@@ -84,7 +84,7 @@ export async function exportDocx(data: ResumeData) {
       new Paragraph({ children: [new TextRun({ text: "" })] }),
       ...(data.skills ? [
         new Paragraph({ children: [new TextRun({ text: "SKILLS", bold: true, size: 18, color: "FFFFFF", characterSpacing: 30 })] }),
-        ...data.skills.split(",").map(s => s.trim()).filter(Boolean).map(s =>
+        ...parseSkills(data.skills).map(s =>
           new Paragraph({ children: [new TextRun({ text: `• ${s}`, size: 18, color: "FFFFFF" })] })
         ),
         new Paragraph({ children: [new TextRun({ text: "" })] }),
