@@ -13,6 +13,7 @@ import { Route as BuilderRouteImport } from './routes/builder'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
 import { Route as ApiRewriteSectionRouteImport } from './routes/api/rewrite-section'
+import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-from-jd'
 
 const BuilderRoute = BuilderRouteImport.update({
   id: '/builder',
@@ -34,16 +35,23 @@ const ApiRewriteSectionRoute = ApiRewriteSectionRouteImport.update({
   path: '/api/rewrite-section',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGenerateFromJdRoute = ApiGenerateFromJdRouteImport.update({
+  id: '/api/generate-from-jd',
+  path: '/api/generate-from-jd',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
 }
@@ -51,18 +59,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/builder' | '/api/rewrite-section' | '/api/rewrite-summary'
+  fullPaths:
+    | '/'
+    | '/builder'
+    | '/api/generate-from-jd'
+    | '/api/rewrite-section'
+    | '/api/rewrite-summary'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/builder' | '/api/rewrite-section' | '/api/rewrite-summary'
+  to:
+    | '/'
+    | '/builder'
+    | '/api/generate-from-jd'
+    | '/api/rewrite-section'
+    | '/api/rewrite-summary'
   id:
     | '__root__'
     | '/'
     | '/builder'
+    | '/api/generate-from-jd'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
   fileRoutesById: FileRoutesById
@@ -70,6 +90,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BuilderRoute: typeof BuilderRoute
+  ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
   ApiRewriteSectionRoute: typeof ApiRewriteSectionRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
 }
@@ -104,15 +125,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRewriteSectionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/generate-from-jd': {
+      id: '/api/generate-from-jd'
+      path: '/api/generate-from-jd'
+      fullPath: '/api/generate-from-jd'
+      preLoaderRoute: typeof ApiGenerateFromJdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BuilderRoute: BuilderRoute,
+  ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
   ApiRewriteSectionRoute: ApiRewriteSectionRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
