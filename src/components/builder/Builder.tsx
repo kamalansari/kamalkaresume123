@@ -22,6 +22,10 @@ import { cn } from "@/lib/utils";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
+function ensureSection(order: SectionId[], id: SectionId): SectionId[] {
+  return order.includes(id) ? order : [...order, id];
+}
+
 const SECTION_LABELS: Record<SectionId, string> = {
   summary: "Summary",
   experience: "Experience",
