@@ -19,6 +19,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Slider } from "@/components/ui/slider";
 import { parseSkills } from "@/lib/parseSkills";
 import { cn } from "@/lib/utils";
+import { FormattableTextarea } from "./FormattableTextarea";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -66,9 +67,13 @@ export function Builder() {
   const [nameDraft, setNameDraft] = useState("");
   const [atsOpen, setAtsOpen] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [jdDialogOpen, setJdDialogOpen] = useState(false);
+  const [jdDialogText, setJdDialogText] = useState("");
+  const [mounted, setMounted] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
   useEffect(() => { setSaved(resumeStore.list()); }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   const refreshList = () => setSaved(resumeStore.list());
 
@@ -264,6 +269,50 @@ export function Builder() {
         }),
       }));
       toast.success("Resume tailored to JD");
+    } catch {
+      toast.error("Network error.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const generateAtsResumeFromDialog = async () => {
+    const jd = jdDialogText.trim();
+    if (!jd) { toast.error("Paste a job description first."); return; }
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/generate-from-jd", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jobDescription: jd,
+          current: {
+            name: data.name,
+            headline: data.headline,
+            summary: data.summary,
+            skills: data.skills,
+            experience: data.experience.map(e => ({ id: e.id, title: e.title, company: e.company, bullets: e.bullets })),
+          },
+        }),
+      });
+      if (res.status === 429) { toast.error("Rate limit hit."); return; }
+      if (res.status === 402) { toast.error("AI credits exhausted."); return; }
+      if (!res.ok) { toast.error("AI generation failed."); return; }
+      const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
+      setData(d => ({
+        ...d,
+        jobDescription: jd,
+        headline: out.headline || d.headline,
+        summary: out.summary || d.summary,
+        skills: out.skills || d.skills,
+        experience: d.experience.map(e => {
+          const match = out.experience?.find(x => x.id === e.id);
+          return match ? { ...e, bullets: match.bullets } : e;
+        }),
+      }));
+      setJdDialogOpen(false);
+      setJdDialogText("");
+      toast.success("ATS-tailored resume generated");
     } catch {
       toast.error("Network error.");
     } finally {
