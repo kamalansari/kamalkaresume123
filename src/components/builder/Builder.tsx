@@ -342,3 +342,66 @@ function Field({ label, children, full }: { label: string; children: React.React
     </div>
   );
 }
+
+function SortableSectionRow({ id }: { id: SectionId }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm cursor-grab active:cursor-grabbing hover:border-[var(--navy-light)]"
+    >
+      <GripVertical className="h-4 w-4 text-muted-foreground" />
+      <span className="font-medium">{SECTION_LABELS[id]}</span>
+    </div>
+  );
+}
+
+function TemplateThumb({ id, accent }: { id: TemplateId; accent: string }) {
+  if (id === "two-column") {
+    return (
+      <div className="aspect-[3/4] w-full rounded bg-white border border-border overflow-hidden flex">
+        <div className="w-1/3 h-full" style={{ background: accent }} />
+        <div className="flex-1 p-1 space-y-1">
+          <div className="h-1 w-3/4 rounded bg-foreground/30" />
+          <div className="h-0.5 w-full rounded bg-foreground/10" />
+          <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+          <div className="h-0.5 w-2/3 rounded bg-foreground/10" />
+        </div>
+      </div>
+    );
+  }
+  if (id === "modern") {
+    return (
+      <div className="aspect-[3/4] w-full rounded bg-white border border-border overflow-hidden">
+        <div className="h-1/4 w-full p-1 flex items-end" style={{ background: accent }}>
+          <div className="h-1 w-2/3 rounded bg-white/80" />
+        </div>
+        <div className="p-1 space-y-1">
+          <div className="h-0.5 w-full rounded bg-foreground/10" />
+          <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+          <div className="h-0.5 w-2/3 rounded bg-foreground/10" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="aspect-[3/4] w-full rounded bg-white border border-border overflow-hidden p-1.5 flex flex-col items-center">
+      <div className="h-1 w-2/3 rounded" style={{ background: accent }} />
+      <div className="mt-0.5 h-0.5 w-1/2 rounded bg-foreground/30" />
+      <div className="mt-1 h-px w-full" style={{ background: accent, opacity: 0.4 }} />
+      <div className="mt-1 self-stretch space-y-1">
+        <div className="h-0.5 w-full rounded bg-foreground/10" />
+        <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+        <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+      </div>
+    </div>
+  );
+}
