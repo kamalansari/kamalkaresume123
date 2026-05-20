@@ -387,6 +387,24 @@ export function Builder() {
               </div>
 
               <div>
+                <Label className="text-xs text-muted-foreground">Background</Label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {BG_PRESETS.map(c => (
+                    <button
+                      key={c.id}
+                      title={c.label}
+                      onClick={() => update("bgHex", c.hex)}
+                      className={cn("h-7 w-7 rounded-full border-2 transition-transform hover:scale-110", data.bgHex === c.hex ? "border-foreground ring-2 ring-foreground/20" : "border-border")}
+                      style={{ background: c.hex }}
+                    />
+                  ))}
+                  <label className="h-7 w-7 rounded-full border-2 border-dashed border-border flex items-center justify-center cursor-pointer overflow-hidden">
+                    <input type="color" value={data.bgHex} onChange={e => update("bgHex", e.target.value)} className="h-10 w-10 cursor-pointer border-0 bg-transparent p-0" />
+                  </label>
+                </div>
+              </div>
+
+              <div>
                 <Label className="text-xs text-muted-foreground">Font</Label>
                 <select
                   value={data.fontId}
@@ -398,15 +416,42 @@ export function Builder() {
               </div>
 
               <div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Font size</Label>
+                  <span className="text-xs tabular-nums text-muted-foreground">{data.fontSize.toFixed(1)} pt</span>
+                </div>
+                <Slider
+                  className="mt-2"
+                  min={9} max={13} step={0.5}
+                  value={[data.fontSize]}
+                  onValueChange={([v]) => update("fontSize", v)}
+                />
+              </div>
+
+              <div>
                 <Label className="text-xs text-muted-foreground">Section order</Label>
                 <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Drag to reorder how sections appear on the resume.</p>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onSectionDragEnd}>
                   <SortableContext items={data.sectionOrder} strategy={verticalListSortingStrategy}>
                     <div className="space-y-1.5">
-                      {data.sectionOrder.map(id => <SortableSectionRow key={id} id={id} />)}
+                      {data.sectionOrder.map(id => <SortableSectionRow key={id} id={id} onRemove={() => removeSectionFromOrder(id)} />)}
                     </div>
                   </SortableContext>
                 </DndContext>
+                <div className="mt-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="outline" className="w-full"><Plus /> Add section</Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {(["projects","certifications","awards","languages"] as SectionId[]).map(id => (
+                        <DropdownMenuItem key={id} disabled={data.sectionOrder.includes(id)} onClick={() => addSectionIfMissing(id)}>
+                          {SECTION_LABELS[id]}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </div>
           </Card>
