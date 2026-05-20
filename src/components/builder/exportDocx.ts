@@ -92,62 +92,75 @@ export async function exportDocx(data: ResumeData) {
 
   let body: Paragraph[] | Table[] = [];
 
-  if (data.template === "two-column") {
+  const twoCol = data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two";
+  if (twoCol) {
+    const compact = data.template === "compact-two";
+    const sidebarFill = compact ? "F4F3EF" : color;
+    const sidebarText = compact ? "1A1A1A" : "FFFFFF";
+    const sidebarMuted = compact ? "555555" : "EEEEEE";
     // Build two-column layout using a table
     const leftChildren: Paragraph[] = [
-      new Paragraph({ children: [new TextRun({ text: data.name || "Your Name", bold: true, size: 36, color: "FFFFFF" })] }),
-      new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: data.headline, size: 20, color: "FFFFFF" })] }),
-      new Paragraph({ children: [new TextRun({ text: "CONTACT", bold: true, size: 18, color: "FFFFFF", characterSpacing: 30 })] }),
+      new Paragraph({ children: [new TextRun({ text: data.name || "Your Name", bold: true, size: 36, color: compact ? color : sidebarText })] }),
+      new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: data.headline, size: 20, color: sidebarText })] }),
+      new Paragraph({ children: [new TextRun({ text: "CONTACT", bold: true, size: 18, color: sidebarText, characterSpacing: 30 })] }),
       ...[data.email, data.phone, data.location, data.links].filter(Boolean).map(t =>
-        new Paragraph({ children: [new TextRun({ text: t, size: 18, color: "FFFFFF" })] })
+        new Paragraph({ children: [new TextRun({ text: t, size: 18, color: sidebarText })] })
       ),
       new Paragraph({ children: [new TextRun({ text: "" })] }),
       ...(data.skills ? [
-        new Paragraph({ children: [new TextRun({ text: "SKILLS", bold: true, size: 18, color: "FFFFFF", characterSpacing: 30 })] }),
+        new Paragraph({ children: [new TextRun({ text: "SKILLS", bold: true, size: 18, color: sidebarText, characterSpacing: 30 })] }),
         ...parseSkills(data.skills).map(s =>
-          new Paragraph({ children: [new TextRun({ text: `• ${s}`, size: 18, color: "FFFFFF" })] })
+          new Paragraph({ children: [new TextRun({ text: `• ${s}`, size: 18, color: sidebarText })] })
+        ),
+        new Paragraph({ children: [new TextRun({ text: "" })] }),
+      ] : []),
+      ...(data.languages?.length ? [
+        new Paragraph({ children: [new TextRun({ text: "LANGUAGES", bold: true, size: 18, color: sidebarText, characterSpacing: 30 })] }),
+        ...data.languages.map(l =>
+          new Paragraph({ children: [new TextRun({ text: `${l.name}${l.level ? ` — ${l.level}` : ""}`, size: 18, color: sidebarText })] })
         ),
         new Paragraph({ children: [new TextRun({ text: "" })] }),
       ] : []),
       ...(data.education.length ? [
-        new Paragraph({ children: [new TextRun({ text: "EDUCATION", bold: true, size: 18, color: "FFFFFF", characterSpacing: 30 })] }),
+        new Paragraph({ children: [new TextRun({ text: "EDUCATION", bold: true, size: 18, color: sidebarText, characterSpacing: 30 })] }),
         ...data.education.flatMap(ed => [
-          new Paragraph({ children: [new TextRun({ text: ed.degree, bold: true, size: 18, color: "FFFFFF" })] }),
-          new Paragraph({ children: [new TextRun({ text: ed.school, size: 18, color: "FFFFFF" })] }),
-          new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: ed.date, size: 16, color: "EEEEEE" })] }),
+          new Paragraph({ children: [new TextRun({ text: ed.degree, bold: true, size: 18, color: sidebarText })] }),
+          new Paragraph({ children: [new TextRun({ text: ed.school, size: 18, color: sidebarText })] }),
+          new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: ed.date, size: 16, color: sidebarMuted })] }),
         ]),
       ] : []),
     ];
 
+    const mainIds: SectionId[] = ["summary", "experience", "projects", "certifications", "awards"];
     const rightChildren: Paragraph[] = data.sectionOrder
-      .filter(id => id === "summary" || id === "experience")
+      .filter(id => mainIds.includes(id))
       .flatMap(id => sectionMap[id]);
 
     const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
     const borders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
 
+    const sideCell = new TableCell({
+      borders,
+      width: { size: 3120, type: WidthType.DXA },
+      shading: { fill: sidebarFill, type: ShadingType.CLEAR, color: "auto" },
+      margins: { top: 400, bottom: 400, left: 300, right: 300 },
+      children: leftChildren,
+    });
+    const mainCell = new TableCell({
+      borders,
+      width: { size: 6240, type: WidthType.DXA },
+      margins: { top: 400, bottom: 400, left: 300, right: 300 },
+      children: rightChildren.length ? rightChildren : [new Paragraph({ children: [new TextRun({ text: "" })] })],
+    });
+    const sidebarRight = data.template === "sidebar-right";
     body = [
       new Table({
         width: { size: 9360, type: WidthType.DXA },
-        columnWidths: [3120, 6240],
+        columnWidths: sidebarRight ? [6240, 3120] : [3120, 6240],
         borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder, insideHorizontal: noBorder, insideVertical: noBorder },
         rows: [
           new TableRow({
-            children: [
-              new TableCell({
-                borders,
-                width: { size: 3120, type: WidthType.DXA },
-                shading: { fill: color, type: ShadingType.CLEAR, color: "auto" },
-                margins: { top: 400, bottom: 400, left: 300, right: 300 },
-                children: leftChildren,
-              }),
-              new TableCell({
-                borders,
-                width: { size: 6240, type: WidthType.DXA },
-                margins: { top: 400, bottom: 400, left: 300, right: 300 },
-                children: rightChildren.length ? rightChildren : [new Paragraph({ children: [new TextRun({ text: "" })] })],
-              }),
-            ],
+            children: sidebarRight ? [mainCell, sideCell] : [sideCell, mainCell],
           }),
         ],
       }),
