@@ -7,11 +7,11 @@ import { parseSkills } from "@/lib/parseSkills";
 function hex(h: string) { return h.replace("#", "").toUpperCase(); }
 function cleanFont(s: string) { return s.replace(/['"]/g, "").trim(); }
 
-function heading(text: string, color: string) {
+function heading(text: string, color: string, font?: string) {
   return new Paragraph({
     spacing: { before: 200, after: 80 },
     border: { bottom: { style: BorderStyle.SINGLE, size: 6, color, space: 1 } },
-    children: [new TextRun({ text: text.toUpperCase(), bold: true, color, size: 22, characterSpacing: 30 })],
+    children: [new TextRun({ text: text.toUpperCase(), bold: true, color, size: 22, characterSpacing: 30, font })],
   });
 }
 
@@ -32,12 +32,13 @@ function line(text: string, opts: { bold?: boolean; right?: string } = {}) {
   return new Paragraph({ children: [new TextRun({ text, bold: opts.bold, size: 21 })] });
 }
 
-function buildSections(data: ResumeData, color: string): Record<SectionId, Paragraph[]> {
+function buildSections(data: ResumeData, color: string, headingFont?: string): Record<SectionId, Paragraph[]> {
+  const h = (t: string) => heading(t, color, headingFont);
   return {
-    summary: data.summary ? [heading("Summary", color), new Paragraph({ children: [new TextRun({ text: data.summary, size: 21 })] })] : [],
+    summary: data.summary ? [h("Summary"), new Paragraph({ children: [new TextRun({ text: data.summary, size: 21 })] })] : [],
     experience: data.experience.length
       ? [
-          heading("Experience", color),
+          h("Experience"),
           ...data.experience.flatMap(e => [
             line(`${e.title || "Role"} · ${e.company}`, { bold: true, right: e.date }),
             ...e.bullets.split("\n").filter(Boolean).map(bullet),
@@ -46,12 +47,12 @@ function buildSections(data: ResumeData, color: string): Record<SectionId, Parag
         ]
       : [],
     education: data.education.length
-      ? [heading("Education", color), ...data.education.map(ed => line(`${ed.degree} · ${ed.school}`, { right: ed.date }))]
+      ? [h("Education"), ...data.education.map(ed => line(`${ed.degree} · ${ed.school}`, { right: ed.date }))]
       : [],
-    skills: data.skills ? [heading("Skills", color), new Paragraph({ children: [new TextRun({ text: parseSkills(data.skills).join(" · "), size: 21 })] })] : [],
+    skills: data.skills ? [h("Skills"), new Paragraph({ children: [new TextRun({ text: parseSkills(data.skills).join(" · "), size: 21 })] })] : [],
     projects: data.projects?.length
       ? [
-          heading("Projects", color),
+          h("Projects"),
           ...data.projects.flatMap(p => [
             line(`${p.name}${p.link ? ` · ${p.link}` : ""}`, { bold: true, right: p.date }),
             ...(p.bullets ? p.bullets.split("\n").filter(Boolean).map(bullet) : []),
@@ -60,13 +61,13 @@ function buildSections(data: ResumeData, color: string): Record<SectionId, Parag
         ]
       : [],
     certifications: data.certifications?.length
-      ? [heading("Certifications", color), ...data.certifications.map(c => line(`${c.name}${c.issuer ? ` · ${c.issuer}` : ""}`, { right: c.date }))]
+      ? [h("Certifications"), ...data.certifications.map(c => line(`${c.name}${c.issuer ? ` · ${c.issuer}` : ""}`, { right: c.date }))]
       : [],
     awards: data.awards?.length
-      ? [heading("Awards", color), ...data.awards.map(a => line(`${a.name}${a.issuer ? ` · ${a.issuer}` : ""}`, { right: a.date }))]
+      ? [h("Awards"), ...data.awards.map(a => line(`${a.name}${a.issuer ? ` · ${a.issuer}` : ""}`, { right: a.date }))]
       : [],
     languages: data.languages?.length
-      ? [heading("Languages", color), new Paragraph({ children: [new TextRun({ text: data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(" · "), size: 21 })] })]
+      ? [h("Languages"), new Paragraph({ children: [new TextRun({ text: data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(" · "), size: 21 })] })]
       : [],
   };
 }
@@ -78,12 +79,12 @@ export async function exportDocx(data: ResumeData) {
   const headingFont = cleanFont(preset.heading);
   const bodyFont = cleanFont(preset.body);
   const baseHalfPt = Math.round((data.fontSize ?? 10.5) * 2);
-  const sectionMap = buildSections(data, color);
+  const sectionMap = buildSections(data, color, headingFont);
 
   const header: Paragraph[] = [
     new Paragraph({
       alignment: data.template === "modern" ? AlignmentType.LEFT : AlignmentType.CENTER,
-      children: [new TextRun({ text: data.name || "Your Name", bold: true, size: 52, color })],
+      children: [new TextRun({ text: data.name || "Your Name", bold: true, size: 52, color, font: headingFont })],
     }),
     new Paragraph({
       alignment: data.template === "modern" ? AlignmentType.LEFT : AlignmentType.CENTER,
