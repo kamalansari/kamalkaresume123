@@ -696,8 +696,16 @@ export function Builder() {
             </Card>
           )}
 
-          <Card title="Target job description">
-            <p className="text-xs text-muted-foreground mb-2">Paste the job posting to score keyword match and surface missing terms.</p>
+          <Card
+            title="Target job description"
+            action={
+              <Button size="sm" variant="accent" onClick={generateFromJD} disabled={generating || !data.jobDescription.trim()}>
+                {generating ? <Loader2 className="animate-spin" /> : <Wand2 />}
+                {generating ? "Tailoring…" : "AI tailor resume"}
+              </Button>
+            }
+          >
+            <p className="text-xs text-muted-foreground mb-2">Paste the job posting to score keyword match and tailor the whole resume in one click.</p>
             <Textarea rows={6} value={data.jobDescription} onChange={e => update("jobDescription", e.target.value)} placeholder="Paste the job description here..." />
             <div className="mt-3">
               <Label className="text-xs text-muted-foreground">Extra ATS keywords (comma separated)</Label>
@@ -713,22 +721,43 @@ export function Builder() {
               <JobSearchButton site="indeed" data={data} />
               <JobSearchButton site="google" data={data} />
               <JobSearchButton site="wellfound" data={data} />
+              <JobSearchButton site="naukri" data={data} />
             </div>
           </Card>
         </div>
 
         {/* Preview */}
-        <div className="min-w-0">
+        <div className="min-w-0 relative">
+          {!atsOpen && (
+            <button
+              onClick={() => setAtsOpen(true)}
+              className="no-print hidden lg:inline-flex absolute right-2 top-2 z-10 items-center gap-1.5 rounded-md border border-border bg-background h-8 px-2.5 text-xs font-medium hover:border-[var(--navy-light)]"
+              title="Open ATS panel"
+            >
+              <PanelRightOpen className="h-3.5 w-3.5" /> ATS · {score.score}
+            </button>
+          )}
           <div className="overflow-auto rounded-xl">
             <ResumeDocument data={data} />
           </div>
         </div>
 
         {/* ATS panel */}
+        {atsOpen && (
         <aside className="no-print space-y-4 lg:sticky lg:top-20 self-start">
           <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Gauge className="h-4 w-4 text-[var(--navy-light)]" /> ATS SCORE
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Gauge className="h-4 w-4 text-[var(--navy-light)]" /> ATS SCORE
+              </div>
+              <button
+                onClick={() => setAtsOpen(false)}
+                className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                aria-label="Close ATS panel"
+                title="Hide panel"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
             <div className="mt-1 flex items-baseline gap-1">
               <span className="font-display text-5xl font-bold">{score.score}</span>
@@ -792,6 +821,7 @@ export function Builder() {
             </div>
           )}
         </aside>
+        )}
       </div>
     </div>
   );
