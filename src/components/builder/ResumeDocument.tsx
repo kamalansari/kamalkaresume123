@@ -2,6 +2,17 @@ import { useEffect } from "react";
 import { Mail, Phone, MapPin, Link as LinkIcon } from "lucide-react";
 import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
+import { parseInline } from "@/lib/inlineFormat";
+
+function InlineText({ text }: { text: string }) {
+  return (
+    <>
+      {parseInline(text).map((r, i) =>
+        r.bold ? <strong key={i} style={{ fontWeight: 700 }}>{r.text}</strong> : <span key={i}>{r.text}</span>
+      )}
+    </>
+  );
+}
 
 const loadedFonts = new Set<string>();
 
