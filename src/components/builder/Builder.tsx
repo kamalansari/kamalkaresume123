@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Download, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, Search, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type TemplateId, type SectionId } from "./types";
+import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
 import { ResumeDocument } from "./ResumeDocument";
 import { exportDocx } from "./exportDocx";
@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Slider } from "@/components/ui/slider";
+import { parseSkills } from "@/lib/parseSkills";
 import { cn } from "@/lib/utils";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
@@ -25,12 +27,26 @@ const SECTION_LABELS: Record<SectionId, string> = {
   experience: "Experience",
   education: "Education",
   skills: "Skills",
+  projects: "Projects",
+  certifications: "Certifications",
+  awards: "Awards",
+  languages: "Languages",
 };
 
 const TEMPLATES: { id: TemplateId; label: string; desc: string }[] = [
   { id: "classic", label: "Classic", desc: "Centered header" },
   { id: "two-column", label: "Two column", desc: "Sidebar layout" },
   { id: "modern", label: "Modern", desc: "Bold header bar" },
+  { id: "sidebar-right", label: "Sidebar right", desc: "Sidebar on right" },
+  { id: "compact-two", label: "Compact two", desc: "Cream sidebar" },
+];
+
+const BG_PRESETS = [
+  { id: "white", label: "White", hex: "#ffffff" },
+  { id: "ivory", label: "Ivory", hex: "#fbf9f4" },
+  { id: "stone", label: "Stone", hex: "#f5f4f0" },
+  { id: "sky", label: "Sky", hex: "#f1f5fb" },
+  { id: "mint", label: "Mint", hex: "#f1f7f3" },
 ];
 
 export function Builder() {
