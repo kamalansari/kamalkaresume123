@@ -852,7 +852,7 @@ function Field({ label, children, full }: { label: string; children: React.React
   );
 }
 
-function JobSearchButton({ site, data }: { site: "linkedin" | "indeed" | "google" | "wellfound"; data: ResumeData }) {
+function JobSearchButton({ site, data }: { site: "linkedin" | "indeed" | "google" | "wellfound" | "naukri"; data: ResumeData }) {
   const kw = encodeURIComponent(data.headline || data.experience[0]?.title || "");
   const loc = encodeURIComponent(data.location || "");
   const labels: Record<typeof site, string> = {
@@ -860,12 +860,14 @@ function JobSearchButton({ site, data }: { site: "linkedin" | "indeed" | "google
     indeed: "Indeed",
     google: "Google Jobs",
     wellfound: "Wellfound",
+    naukri: "Naukri",
   };
   const urls: Record<typeof site, string> = {
     linkedin: `https://www.linkedin.com/jobs/search/?keywords=${kw}&location=${loc}`,
     indeed: `https://www.indeed.com/jobs?q=${kw}&l=${loc}`,
     google: `https://www.google.com/search?q=${kw}+jobs+${loc}&ibp=htl;jobs`,
     wellfound: `https://wellfound.com/jobs?role=${kw}&location=${loc}`,
+    naukri: `https://www.naukri.com/${(data.headline || data.experience[0]?.title || "").toString().trim().toLowerCase().replace(/\s+/g, "-") || "jobs"}-jobs${loc ? `-in-${loc}` : ""}`,
   };
   return (
     <a href={urls[site]} target="_blank" rel="noreferrer"
