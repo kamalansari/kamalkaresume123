@@ -3,6 +3,7 @@ import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
 import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
+import { parseInline } from "@/lib/inlineFormat";
 
 function hex(h: string) { return h.replace("#", "").toUpperCase(); }
 function cleanFont(s: string) { return s.replace(/['"]/g, "").trim(); }
@@ -15,11 +16,15 @@ function heading(text: string, color: string, font?: string) {
   });
 }
 
+function inlineRuns(text: string, baseBold?: boolean) {
+  return parseInline(text).map(r => new TextRun({ text: r.text, size: 21, bold: r.bold || baseBold }));
+}
+
 function bullet(text: string, bodyBold?: boolean, justify?: boolean) {
   return new Paragraph({
     bullet: { level: 0 },
     alignment: justify ? AlignmentType.JUSTIFIED : undefined,
-    children: [new TextRun({ text, size: 21, bold: bodyBold })],
+    children: inlineRuns(text, bodyBold),
   });
 }
 
@@ -43,7 +48,7 @@ function buildSections(data: ResumeData, color: string, headingFont?: string): R
   const jx = data.justifyText;
   const para = (text: string) => new Paragraph({
     alignment: jx ? AlignmentType.JUSTIFIED : undefined,
-    children: [new TextRun({ text, size: 21, bold: bb })],
+    children: inlineRuns(text, bb),
   });
   return {
     summary: data.summary ? [h("Summary"), para(data.summary)] : [],
