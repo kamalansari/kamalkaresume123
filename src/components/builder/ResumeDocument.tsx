@@ -208,7 +208,7 @@ function Section({ title, accent, headingFont, children }: { title: string; acce
 }
 
 function SummarySection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
-  return <Section title="Summary" accent={accent} headingFont={headingFont}><p>{data.summary}</p></Section>;
+  return <Section title="Summary" accent={accent} headingFont={headingFont}><p><InlineText text={data.summary} /></p></Section>;
 }
 
 function ExperienceSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
@@ -223,7 +223,7 @@ function ExperienceSection({ data, accent, headingFont }: { data: ResumeData; ac
             <div style={{ color: "#666", whiteSpace: "nowrap" }}>{e.date}</div>
           </div>
           <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
-            {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}>{b}</li>)}
+            {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
           </ul>
         </div>
       ))}
@@ -264,7 +264,7 @@ function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; acce
           </div>
           {p.bullets && (
             <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
-              {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}>{b}</li>)}
+              {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
             </ul>
           )}
         </div>
