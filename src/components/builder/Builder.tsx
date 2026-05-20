@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
@@ -64,6 +64,8 @@ export function Builder() {
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+  const [atsOpen, setAtsOpen] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
   useEffect(() => { setSaved(resumeStore.list()); }, []);
@@ -226,6 +228,46 @@ export function Builder() {
       return null;
     } finally {
       setRewritingKey(null);
+    }
+  };
+
+  const generateFromJD = async () => {
+    if (!data.jobDescription.trim()) { toast.error("Paste a job description first."); return; }
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/generate-from-jd", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jobDescription: data.jobDescription,
+          current: {
+            name: data.name,
+            headline: data.headline,
+            summary: data.summary,
+            skills: data.skills,
+            experience: data.experience.map(e => ({ id: e.id, title: e.title, company: e.company, bullets: e.bullets })),
+          },
+        }),
+      });
+      if (res.status === 429) { toast.error("Rate limit hit."); return; }
+      if (res.status === 402) { toast.error("AI credits exhausted."); return; }
+      if (!res.ok) { toast.error("AI tailoring failed."); return; }
+      const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
+      setData(d => ({
+        ...d,
+        headline: out.headline || d.headline,
+        summary: out.summary || d.summary,
+        skills: out.skills || d.skills,
+        experience: d.experience.map(e => {
+          const match = out.experience?.find(x => x.id === e.id);
+          return match ? { ...e, bullets: match.bullets } : e;
+        }),
+      }));
+      toast.success("Resume tailored to JD");
+    } catch {
+      toast.error("Network error.");
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -426,6 +468,26 @@ export function Builder() {
                   value={[data.fontSize]}
                   onValueChange={([v]) => update("fontSize", v)}
                 />
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Text style</Label>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => update("justifyText", !data.justifyText)}
+                    className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
+                      data.justifyText ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                  >
+                    <AlignJustify className="h-4 w-4" /> Justify
+                  </button>
+                  <button
+                    onClick={() => update("boldBody", !data.boldBody)}
+                    className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
+                      data.boldBody ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                  >
+                    <Bold className="h-4 w-4" /> Bold text
+                  </button>
+                </div>
               </div>
 
               <div>
