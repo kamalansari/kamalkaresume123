@@ -1,10 +1,11 @@
 import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, TabStopType } from "docx";
 import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
-import type { ResumeData, SectionId } from "./types";
+import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
 
 function hex(h: string) { return h.replace("#", "").toUpperCase(); }
+function cleanFont(s: string) { return s.replace(/['"]/g, "").trim(); }
 
 function heading(text: string, color: string) {
   return new Paragraph({
@@ -72,6 +73,11 @@ function buildSections(data: ResumeData, color: string): Record<SectionId, Parag
 
 export async function exportDocx(data: ResumeData) {
   const color = hex(data.accentHex);
+  const bg = hex(data.bgHex || "#ffffff");
+  const preset = FONT_PRESETS.find(f => f.id === data.fontId) ?? FONT_PRESETS[0];
+  const headingFont = cleanFont(preset.heading);
+  const bodyFont = cleanFont(preset.body);
+  const baseHalfPt = Math.round((data.fontSize ?? 10.5) * 2);
   const sectionMap = buildSections(data, color);
 
   const header: Paragraph[] = [
@@ -173,8 +179,16 @@ export async function exportDocx(data: ResumeData) {
   const doc = new Document({
     creator: "ResumeForge",
     title: `${data.name || "Resume"} — Resume`,
+    background: { color: bg },
+    styles: {
+      default: {
+        document: { run: { font: bodyFont, size: baseHalfPt } },
+      },
+    },
     sections: [{
-      properties: { page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } } },
+      properties: {
+        page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } },
+      },
       children: body as never,
     }],
   });
