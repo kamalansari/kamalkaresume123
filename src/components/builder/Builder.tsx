@@ -1,15 +1,18 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Download, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText } from "lucide-react";
+import { ArrowLeft, Download, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
 import { ResumeDocument } from "./ResumeDocument";
 import { exportDocx } from "./exportDocx";
+import { resumeStore, newId, type SavedResume } from "./resumeStore";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -34,7 +37,68 @@ export function Builder() {
   const [data, setData] = useState<ResumeData>(defaultResume);
   const [rewriting, setRewriting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [currentName, setCurrentName] = useState<string>("Untitled resume");
+  const [saved, setSaved] = useState<SavedResume[]>([]);
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
   const score = useMemo(() => computeScore(data), [data]);
+
+  useEffect(() => { setSaved(resumeStore.list()); }, []);
+
+  const refreshList = () => setSaved(resumeStore.list());
+
+  const saveCurrent = () => {
+    if (!currentId) { setNameDraft(data.name ? `${data.name}'s resume` : "Untitled resume"); setSaveAsOpen(true); return; }
+    resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data });
+    refreshList();
+    toast.success(`Saved "${currentName}"`);
+  };
+
+  const saveAs = (name: string) => {
+    const trimmed = name.trim() || "Untitled resume";
+    const id = newId();
+    resumeStore.upsert({ id, name: trimmed, updatedAt: Date.now(), data });
+    setCurrentId(id);
+    setCurrentName(trimmed);
+    setSaveAsOpen(false);
+    refreshList();
+    toast.success(`Saved as "${trimmed}"`);
+  };
+
+  const loadSaved = (id: string) => {
+    const entry = resumeStore.get(id);
+    if (!entry) { toast.error("Resume not found"); return; }
+    setData(entry.data);
+    setCurrentId(entry.id);
+    setCurrentName(entry.name);
+    toast.success(`Loaded "${entry.name}"`);
+  };
+
+  const renameCurrent = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || !currentId) return;
+    resumeStore.rename(currentId, trimmed);
+    setCurrentName(trimmed);
+    setRenameOpen(false);
+    refreshList();
+    toast.success("Renamed");
+  };
+
+  const deleteSaved = (id: string, name: string) => {
+    resumeStore.remove(id);
+    if (currentId === id) { setCurrentId(null); setCurrentName("Untitled resume"); }
+    refreshList();
+    toast.success(`Deleted "${name}"`);
+  };
+
+  const newResume = () => {
+    setData(defaultResume);
+    setCurrentId(null);
+    setCurrentName("Untitled resume");
+    toast.success("Started a new resume");
+  };
 
   const update = <K extends keyof ResumeData>(k: K, v: ResumeData[K]) => setData(d => ({ ...d, [k]: v }));
 
@@ -103,6 +167,65 @@ export function Builder() {
           </Link>
           <div className="font-display font-semibold">ResumeForge Builder</div>
           <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <FolderOpen /> <span className="hidden sm:inline">Resumes</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Current: {currentName}{currentId ? "" : " (unsaved)"}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={saveCurrent}>
+                  <Save className="h-4 w-4" /> {currentId ? "Save" : "Save…"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setNameDraft(currentName); setSaveAsOpen(true); }}>
+                  <FilePlus2 className="h-4 w-4" /> Save as new…
+                </DropdownMenuItem>
+                {currentId && (
+                  <DropdownMenuItem onClick={() => { setNameDraft(currentName); setRenameOpen(true); }}>
+                    <Pencil className="h-4 w-4" /> Rename current
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={newResume}>
+                  <Plus className="h-4 w-4" /> New blank resume
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Saved ({saved.length})
+                </DropdownMenuLabel>
+                {saved.length === 0 && (
+                  <div className="px-2 py-2 text-xs text-muted-foreground">No saved resumes yet. Use “Save as new…” to create one per job.</div>
+                )}
+                <div className="max-h-72 overflow-auto">
+                  {saved.map(s => (
+                    <div key={s.id} className="group flex items-center gap-1 px-1.5 py-0.5">
+                      <button
+                        onClick={() => loadSaved(s.id)}
+                        className="flex-1 text-left rounded-sm px-2 py-1.5 hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <div className="flex items-center gap-2 text-sm font-medium truncate">
+                          {currentId === s.id && <Check className="h-3.5 w-3.5 text-[var(--navy-light)]" />}
+                          <span className="truncate">{s.name}</span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {new Date(s.updatedAt).toLocaleString()}
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => deleteSaved(s.id, s.name)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" onClick={handleDocx} disabled={exporting}>
               {exporting ? <Loader2 className="animate-spin" /> : <FileType />} DOCX
             </Button>
@@ -112,6 +235,42 @@ export function Builder() {
           </div>
         </div>
       </header>
+
+      <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Save resume as…</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Name (e.g. “Stripe — Senior PM”)</Label>
+            <Input
+              autoFocus
+              value={nameDraft}
+              onChange={e => setNameDraft(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") saveAs(nameDraft); }}
+              placeholder="Name this version"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaveAsOpen(false)}>Cancel</Button>
+            <Button onClick={() => saveAs(nameDraft)}><Save /> Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Rename resume</DialogTitle></DialogHeader>
+          <Input
+            autoFocus
+            value={nameDraft}
+            onChange={e => setNameDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") renameCurrent(nameDraft); }}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameOpen(false)}>Cancel</Button>
+            <Button onClick={() => renameCurrent(nameDraft)}>Save name</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="mx-auto max-w-[1600px] grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)_minmax(0,360px)] gap-6 px-6 py-6">
         {/* Editor */}
