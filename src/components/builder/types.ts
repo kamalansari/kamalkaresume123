@@ -1,8 +1,20 @@
 export type Experience = { id: string; title: string; company: string; date: string; bullets: string };
 export type Education = { id: string; degree: string; school: string; date: string };
+export type Project = { id: string; name: string; link: string; date: string; bullets: string };
+export type Certification = { id: string; name: string; issuer: string; date: string };
+export type Award = { id: string; name: string; issuer: string; date: string };
+export type Language = { id: string; name: string; level: string };
 
-export type TemplateId = "classic" | "two-column" | "modern";
-export type SectionId = "summary" | "experience" | "education" | "skills";
+export type TemplateId = "classic" | "two-column" | "modern" | "sidebar-right" | "compact-two";
+export type SectionId =
+  | "summary"
+  | "experience"
+  | "education"
+  | "skills"
+  | "projects"
+  | "certifications"
+  | "awards"
+  | "languages";
 
 export type FontPreset = {
   id: string;
@@ -48,6 +60,13 @@ export type ResumeData = {
   template: TemplateId;
   fontId: string;
   accentHex: string;
+  bgHex: string;
+  fontSize: number; // base point size, 9–13
+  projects: Project[];
+  certifications: Certification[];
+  awards: Award[];
+  languages: Language[];
+  extraKeywords: string; // comma-separated, ATS booster
   sectionOrder: SectionId[];
 };
 
@@ -87,5 +106,12 @@ export const defaultResume: ResumeData = {
   template: "classic",
   fontId: "sora-manrope",
   accentHex: "#1f3a68",
+  bgHex: "#ffffff",
+  fontSize: 10.5,
+  projects: [],
+  certifications: [],
+  awards: [],
+  languages: [],
+  extraKeywords: "",
   sectionOrder: ["summary", "experience", "education", "skills"],
 };
