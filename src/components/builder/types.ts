@@ -68,6 +68,8 @@ export type ResumeData = {
   languages: Language[];
   extraKeywords: string; // comma-separated, ATS booster
   sectionOrder: SectionId[];
+  justifyText: boolean;
+  boldBody: boolean;
 };
 
 export const defaultResume: ResumeData = {
@@ -114,4 +116,6 @@ export const defaultResume: ResumeData = {
   languages: [],
   extraKeywords: "",
   sectionOrder: ["summary", "experience", "education", "skills"],
+  justifyText: false,
+  boldBody: false,
 };

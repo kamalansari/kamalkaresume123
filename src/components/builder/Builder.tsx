@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
@@ -64,6 +64,8 @@ export function Builder() {
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+  const [atsOpen, setAtsOpen] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
   useEffect(() => { setSaved(resumeStore.list()); }, []);
@@ -226,6 +228,46 @@ export function Builder() {
       return null;
     } finally {
       setRewritingKey(null);
+    }
+  };
+
+  const generateFromJD = async () => {
+    if (!data.jobDescription.trim()) { toast.error("Paste a job description first."); return; }
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/generate-from-jd", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jobDescription: data.jobDescription,
+          current: {
+            name: data.name,
+            headline: data.headline,
+            summary: data.summary,
+            skills: data.skills,
+            experience: data.experience.map(e => ({ id: e.id, title: e.title, company: e.company, bullets: e.bullets })),
+          },
+        }),
+      });
+      if (res.status === 429) { toast.error("Rate limit hit."); return; }
+      if (res.status === 402) { toast.error("AI credits exhausted."); return; }
+      if (!res.ok) { toast.error("AI tailoring failed."); return; }
+      const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
+      setData(d => ({
+        ...d,
+        headline: out.headline || d.headline,
+        summary: out.summary || d.summary,
+        skills: out.skills || d.skills,
+        experience: d.experience.map(e => {
+          const match = out.experience?.find(x => x.id === e.id);
+          return match ? { ...e, bullets: match.bullets } : e;
+        }),
+      }));
+      toast.success("Resume tailored to JD");
+    } catch {
+      toast.error("Network error.");
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -426,6 +468,26 @@ export function Builder() {
                   value={[data.fontSize]}
                   onValueChange={([v]) => update("fontSize", v)}
                 />
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Text style</Label>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => update("justifyText", !data.justifyText)}
+                    className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
+                      data.justifyText ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                  >
+                    <AlignJustify className="h-4 w-4" /> Justify
+                  </button>
+                  <button
+                    onClick={() => update("boldBody", !data.boldBody)}
+                    className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
+                      data.boldBody ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                  >
+                    <Bold className="h-4 w-4" /> Bold text
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -634,8 +696,16 @@ export function Builder() {
             </Card>
           )}
 
-          <Card title="Target job description">
-            <p className="text-xs text-muted-foreground mb-2">Paste the job posting to score keyword match and surface missing terms.</p>
+          <Card
+            title="Target job description"
+            action={
+              <Button size="sm" variant="accent" onClick={generateFromJD} disabled={generating || !data.jobDescription.trim()}>
+                {generating ? <Loader2 className="animate-spin" /> : <Wand2 />}
+                {generating ? "Tailoring…" : "AI tailor resume"}
+              </Button>
+            }
+          >
+            <p className="text-xs text-muted-foreground mb-2">Paste the job posting to score keyword match and tailor the whole resume in one click.</p>
             <Textarea rows={6} value={data.jobDescription} onChange={e => update("jobDescription", e.target.value)} placeholder="Paste the job description here..." />
             <div className="mt-3">
               <Label className="text-xs text-muted-foreground">Extra ATS keywords (comma separated)</Label>
@@ -651,22 +721,43 @@ export function Builder() {
               <JobSearchButton site="indeed" data={data} />
               <JobSearchButton site="google" data={data} />
               <JobSearchButton site="wellfound" data={data} />
+              <JobSearchButton site="naukri" data={data} />
             </div>
           </Card>
         </div>
 
         {/* Preview */}
-        <div className="min-w-0">
+        <div className="min-w-0 relative">
+          {!atsOpen && (
+            <button
+              onClick={() => setAtsOpen(true)}
+              className="no-print hidden lg:inline-flex absolute right-2 top-2 z-10 items-center gap-1.5 rounded-md border border-border bg-background h-8 px-2.5 text-xs font-medium hover:border-[var(--navy-light)]"
+              title="Open ATS panel"
+            >
+              <PanelRightOpen className="h-3.5 w-3.5" /> ATS · {score.score}
+            </button>
+          )}
           <div className="overflow-auto rounded-xl">
             <ResumeDocument data={data} />
           </div>
         </div>
 
         {/* ATS panel */}
+        {atsOpen && (
         <aside className="no-print space-y-4 lg:sticky lg:top-20 self-start">
           <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Gauge className="h-4 w-4 text-[var(--navy-light)]" /> ATS SCORE
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Gauge className="h-4 w-4 text-[var(--navy-light)]" /> ATS SCORE
+              </div>
+              <button
+                onClick={() => setAtsOpen(false)}
+                className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                aria-label="Close ATS panel"
+                title="Hide panel"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
             <div className="mt-1 flex items-baseline gap-1">
               <span className="font-display text-5xl font-bold">{score.score}</span>
@@ -730,6 +821,7 @@ export function Builder() {
             </div>
           )}
         </aside>
+        )}
       </div>
     </div>
   );
@@ -760,7 +852,7 @@ function Field({ label, children, full }: { label: string; children: React.React
   );
 }
 
-function JobSearchButton({ site, data }: { site: "linkedin" | "indeed" | "google" | "wellfound"; data: ResumeData }) {
+function JobSearchButton({ site, data }: { site: "linkedin" | "indeed" | "google" | "wellfound" | "naukri"; data: ResumeData }) {
   const kw = encodeURIComponent(data.headline || data.experience[0]?.title || "");
   const loc = encodeURIComponent(data.location || "");
   const labels: Record<typeof site, string> = {
@@ -768,12 +860,14 @@ function JobSearchButton({ site, data }: { site: "linkedin" | "indeed" | "google
     indeed: "Indeed",
     google: "Google Jobs",
     wellfound: "Wellfound",
+    naukri: "Naukri",
   };
   const urls: Record<typeof site, string> = {
     linkedin: `https://www.linkedin.com/jobs/search/?keywords=${kw}&location=${loc}`,
     indeed: `https://www.indeed.com/jobs?q=${kw}&l=${loc}`,
     google: `https://www.google.com/search?q=${kw}+jobs+${loc}&ibp=htl;jobs`,
     wellfound: `https://wellfound.com/jobs?role=${kw}&location=${loc}`,
+    naukri: `https://www.naukri.com/${(data.headline || data.experience[0]?.title || "").toString().trim().toLowerCase().replace(/\s+/g, "-") || "jobs"}-jobs${loc ? `-in-${loc}` : ""}`,
   };
   return (
     <a href={urls[site]} target="_blank" rel="noreferrer"

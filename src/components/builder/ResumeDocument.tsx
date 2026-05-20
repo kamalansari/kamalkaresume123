@@ -50,6 +50,8 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
     lineHeight: 1.45,
     color: "#1a1a1a",
     background: data.bgHex || "#ffffff",
+    textAlign: data.justifyText ? "justify" : "left",
+    fontWeight: data.boldBody ? 600 : 400,
   } as React.CSSProperties;
 
   const contactLine = (
