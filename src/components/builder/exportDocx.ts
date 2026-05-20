@@ -15,59 +15,70 @@ function heading(text: string, color: string, font?: string) {
   });
 }
 
-function bullet(text: string) {
-  return new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text, size: 21 })] });
+function bullet(text: string, bodyBold?: boolean, justify?: boolean) {
+  return new Paragraph({
+    bullet: { level: 0 },
+    alignment: justify ? AlignmentType.JUSTIFIED : undefined,
+    children: [new TextRun({ text, size: 21, bold: bodyBold })],
+  });
 }
 
-function line(text: string, opts: { bold?: boolean; right?: string } = {}) {
+function line(text: string, opts: { bold?: boolean; right?: string; bodyBold?: boolean } = {}) {
+  const isBold = opts.bold || opts.bodyBold;
   if (opts.right) {
     return new Paragraph({
       tabStops: [{ type: TabStopType.RIGHT, position: 9000 }],
       children: [
-        new TextRun({ text, bold: opts.bold, size: 21 }),
+        new TextRun({ text, bold: isBold, size: 21 }),
         new TextRun({ text: `\t${opts.right}`, size: 21, color: "555555" }),
       ],
     });
   }
-  return new Paragraph({ children: [new TextRun({ text, bold: opts.bold, size: 21 })] });
+  return new Paragraph({ children: [new TextRun({ text, bold: isBold, size: 21 })] });
 }
 
 function buildSections(data: ResumeData, color: string, headingFont?: string): Record<SectionId, Paragraph[]> {
   const h = (t: string) => heading(t, color, headingFont);
+  const bb = data.boldBody;
+  const jx = data.justifyText;
+  const para = (text: string) => new Paragraph({
+    alignment: jx ? AlignmentType.JUSTIFIED : undefined,
+    children: [new TextRun({ text, size: 21, bold: bb })],
+  });
   return {
-    summary: data.summary ? [h("Summary"), new Paragraph({ children: [new TextRun({ text: data.summary, size: 21 })] })] : [],
+    summary: data.summary ? [h("Summary"), para(data.summary)] : [],
     experience: data.experience.length
       ? [
           h("Experience"),
           ...data.experience.flatMap(e => [
             line(`${e.title || "Role"} · ${e.company}`, { bold: true, right: e.date }),
-            ...e.bullets.split("\n").filter(Boolean).map(bullet),
+            ...e.bullets.split("\n").filter(Boolean).map(t => bullet(t, bb, jx)),
             new Paragraph({ children: [new TextRun({ text: "", size: 10 })] }),
           ]),
         ]
       : [],
     education: data.education.length
-      ? [h("Education"), ...data.education.map(ed => line(`${ed.degree} · ${ed.school}`, { right: ed.date }))]
+      ? [h("Education"), ...data.education.map(ed => line(`${ed.degree} · ${ed.school}`, { right: ed.date, bodyBold: bb }))]
       : [],
-    skills: data.skills ? [h("Skills"), new Paragraph({ children: [new TextRun({ text: parseSkills(data.skills).join(" · "), size: 21 })] })] : [],
+    skills: data.skills ? [h("Skills"), para(parseSkills(data.skills).join(" · "))] : [],
     projects: data.projects?.length
       ? [
           h("Projects"),
           ...data.projects.flatMap(p => [
             line(`${p.name}${p.link ? ` · ${p.link}` : ""}`, { bold: true, right: p.date }),
-            ...(p.bullets ? p.bullets.split("\n").filter(Boolean).map(bullet) : []),
+            ...(p.bullets ? p.bullets.split("\n").filter(Boolean).map(t => bullet(t, bb, jx)) : []),
             new Paragraph({ children: [new TextRun({ text: "", size: 10 })] }),
           ]),
         ]
       : [],
     certifications: data.certifications?.length
-      ? [h("Certifications"), ...data.certifications.map(c => line(`${c.name}${c.issuer ? ` · ${c.issuer}` : ""}`, { right: c.date }))]
+      ? [h("Certifications"), ...data.certifications.map(c => line(`${c.name}${c.issuer ? ` · ${c.issuer}` : ""}`, { right: c.date, bodyBold: bb }))]
       : [],
     awards: data.awards?.length
-      ? [h("Awards"), ...data.awards.map(a => line(`${a.name}${a.issuer ? ` · ${a.issuer}` : ""}`, { right: a.date }))]
+      ? [h("Awards"), ...data.awards.map(a => line(`${a.name}${a.issuer ? ` · ${a.issuer}` : ""}`, { right: a.date, bodyBold: bb }))]
       : [],
     languages: data.languages?.length
-      ? [h("Languages"), new Paragraph({ children: [new TextRun({ text: data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(" · "), size: 21 })] })]
+      ? [h("Languages"), para(data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(" · "))]
       : [],
   };
 }
