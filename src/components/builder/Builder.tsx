@@ -52,6 +52,7 @@ const BG_PRESETS = [
 export function Builder() {
   const [data, setData] = useState<ResumeData>(defaultResume);
   const [rewriting, setRewriting] = useState(false);
+  const [rewritingKey, setRewritingKey] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [currentName, setCurrentName] = useState<string>("Untitled resume");
@@ -86,7 +87,7 @@ export function Builder() {
   const loadSaved = (id: string) => {
     const entry = resumeStore.get(id);
     if (!entry) { toast.error("Resume not found"); return; }
-    setData(entry.data);
+    setData({ ...defaultResume, ...entry.data });
     setCurrentId(entry.id);
     setCurrentName(entry.name);
     toast.success(`Loaded "${entry.name}"`);
@@ -127,6 +128,35 @@ export function Builder() {
     setData(d => ({ ...d, education: d.education.map(e => e.id === id ? { ...e, ...patch } : e) }));
   const addEdu = () => setData(d => ({ ...d, education: [...d.education, { id: uid(), degree: "", school: "", date: "" }] }));
   const removeEdu = (id: string) => setData(d => ({ ...d, education: d.education.filter(e => e.id !== id) }));
+
+  const updateProject = (id: string, patch: Partial<Project>) =>
+    setData(d => ({ ...d, projects: d.projects.map(p => p.id === id ? { ...p, ...patch } : p) }));
+  const addProject = () => setData(d => ({ ...d, projects: [...d.projects, { id: uid(), name: "", link: "", date: "", bullets: "" }], sectionOrder: ensureSection(d.sectionOrder, "projects") }));
+  const removeProject = (id: string) => setData(d => ({ ...d, projects: d.projects.filter(p => p.id !== id) }));
+
+  const updateCert = (id: string, patch: Partial<Certification>) =>
+    setData(d => ({ ...d, certifications: d.certifications.map(c => c.id === id ? { ...c, ...patch } : c) }));
+  const addCert = () => setData(d => ({ ...d, certifications: [...d.certifications, { id: uid(), name: "", issuer: "", date: "" }], sectionOrder: ensureSection(d.sectionOrder, "certifications") }));
+  const removeCert = (id: string) => setData(d => ({ ...d, certifications: d.certifications.filter(c => c.id !== id) }));
+
+  const updateAward = (id: string, patch: Partial<Award>) =>
+    setData(d => ({ ...d, awards: d.awards.map(a => a.id === id ? { ...a, ...patch } : a) }));
+  const addAward = () => setData(d => ({ ...d, awards: [...d.awards, { id: uid(), name: "", issuer: "", date: "" }], sectionOrder: ensureSection(d.sectionOrder, "awards") }));
+  const removeAward = (id: string) => setData(d => ({ ...d, awards: d.awards.filter(a => a.id !== id) }));
+
+  const updateLang = (id: string, patch: Partial<Language>) =>
+    setData(d => ({ ...d, languages: d.languages.map(l => l.id === id ? { ...l, ...patch } : l) }));
+  const addLang = () => setData(d => ({ ...d, languages: [...d.languages, { id: uid(), name: "", level: "" }], sectionOrder: ensureSection(d.sectionOrder, "languages") }));
+  const removeLang = (id: string) => setData(d => ({ ...d, languages: d.languages.filter(l => l.id !== id) }));
+
+  const addSectionIfMissing = (id: SectionId) => {
+    setData(d => ({ ...d, sectionOrder: ensureSection(d.sectionOrder, id) }));
+    if (id === "projects" && data.projects.length === 0) addProject();
+    if (id === "certifications" && data.certifications.length === 0) addCert();
+    if (id === "awards" && data.awards.length === 0) addAward();
+    if (id === "languages" && data.languages.length === 0) addLang();
+  };
+  const removeSectionFromOrder = (id: SectionId) => setData(d => ({ ...d, sectionOrder: d.sectionOrder.filter(s => s !== id) }));
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const onSectionDragEnd = (e: DragEndEvent) => {
@@ -171,6 +201,27 @@ export function Builder() {
       toast.error("Network error. Please try again.");
     } finally {
       setRewriting(false);
+    }
+  };
+
+  const rewriteWithAI = async (kind: "bullets" | "skills" | "education", text: string, ctx: Record<string, string | undefined>, key: string): Promise<string | null> => {
+    setRewritingKey(key);
+    try {
+      const res = await fetch("/api/rewrite-section", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ kind, text, context: { headline: data.headline, jobDescription: data.jobDescription, skills: data.skills, ...ctx } }),
+      });
+      if (res.status === 429) { toast.error("Rate limit hit. Please retry."); return null; }
+      if (res.status === 402) { toast.error("AI credits exhausted."); return null; }
+      if (!res.ok) { toast.error("Rewrite failed."); return null; }
+      const json = (await res.json()) as { text?: string };
+      return json.text ?? null;
+    } catch {
+      toast.error("Network error.");
+      return null;
+    } finally {
+      setRewritingKey(null);
     }
   };
 
