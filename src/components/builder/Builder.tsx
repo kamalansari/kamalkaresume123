@@ -388,6 +388,9 @@ export function Builder() {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button variant="outline" onClick={() => { setJdDialogText(data.jobDescription); setJdDialogOpen(true); }}>
+              <Wand2 /> <span className="hidden sm:inline">JD → Resume</span>
+            </Button>
             <Button variant="outline" onClick={handleDocx} disabled={exporting}>
               {exporting ? <Loader2 className="animate-spin" /> : <FileType />} DOCX
             </Button>
@@ -430,6 +433,29 @@ export function Builder() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setRenameOpen(false)}>Cancel</Button>
             <Button onClick={() => renameCurrent(nameDraft)}>Save name</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={jdDialogOpen} onOpenChange={setJdDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Generate ATS-ready resume from a job description</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Paste the full job posting below. AI will rewrite your headline, summary, skills and experience bullets to match — keeping your real employers and dates.
+          </p>
+          <Textarea
+            autoFocus
+            rows={12}
+            value={jdDialogText}
+            onChange={e => setJdDialogText(e.target.value)}
+            placeholder="Paste the job description here…"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setJdDialogOpen(false)}>Cancel</Button>
+            <Button onClick={generateAtsResumeFromDialog} disabled={generating || !jdDialogText.trim()}>
+              {generating ? <Loader2 className="animate-spin" /> : <Sparkles />}
+              {generating ? "Generating…" : "Generate"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
