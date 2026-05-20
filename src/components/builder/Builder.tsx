@@ -760,6 +760,29 @@ function Field({ label, children, full }: { label: string; children: React.React
   );
 }
 
+function JobSearchButton({ site, data }: { site: "linkedin" | "indeed" | "google" | "wellfound"; data: ResumeData }) {
+  const kw = encodeURIComponent(data.headline || data.experience[0]?.title || "");
+  const loc = encodeURIComponent(data.location || "");
+  const labels: Record<typeof site, string> = {
+    linkedin: "LinkedIn",
+    indeed: "Indeed",
+    google: "Google Jobs",
+    wellfound: "Wellfound",
+  };
+  const urls: Record<typeof site, string> = {
+    linkedin: `https://www.linkedin.com/jobs/search/?keywords=${kw}&location=${loc}`,
+    indeed: `https://www.indeed.com/jobs?q=${kw}&l=${loc}`,
+    google: `https://www.google.com/search?q=${kw}+jobs+${loc}&ibp=htl;jobs`,
+    wellfound: `https://wellfound.com/jobs?role=${kw}&location=${loc}`,
+  };
+  return (
+    <a href={urls[site]} target="_blank" rel="noreferrer"
+      className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-background h-9 px-3 text-sm font-medium hover:border-[var(--navy-light)] hover:text-[var(--navy-light)] transition-colors">
+      <Briefcase className="h-4 w-4" /> {labels[site]} <ExternalLink className="h-3 w-3 opacity-60" />
+    </a>
+  );
+}
+
 function SortableSectionRow({ id, onRemove }: { id: SectionId; onRemove?: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = {
