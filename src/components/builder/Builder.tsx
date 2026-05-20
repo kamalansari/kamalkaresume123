@@ -618,7 +618,7 @@ function Field({ label, children, full }: { label: string; children: React.React
   );
 }
 
-function SortableSectionRow({ id }: { id: SectionId }) {
+function SortableSectionRow({ id, onRemove }: { id: SectionId; onRemove?: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -629,12 +629,17 @@ function SortableSectionRow({ id }: { id: SectionId }) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm cursor-grab active:cursor-grabbing hover:border-[var(--navy-light)]"
+      className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-2 text-sm hover:border-[var(--navy-light)]"
     >
-      <GripVertical className="h-4 w-4 text-muted-foreground" />
-      <span className="font-medium">{SECTION_LABELS[id]}</span>
+      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground" aria-label="Drag">
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <span className="font-medium flex-1">{SECTION_LABELS[id]}</span>
+      {onRemove && (
+        <button onClick={onRemove} className="p-1 text-muted-foreground hover:text-destructive" aria-label="Remove from order">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   );
 }
