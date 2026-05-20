@@ -19,6 +19,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Slider } from "@/components/ui/slider";
 import { parseSkills } from "@/lib/parseSkills";
 import { cn } from "@/lib/utils";
+import { FormattableTextarea } from "./FormattableTextarea";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -66,9 +67,13 @@ export function Builder() {
   const [nameDraft, setNameDraft] = useState("");
   const [atsOpen, setAtsOpen] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [jdDialogOpen, setJdDialogOpen] = useState(false);
+  const [jdDialogText, setJdDialogText] = useState("");
+  const [mounted, setMounted] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
   useEffect(() => { setSaved(resumeStore.list()); }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   const refreshList = () => setSaved(resumeStore.list());
 
@@ -271,6 +276,50 @@ export function Builder() {
     }
   };
 
+  const generateAtsResumeFromDialog = async () => {
+    const jd = jdDialogText.trim();
+    if (!jd) { toast.error("Paste a job description first."); return; }
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/generate-from-jd", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jobDescription: jd,
+          current: {
+            name: data.name,
+            headline: data.headline,
+            summary: data.summary,
+            skills: data.skills,
+            experience: data.experience.map(e => ({ id: e.id, title: e.title, company: e.company, bullets: e.bullets })),
+          },
+        }),
+      });
+      if (res.status === 429) { toast.error("Rate limit hit."); return; }
+      if (res.status === 402) { toast.error("AI credits exhausted."); return; }
+      if (!res.ok) { toast.error("AI generation failed."); return; }
+      const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
+      setData(d => ({
+        ...d,
+        jobDescription: jd,
+        headline: out.headline || d.headline,
+        summary: out.summary || d.summary,
+        skills: out.skills || d.skills,
+        experience: d.experience.map(e => {
+          const match = out.experience?.find(x => x.id === e.id);
+          return match ? { ...e, bullets: match.bullets } : e;
+        }),
+      }));
+      setJdDialogOpen(false);
+      setJdDialogText("");
+      toast.success("ATS-tailored resume generated");
+    } catch {
+      toast.error("Network error.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-secondary/40">
       <header className="no-print sticky top-0 z-30 backdrop-blur-md bg-background/80 border-b border-border">
@@ -339,6 +388,9 @@ export function Builder() {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button variant="outline" onClick={() => { setJdDialogText(data.jobDescription); setJdDialogOpen(true); }}>
+              <Wand2 /> <span className="hidden sm:inline">JD → Resume</span>
+            </Button>
             <Button variant="outline" onClick={handleDocx} disabled={exporting}>
               {exporting ? <Loader2 className="animate-spin" /> : <FileType />} DOCX
             </Button>
@@ -381,6 +433,29 @@ export function Builder() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setRenameOpen(false)}>Cancel</Button>
             <Button onClick={() => renameCurrent(nameDraft)}>Save name</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={jdDialogOpen} onOpenChange={setJdDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Generate ATS-ready resume from a job description</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Paste the full job posting below. AI will rewrite your headline, summary, skills and experience bullets to match — keeping your real employers and dates.
+          </p>
+          <Textarea
+            autoFocus
+            rows={12}
+            value={jdDialogText}
+            onChange={e => setJdDialogText(e.target.value)}
+            placeholder="Paste the job description here…"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setJdDialogOpen(false)}>Cancel</Button>
+            <Button onClick={generateAtsResumeFromDialog} disabled={generating || !jdDialogText.trim()}>
+              {generating ? <Loader2 className="animate-spin" /> : <Sparkles />}
+              {generating ? "Generating…" : "Generate"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -493,13 +568,24 @@ export function Builder() {
               <div>
                 <Label className="text-xs text-muted-foreground">Section order</Label>
                 <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Drag to reorder how sections appear on the resume.</p>
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onSectionDragEnd}>
-                  <SortableContext items={data.sectionOrder} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-1.5">
-                      {data.sectionOrder.map(id => <SortableSectionRow key={id} id={id} onRemove={() => removeSectionFromOrder(id)} />)}
-                    </div>
-                  </SortableContext>
-                </DndContext>
+                {mounted ? (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onSectionDragEnd}>
+                    <SortableContext items={data.sectionOrder} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-1.5">
+                        {data.sectionOrder.map(id => <SortableSectionRow key={id} id={id} onRemove={() => removeSectionFromOrder(id)} />)}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                ) : (
+                  <div className="space-y-1.5">
+                    {data.sectionOrder.map(id => (
+                      <div key={id} className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-2 text-sm">
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium flex-1">{SECTION_LABELS[id]}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="mt-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -538,8 +624,8 @@ export function Builder() {
               </Button>
             }
           >
-            <Textarea rows={4} value={data.summary} onChange={e => update("summary", e.target.value)} placeholder="2-3 sentences on who you are and what you do." />
-            <p className="mt-2 text-xs text-muted-foreground">Tip: paste a job description below for a tailored rewrite.</p>
+            <FormattableTextarea rows={4} value={data.summary} onChange={v => update("summary", v)} placeholder="2-3 sentences on who you are and what you do." />
+            <p className="mt-2 text-xs text-muted-foreground">Select text and click <b>B</b> to bold it. Tip: paste a job description below for a tailored rewrite.</p>
           </Card>
 
           <Card title="Experience" action={<Button size="sm" variant="outline" onClick={addExp}><Plus /> Add</Button>}>
@@ -565,7 +651,7 @@ export function Builder() {
                         {rewritingKey === `exp-${e.id}` ? <Loader2 className="animate-spin" /> : <Sparkles />} AI rewrite
                       </Button>
                     </div>
-                    <Textarea rows={4} className="mt-1.5" value={e.bullets} onChange={ev => updateExp(e.id, { bullets: ev.target.value })} placeholder="Led redesign of checkout flow, lifting conversion 18%." />
+                    <FormattableTextarea rows={4} className="mt-1.5" value={e.bullets} onChange={v => updateExp(e.id, { bullets: v })} placeholder="Led redesign of checkout flow, lifting conversion 18%." />
                   </div>
                   <div className="mt-2 flex justify-end">
                     <Button size="sm" variant="ghost" onClick={() => removeExp(e.id)}><Trash2 /> Remove</Button>
@@ -629,7 +715,7 @@ export function Builder() {
                           {rewritingKey === `proj-${p.id}` ? <Loader2 className="animate-spin" /> : <Sparkles />} AI rewrite
                         </Button>
                       </div>
-                      <Textarea rows={3} className="mt-1.5" value={p.bullets} onChange={ev => updateProject(p.id, { bullets: ev.target.value })} />
+                      <FormattableTextarea rows={3} className="mt-1.5" value={p.bullets} onChange={v => updateProject(p.id, { bullets: v })} />
                     </div>
                     <div className="mt-2 flex justify-end">
                       <Button size="sm" variant="ghost" onClick={() => removeProject(p.id)}><Trash2 /> Remove</Button>

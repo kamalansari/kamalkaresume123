@@ -2,6 +2,17 @@ import { useEffect } from "react";
 import { Mail, Phone, MapPin, Link as LinkIcon } from "lucide-react";
 import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
+import { parseInline } from "@/lib/inlineFormat";
+
+function InlineText({ text }: { text: string }) {
+  return (
+    <>
+      {parseInline(text).map((r, i) =>
+        r.bold ? <strong key={i} style={{ fontWeight: 700 }}>{r.text}</strong> : <span key={i}>{r.text}</span>
+      )}
+    </>
+  );
+}
 
 const loadedFonts = new Set<string>();
 
@@ -197,7 +208,7 @@ function Section({ title, accent, headingFont, children }: { title: string; acce
 }
 
 function SummarySection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
-  return <Section title="Summary" accent={accent} headingFont={headingFont}><p>{data.summary}</p></Section>;
+  return <Section title="Summary" accent={accent} headingFont={headingFont}><p><InlineText text={data.summary} /></p></Section>;
 }
 
 function ExperienceSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
@@ -212,7 +223,7 @@ function ExperienceSection({ data, accent, headingFont }: { data: ResumeData; ac
             <div style={{ color: "#666", whiteSpace: "nowrap" }}>{e.date}</div>
           </div>
           <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
-            {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}>{b}</li>)}
+            {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
           </ul>
         </div>
       ))}
@@ -253,7 +264,7 @@ function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; acce
           </div>
           {p.bullets && (
             <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
-              {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}>{b}</li>)}
+              {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
             </ul>
           )}
         </div>
