@@ -490,7 +490,19 @@ export function Builder() {
                     <Field label="Dates" full><Input value={e.date} onChange={ev => updateExp(e.id, { date: ev.target.value })} placeholder="2022 — Present" /></Field>
                   </Grid>
                   <div className="mt-3">
-                    <Label className="text-xs text-muted-foreground">Bullets (one per line)</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Bullets (one per line)</Label>
+                      <Button
+                        size="sm" variant="ghost"
+                        disabled={rewritingKey === `exp-${e.id}` || !e.bullets.trim()}
+                        onClick={async () => {
+                          const out = await rewriteWithAI("bullets", e.bullets, { title: e.title, company: e.company }, `exp-${e.id}`);
+                          if (out) { updateExp(e.id, { bullets: out }); toast.success("Bullets rewritten"); }
+                        }}
+                      >
+                        {rewritingKey === `exp-${e.id}` ? <Loader2 className="animate-spin" /> : <Sparkles />} AI rewrite
+                      </Button>
+                    </div>
                     <Textarea rows={4} className="mt-1.5" value={e.bullets} onChange={ev => updateExp(e.id, { bullets: ev.target.value })} placeholder="Led redesign of checkout flow, lifting conversion 18%." />
                   </div>
                   <div className="mt-2 flex justify-end">
@@ -518,13 +530,128 @@ export function Builder() {
             </div>
           </Card>
 
-          <Card title="Skills">
-            <Textarea rows={3} value={data.skills} onChange={e => update("skills", e.target.value)} placeholder="Comma-separated skills" />
+          <Card
+            title="Skills"
+            action={
+              <Button size="sm" variant="ghost" disabled={rewritingKey === "skills" || !data.skills.trim()}
+                onClick={async () => {
+                  const out = await rewriteWithAI("skills", data.skills, {}, "skills");
+                  if (out) { update("skills", out); toast.success("Skills tuned"); }
+                }}>
+                {rewritingKey === "skills" ? <Loader2 className="animate-spin" /> : <Sparkles />} AI tune
+              </Button>
+            }
+          >
+            <Textarea rows={3} value={data.skills} onChange={e => update("skills", e.target.value)} placeholder="Comma or pipe separated: React | TypeScript, Figma | Design Systems" />
+            <p className="mt-2 text-xs text-muted-foreground">Separate with <code>,</code> or <code>|</code>. {parseSkills(data.skills).length} skills detected.</p>
           </Card>
+
+          {data.sectionOrder.includes("projects") && (
+            <Card title="Projects" action={<Button size="sm" variant="outline" onClick={addProject}><Plus /> Add</Button>}>
+              <div className="space-y-4">
+                {data.projects.map(p => (
+                  <div key={p.id} className="rounded-lg border border-border p-4 bg-background">
+                    <Grid>
+                      <Field label="Name"><Input value={p.name} onChange={ev => updateProject(p.id, { name: ev.target.value })} /></Field>
+                      <Field label="Link"><Input value={p.link} onChange={ev => updateProject(p.id, { link: ev.target.value })} placeholder="github.com/…" /></Field>
+                      <Field label="Date" full><Input value={p.date} onChange={ev => updateProject(p.id, { date: ev.target.value })} placeholder="2024" /></Field>
+                    </Grid>
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">Bullets (one per line)</Label>
+                        <Button size="sm" variant="ghost" disabled={rewritingKey === `proj-${p.id}` || !p.bullets.trim()}
+                          onClick={async () => {
+                            const out = await rewriteWithAI("bullets", p.bullets, { title: p.name }, `proj-${p.id}`);
+                            if (out) { updateProject(p.id, { bullets: out }); toast.success("Project rewritten"); }
+                          }}>
+                          {rewritingKey === `proj-${p.id}` ? <Loader2 className="animate-spin" /> : <Sparkles />} AI rewrite
+                        </Button>
+                      </div>
+                      <Textarea rows={3} className="mt-1.5" value={p.bullets} onChange={ev => updateProject(p.id, { bullets: ev.target.value })} />
+                    </div>
+                    <div className="mt-2 flex justify-end">
+                      <Button size="sm" variant="ghost" onClick={() => removeProject(p.id)}><Trash2 /> Remove</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {data.sectionOrder.includes("certifications") && (
+            <Card title="Certifications" action={<Button size="sm" variant="outline" onClick={addCert}><Plus /> Add</Button>}>
+              <div className="space-y-3">
+                {data.certifications.map(c => (
+                  <div key={c.id} className="rounded-lg border border-border p-4 bg-background">
+                    <Grid>
+                      <Field label="Name" full><Input value={c.name} onChange={ev => updateCert(c.id, { name: ev.target.value })} /></Field>
+                      <Field label="Issuer"><Input value={c.issuer} onChange={ev => updateCert(c.id, { issuer: ev.target.value })} /></Field>
+                      <Field label="Date"><Input value={c.date} onChange={ev => updateCert(c.id, { date: ev.target.value })} /></Field>
+                    </Grid>
+                    <div className="mt-2 flex justify-end">
+                      <Button size="sm" variant="ghost" onClick={() => removeCert(c.id)}><Trash2 /> Remove</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {data.sectionOrder.includes("awards") && (
+            <Card title="Awards" action={<Button size="sm" variant="outline" onClick={addAward}><Plus /> Add</Button>}>
+              <div className="space-y-3">
+                {data.awards.map(a => (
+                  <div key={a.id} className="rounded-lg border border-border p-4 bg-background">
+                    <Grid>
+                      <Field label="Name" full><Input value={a.name} onChange={ev => updateAward(a.id, { name: ev.target.value })} /></Field>
+                      <Field label="Issuer"><Input value={a.issuer} onChange={ev => updateAward(a.id, { issuer: ev.target.value })} /></Field>
+                      <Field label="Date"><Input value={a.date} onChange={ev => updateAward(a.id, { date: ev.target.value })} /></Field>
+                    </Grid>
+                    <div className="mt-2 flex justify-end">
+                      <Button size="sm" variant="ghost" onClick={() => removeAward(a.id)}><Trash2 /> Remove</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {data.sectionOrder.includes("languages") && (
+            <Card title="Languages" action={<Button size="sm" variant="outline" onClick={addLang}><Plus /> Add</Button>}>
+              <div className="space-y-3">
+                {data.languages.map(l => (
+                  <div key={l.id} className="rounded-lg border border-border p-4 bg-background">
+                    <Grid>
+                      <Field label="Language"><Input value={l.name} onChange={ev => updateLang(l.id, { name: ev.target.value })} /></Field>
+                      <Field label="Proficiency"><Input value={l.level} onChange={ev => updateLang(l.id, { level: ev.target.value })} placeholder="Native / Fluent / B2" /></Field>
+                    </Grid>
+                    <div className="mt-2 flex justify-end">
+                      <Button size="sm" variant="ghost" onClick={() => removeLang(l.id)}><Trash2 /> Remove</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
           <Card title="Target job description">
             <p className="text-xs text-muted-foreground mb-2">Paste the job posting to score keyword match and surface missing terms.</p>
             <Textarea rows={6} value={data.jobDescription} onChange={e => update("jobDescription", e.target.value)} placeholder="Paste the job description here..." />
+            <div className="mt-3">
+              <Label className="text-xs text-muted-foreground">Extra ATS keywords (comma separated)</Label>
+              <Input className="mt-1.5" value={data.extraKeywords} onChange={e => update("extraKeywords", e.target.value)} placeholder="e.g. SOC2, GraphQL, Series B" />
+              <p className="mt-1 text-[11px] text-muted-foreground">Counts toward ATS keyword coverage even if not in your visible text.</p>
+            </div>
+          </Card>
+
+          <Card title="Find jobs">
+            <p className="text-xs text-muted-foreground mb-3">Open searches tuned to your headline and location.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <JobSearchButton site="linkedin" data={data} />
+              <JobSearchButton site="indeed" data={data} />
+              <JobSearchButton site="google" data={data} />
+              <JobSearchButton site="wellfound" data={data} />
+            </div>
           </Card>
         </div>
 
