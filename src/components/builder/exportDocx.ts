@@ -2,6 +2,7 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, T
 import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
 import type { ResumeData, SectionId } from "./types";
+import { parseSkills } from "@/lib/parseSkills";
 
 function hex(h: string) { return h.replace("#", "").toUpperCase(); }
 
@@ -46,7 +47,26 @@ function buildSections(data: ResumeData, color: string): Record<SectionId, Parag
     education: data.education.length
       ? [heading("Education", color), ...data.education.map(ed => line(`${ed.degree} · ${ed.school}`, { right: ed.date }))]
       : [],
-    skills: data.skills ? [heading("Skills", color), new Paragraph({ children: [new TextRun({ text: data.skills, size: 21 })] })] : [],
+    skills: data.skills ? [heading("Skills", color), new Paragraph({ children: [new TextRun({ text: parseSkills(data.skills).join(" · "), size: 21 })] })] : [],
+    projects: data.projects?.length
+      ? [
+          heading("Projects", color),
+          ...data.projects.flatMap(p => [
+            line(`${p.name}${p.link ? ` · ${p.link}` : ""}`, { bold: true, right: p.date }),
+            ...(p.bullets ? p.bullets.split("\n").filter(Boolean).map(bullet) : []),
+            new Paragraph({ children: [new TextRun({ text: "", size: 10 })] }),
+          ]),
+        ]
+      : [],
+    certifications: data.certifications?.length
+      ? [heading("Certifications", color), ...data.certifications.map(c => line(`${c.name}${c.issuer ? ` · ${c.issuer}` : ""}`, { right: c.date }))]
+      : [],
+    awards: data.awards?.length
+      ? [heading("Awards", color), ...data.awards.map(a => line(`${a.name}${a.issuer ? ` · ${a.issuer}` : ""}`, { right: a.date }))]
+      : [],
+    languages: data.languages?.length
+      ? [heading("Languages", color), new Paragraph({ children: [new TextRun({ text: data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(" · "), size: 21 })] })]
+      : [],
   };
 }
 
