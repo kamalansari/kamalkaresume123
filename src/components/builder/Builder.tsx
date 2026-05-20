@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Download, Plus, Trash2, Gauge, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Download, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { defaultResume, type ResumeData, type Experience, type Education } from "./types";
 import { computeScore } from "./atsScore";
 import { ResumeDocument } from "./ResumeDocument";
@@ -13,6 +14,7 @@ function uid() { return Math.random().toString(36).slice(2, 9); }
 
 export function Builder() {
   const [data, setData] = useState<ResumeData>(defaultResume);
+  const [rewriting, setRewriting] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
   const update = <K extends keyof ResumeData>(k: K, v: ResumeData[K]) => setData(d => ({ ...d, [k]: v }));
@@ -26,6 +28,35 @@ export function Builder() {
     setData(d => ({ ...d, education: d.education.map(e => e.id === id ? { ...e, ...patch } : e) }));
   const addEdu = () => setData(d => ({ ...d, education: [...d.education, { id: uid(), degree: "", school: "", date: "" }] }));
   const removeEdu = (id: string) => setData(d => ({ ...d, education: d.education.filter(e => e.id !== id) }));
+
+  const rewriteSummary = async () => {
+    setRewriting(true);
+    try {
+      const res = await fetch("/api/rewrite-summary", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          summary: data.summary,
+          headline: data.headline,
+          jobDescription: data.jobDescription,
+          skills: data.skills,
+          experience: data.experience.map(e => ({ title: e.title, company: e.company, bullets: e.bullets })),
+        }),
+      });
+      if (res.status === 429) { toast.error("Rate limit hit. Please retry in a moment."); return; }
+      if (res.status === 402) { toast.error("AI credits exhausted. Add credits in Workspace settings."); return; }
+      if (!res.ok) { toast.error("Rewrite failed. Please try again."); return; }
+      const json = (await res.json()) as { summary?: string };
+      if (json.summary) {
+        update("summary", json.summary);
+        toast.success("Summary rewritten");
+      }
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setRewriting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-secondary/40">
@@ -55,8 +86,17 @@ export function Builder() {
             </Grid>
           </Card>
 
-          <Card title="Summary">
+          <Card
+            title="Summary"
+            action={
+              <Button size="sm" variant="accent" onClick={rewriteSummary} disabled={rewriting}>
+                {rewriting ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                {rewriting ? "Rewriting…" : "Rewrite with AI"}
+              </Button>
+            }
+          >
             <Textarea rows={4} value={data.summary} onChange={e => update("summary", e.target.value)} placeholder="2-3 sentences on who you are and what you do." />
+            <p className="mt-2 text-xs text-muted-foreground">Tip: paste a job description below for a tailored rewrite.</p>
           </Card>
 
           <Card title="Experience" action={<Button size="sm" variant="outline" onClick={addExp}><Plus /> Add</Button>}>
