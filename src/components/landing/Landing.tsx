@@ -1,7 +1,25 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, FileText, Gauge, Sparkles, ShieldCheck, Download, Eye } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileText, Gauge, Sparkles, ShieldCheck, Download, Eye, GripVertical } from "lucide-react";
 import { ResumePreviewMock } from "./ResumePreviewMock";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export function Landing() {
   return (
@@ -123,33 +141,81 @@ function LogoStrip() {
 }
 
 function Features() {
-  const items = [
-    { icon: Gauge, title: "Real-time ATS score", text: "See how your resume parses through applicant tracking systems—and exactly what to fix." },
-    { icon: FileText, title: "Recruiter-grade templates", text: "Single-column, ATS-safe layouts. No tables, no graphics that confuse parsers." },
-    { icon: Eye, title: "Live preview", text: "Every keystroke updates the preview. What you see is what recruiters get." },
-    { icon: ShieldCheck, title: "Keyword coverage", text: "Paste a job description and we match it against your content automatically." },
-    { icon: Download, title: "Clean PDF export", text: "Pixel-perfect, selectable text. Parses cleanly in Workday, Greenhouse, Lever." },
-    { icon: Sparkles, title: "Smart suggestions", text: "Action-verb hints and bullet rewrites tuned for impact and brevity." },
+  const initial = [
+    { id: "ats", icon: Gauge, title: "Real-time ATS score", text: "See how your resume parses through applicant tracking systems—and exactly what to fix." },
+    { id: "templates", icon: FileText, title: "Recruiter-grade templates", text: "Single-column, ATS-safe layouts. No tables, no graphics that confuse parsers." },
+    { id: "preview", icon: Eye, title: "Live preview", text: "Every keystroke updates the preview. What you see is what recruiters get." },
+    { id: "keywords", icon: ShieldCheck, title: "Keyword coverage", text: "Paste a job description and we match it against your content automatically." },
+    { id: "pdf", icon: Download, title: "Clean PDF export", text: "Pixel-perfect, selectable text. Parses cleanly in Workday, Greenhouse, Lever." },
+    { id: "smart", icon: Sparkles, title: "Smart suggestions", text: "Action-verb hints and bullet rewrites tuned for impact and brevity." },
   ];
+  const [items, setItems] = useState(initial);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    setItems(arr => {
+      const from = arr.findIndex(i => i.id === active.id);
+      const to = arr.findIndex(i => i.id === over.id);
+      return arrayMove(arr, from, to);
+    });
+  };
+
   return (
     <section id="features" className="mx-auto max-w-7xl px-6 py-24">
-      <div className="max-w-2xl">
-        <p className="text-xs uppercase tracking-widest text-[var(--navy-light)] font-semibold">Why ResumeForge</p>
-        <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold tracking-tight">Engineered to pass the filter.</h2>
-        <p className="mt-4 text-muted-foreground text-lg">75% of resumes never reach a human. We're built to make sure yours does.</p>
+      <div className="flex items-end justify-between gap-6 flex-wrap">
+        <div className="max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-[var(--navy-light)] font-semibold">Why ResumeForge</p>
+          <h2 className="mt-3 font-display text-4xl md:text-5xl font-bold tracking-tight">Engineered to pass the filter.</h2>
+          <p className="mt-4 text-muted-foreground text-lg">75% of resumes never reach a human. We're built to make sure yours does.</p>
+        </div>
+        <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+          <GripVertical className="h-3.5 w-3.5" /> Drag to reorder
+        </p>
       </div>
-      <div className="mt-14 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items.map(({ icon: Icon, title, text }) => (
-          <div key={title} className="group p-6 rounded-xl border border-border bg-card hover:border-[var(--navy-light)] transition-colors">
-            <div className="h-10 w-10 rounded-lg grid place-items-center text-primary-foreground mb-4" style={{ background: "var(--gradient-hero)" }}>
-              <Icon className="h-5 w-5" />
-            </div>
-            <h3 className="font-display font-semibold text-lg">{title}</h3>
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{text}</p>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+          <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {items.map(item => <FeatureCard key={item.id} item={item} />)}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
     </section>
+  );
+}
+
+function FeatureCard({ item }: { item: { id: string; icon: typeof Gauge; title: string; text: string } }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const Icon = item.icon;
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 20 : undefined,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group relative p-6 rounded-xl border bg-card transition-colors ${isDragging ? "border-[var(--navy-light)] shadow-[var(--shadow-elegant)]" : "border-border hover:border-[var(--navy-light)]"}`}
+    >
+      <button
+        type="button"
+        aria-label="Drag to reorder"
+        {...attributes}
+        {...listeners}
+        className="absolute top-3 right-3 p-1.5 rounded-md text-muted-foreground/60 hover:text-foreground hover:bg-secondary cursor-grab active:cursor-grabbing touch-none opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <div className="h-10 w-10 rounded-lg grid place-items-center text-primary-foreground mb-4" style={{ background: "var(--gradient-hero)" }}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <h3 className="font-display font-semibold text-lg">{item.title}</h3>
+      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{item.text}</p>
+    </div>
   );
 }
 
