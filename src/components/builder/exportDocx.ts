@@ -1,4 +1,4 @@
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType } from "docx";
+import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, TabStopType } from "docx";
 import { saveAs } from "file-saver";
 import type { ResumeData, SectionId } from "./types";
 
@@ -19,7 +19,7 @@ function bullet(text: string) {
 function line(text: string, opts: { bold?: boolean; right?: string } = {}) {
   if (opts.right) {
     return new Paragraph({
-      tabStops: [{ type: "right" as const, position: 9000 }],
+      tabStops: [{ type: TabStopType.RIGHT, position: 9000 }],
       children: [
         new TextRun({ text, bold: opts.bold, size: 21 }),
         new TextRun({ text: `\t${opts.right}`, size: 21, color: "555555" }),
