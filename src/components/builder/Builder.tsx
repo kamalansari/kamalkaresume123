@@ -568,13 +568,24 @@ export function Builder() {
               <div>
                 <Label className="text-xs text-muted-foreground">Section order</Label>
                 <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">Drag to reorder how sections appear on the resume.</p>
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onSectionDragEnd}>
-                  <SortableContext items={data.sectionOrder} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-1.5">
-                      {data.sectionOrder.map(id => <SortableSectionRow key={id} id={id} onRemove={() => removeSectionFromOrder(id)} />)}
-                    </div>
-                  </SortableContext>
-                </DndContext>
+                {mounted ? (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onSectionDragEnd}>
+                    <SortableContext items={data.sectionOrder} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-1.5">
+                        {data.sectionOrder.map(id => <SortableSectionRow key={id} id={id} onRemove={() => removeSectionFromOrder(id)} />)}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                ) : (
+                  <div className="space-y-1.5">
+                    {data.sectionOrder.map(id => (
+                      <div key={id} className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-2 text-sm">
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium flex-1">{SECTION_LABELS[id]}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="mt-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -613,8 +624,8 @@ export function Builder() {
               </Button>
             }
           >
-            <Textarea rows={4} value={data.summary} onChange={e => update("summary", e.target.value)} placeholder="2-3 sentences on who you are and what you do." />
-            <p className="mt-2 text-xs text-muted-foreground">Tip: paste a job description below for a tailored rewrite.</p>
+            <FormattableTextarea rows={4} value={data.summary} onChange={v => update("summary", v)} placeholder="2-3 sentences on who you are and what you do." />
+            <p className="mt-2 text-xs text-muted-foreground">Select text and click <b>B</b> to bold it. Tip: paste a job description below for a tailored rewrite.</p>
           </Card>
 
           <Card title="Experience" action={<Button size="sm" variant="outline" onClick={addExp}><Plus /> Add</Button>}>
@@ -640,7 +651,7 @@ export function Builder() {
                         {rewritingKey === `exp-${e.id}` ? <Loader2 className="animate-spin" /> : <Sparkles />} AI rewrite
                       </Button>
                     </div>
-                    <Textarea rows={4} className="mt-1.5" value={e.bullets} onChange={ev => updateExp(e.id, { bullets: ev.target.value })} placeholder="Led redesign of checkout flow, lifting conversion 18%." />
+                    <FormattableTextarea rows={4} className="mt-1.5" value={e.bullets} onChange={v => updateExp(e.id, { bullets: v })} placeholder="Led redesign of checkout flow, lifting conversion 18%." />
                   </div>
                   <div className="mt-2 flex justify-end">
                     <Button size="sm" variant="ghost" onClick={() => removeExp(e.id)}><Trash2 /> Remove</Button>
@@ -704,7 +715,7 @@ export function Builder() {
                           {rewritingKey === `proj-${p.id}` ? <Loader2 className="animate-spin" /> : <Sparkles />} AI rewrite
                         </Button>
                       </div>
-                      <Textarea rows={3} className="mt-1.5" value={p.bullets} onChange={ev => updateProject(p.id, { bullets: ev.target.value })} />
+                      <FormattableTextarea rows={3} className="mt-1.5" value={p.bullets} onChange={v => updateProject(p.id, { bullets: v })} />
                     </div>
                     <div className="mt-2 flex justify-end">
                       <Button size="sm" variant="ghost" onClick={() => removeProject(p.id)}><Trash2 /> Remove</Button>
