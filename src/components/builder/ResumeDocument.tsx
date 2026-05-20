@@ -1,0 +1,296 @@
+import { useEffect } from "react";
+import { Mail, Phone, MapPin, Link as LinkIcon } from "lucide-react";
+import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
+import { parseSkills } from "@/lib/parseSkills";
+
+const loadedFonts = new Set<string>();
+
+function useFont(fontId: string) {
+  useEffect(() => {
+    const preset = FONT_PRESETS.find(f => f.id === fontId);
+    if (!preset?.googleHref || loadedFonts.has(preset.googleHref)) return;
+    loadedFonts.add(preset.googleHref);
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = preset.googleHref;
+    document.head.appendChild(link);
+  }, [fontId]);
+}
+
+function splitLinks(s: string): string[] {
+  return s.split(/[·,|]/g).map(x => x.trim()).filter(Boolean);
+}
+
+export function ResumeDocument({ data }: { data: ResumeData }) {
+  useFont(data.fontId);
+  const preset = FONT_PRESETS.find(f => f.id === data.fontId) ?? FONT_PRESETS[0];
+  const headingFont = `${preset.heading}, system-ui, sans-serif`;
+  const bodyFont = `${preset.body}, system-ui, sans-serif`;
+  const accent = data.accentHex;
+  const fs = data.fontSize ?? 10.5;
+
+  const sections: Record<SectionId, React.ReactNode> = {
+    summary: data.summary ? <SummarySection key="summary" data={data} accent={accent} headingFont={headingFont} /> : null,
+    experience: data.experience.length ? <ExperienceSection key="experience" data={data} accent={accent} headingFont={headingFont} /> : null,
+    education: data.education.length ? <EducationSection key="education" data={data} accent={accent} headingFont={headingFont} /> : null,
+    skills: data.skills ? <SkillsSection key="skills" data={data} accent={accent} headingFont={headingFont} template={data.template} /> : null,
+    projects: data.projects?.length ? <ProjectsSection key="projects" data={data} accent={accent} headingFont={headingFont} /> : null,
+    certifications: data.certifications?.length ? <CertSection key="certs" data={data} accent={accent} headingFont={headingFont} /> : null,
+    awards: data.awards?.length ? <AwardsSection key="awards" data={data} accent={accent} headingFont={headingFont} /> : null,
+    languages: data.languages?.length ? <LanguagesSection key="langs" data={data} accent={accent} headingFont={headingFont} template={data.template} /> : null,
+  };
+
+  const ordered = data.sectionOrder.map(id => sections[id]);
+
+  const base = {
+    width: "8.5in",
+    minHeight: "11in",
+    fontFamily: bodyFont,
+    fontSize: `${fs}pt`,
+    lineHeight: 1.45,
+    color: "#1a1a1a",
+    background: data.bgHex || "#ffffff",
+  } as React.CSSProperties;
+
+  const contactLine = (
+    <ContactRow data={data} color="#5a5a5a" />
+  );
+
+  if (data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two") {
+    const sidebarRight = data.template === "sidebar-right";
+    const compact = data.template === "compact-two";
+    const sidebarBg = compact ? "#f4f3ef" : accent;
+    const sidebarText = compact ? "#1a1a1a" : "#ffffff";
+    const sidebar = (
+      <aside style={{ background: sidebarBg, color: sidebarText, padding: "0.55in 0.4in" }}>
+        <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}>{data.name || "Your Name"}</h1>
+        <div style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}>{data.headline}</div>
+        <div style={{ height: 1, background: compact ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.3)", margin: "16px 0" }} />
+        <SidebarBlock title="Contact" headingFont={headingFont} dark={!compact}>
+          <SidebarContact data={data} dark={!compact} />
+        </SidebarBlock>
+        {data.skills && (
+          <SidebarBlock title="Skills" headingFont={headingFont} dark={!compact}>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+              {parseSkills(data.skills).map((s, i) => (
+                <li key={i} style={{ marginBottom: 3 }}>• {s}</li>
+              ))}
+            </ul>
+          </SidebarBlock>
+        )}
+        {data.languages?.length > 0 && (
+          <SidebarBlock title="Languages" headingFont={headingFont} dark={!compact}>
+            {data.languages.map(l => (
+              <div key={l.id} style={{ marginBottom: 3 }}>{l.name}{l.level ? ` — ${l.level}` : ""}</div>
+            ))}
+          </SidebarBlock>
+        )}
+        {data.education.length > 0 && (
+          <SidebarBlock title="Education" headingFont={headingFont} dark={!compact}>
+            {data.education.map(ed => (
+              <div key={ed.id} style={{ marginBottom: 6 }}>
+                <div style={{ fontWeight: 600 }}>{ed.degree}</div>
+                <div style={{ opacity: 0.9 }}>{ed.school}</div>
+                <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{ed.date}</div>
+              </div>
+            ))}
+          </SidebarBlock>
+        )}
+      </aside>
+    );
+    const mainSectionIds: SectionId[] = ["summary", "experience", "projects", "certifications", "awards"];
+    const main = (
+      <main style={{ padding: "0.55in 0.5in" }}>
+        {data.sectionOrder.filter(id => mainSectionIds.includes(id)).map(id => sections[id])}
+      </main>
+    );
+    return (
+      <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
+        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.6in" : "2.6in 1fr", minHeight: "11in" }}>
+          {sidebarRight ? main : sidebar}
+          {sidebarRight ? sidebar : main}
+        </div>
+      </div>
+    );
+  }
+
+  if (data.template === "modern") {
+    return (
+      <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
+        <header style={{ padding: "0.5in 0.6in", background: accent, color: "#fff" }}>
+          <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.6}pt`, fontWeight: 800, letterSpacing: "-0.01em" }}>{data.name || "Your Name"}</h1>
+          <div style={{ fontSize: `${fs + 1.5}pt`, opacity: 0.92, marginTop: 2 }}>{data.headline}</div>
+          <div style={{ marginTop: 8, color: "#fff", opacity: 0.92 }}><ContactRow data={data} color="#ffffff" /></div>
+        </header>
+        <div style={{ padding: "0.35in 0.6in 0.6in" }}>{ordered}</div>
+      </div>
+    );
+  }
+
+  // classic
+  return (
+    <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: "0.6in" }}>
+      <header style={{ textAlign: "center", borderBottom: `2px solid ${accent}`, paddingBottom: 10 }}>
+        <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.45}pt`, fontWeight: 700, letterSpacing: "-0.01em", color: accent }}>{data.name || "Your Name"}</h1>
+        <div style={{ fontSize: `${fs + 0.5}pt`, color: "#4a4a4a", marginTop: 2 }}>{data.headline}</div>
+        <div style={{ marginTop: 6, display: "flex", justifyContent: "center" }}>{contactLine}</div>
+      </header>
+      {ordered}
+    </div>
+  );
+}
+
+function ContactRow({ data, color }: { data: ResumeData; color: string }) {
+  const iconSize = 11;
+  const items: { icon: React.ReactNode; text: string }[] = [];
+  if (data.email) items.push({ icon: <Mail size={iconSize} />, text: data.email });
+  if (data.phone) items.push({ icon: <Phone size={iconSize} />, text: data.phone });
+  if (data.location) items.push({ icon: <MapPin size={iconSize} />, text: data.location });
+  splitLinks(data.links).forEach(l => items.push({ icon: <LinkIcon size={iconSize} />, text: l }));
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px", color, fontSize: "9.5pt", alignItems: "center" }}>
+      {items.map((it, i) => (
+        <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <span style={{ display: "inline-flex" }}>{it.icon}</span>{it.text}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function SidebarContact({ data, dark }: { data: ResumeData; dark: boolean }) {
+  const items: { icon: React.ReactNode; text: string }[] = [];
+  if (data.email) items.push({ icon: <Mail size={11} />, text: data.email });
+  if (data.phone) items.push({ icon: <Phone size={11} />, text: data.phone });
+  if (data.location) items.push({ icon: <MapPin size={11} />, text: data.location });
+  splitLinks(data.links).forEach(l => items.push({ icon: <LinkIcon size={11} />, text: l }));
+  return (
+    <div>
+      {items.map((it, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 4, wordBreak: "break-word", opacity: dark ? 0.95 : 1 }}>
+          <span style={{ display: "inline-flex", marginTop: 2 }}>{it.icon}</span>
+          <span style={{ flex: 1 }}>{it.text}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SidebarBlock({ title, headingFont, children, dark }: { title: string; headingFont: string; children: React.ReactNode; dark: boolean }) {
+  return (
+    <div style={{ marginBottom: 18, fontSize: "9.5pt" }}>
+      <div style={{ fontFamily: headingFont, fontSize: "9pt", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 6, opacity: dark ? 0.95 : 0.7 }}>{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function Section({ title, accent, headingFont, children }: { title: string; accent: string; headingFont: string; children: React.ReactNode }) {
+  return (
+    <section style={{ marginTop: 16 }}>
+      <h2 style={{ fontFamily: headingFont, fontSize: "10.5pt", fontWeight: 700, letterSpacing: "0.18em", color: accent, textTransform: "uppercase", borderBottom: `1px solid ${accent}33`, paddingBottom: 4, marginBottom: 8 }}>{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function SummarySection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+  return <Section title="Summary" accent={accent} headingFont={headingFont}><p>{data.summary}</p></Section>;
+}
+
+function ExperienceSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+  return (
+    <Section title="Experience" accent={accent} headingFont={headingFont}>
+      {data.experience.map(e => (
+        <div key={e.id} style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ fontWeight: 600 }}>
+              {e.title || "Role"} <span style={{ fontWeight: 400, color: "#4a4a4a" }}>· {e.company}</span>
+            </div>
+            <div style={{ color: "#666", whiteSpace: "nowrap" }}>{e.date}</div>
+          </div>
+          <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
+            {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}>{b}</li>)}
+          </ul>
+        </div>
+      ))}
+    </Section>
+  );
+}
+
+function EducationSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+  return (
+    <Section title="Education" accent={accent} headingFont={headingFont}>
+      {data.education.map(ed => (
+        <div key={ed.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
+          <div><span style={{ fontWeight: 600 }}>{ed.degree}</span> · {ed.school}</div>
+          <div style={{ color: "#666", whiteSpace: "nowrap" }}>{ed.date}</div>
+        </div>
+      ))}
+    </Section>
+  );
+}
+
+function SkillsSection({ data, accent, headingFont, template }: { data: ResumeData; accent: string; headingFont: string; template: string }) {
+  if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
+  return (
+    <Section title="Skills" accent={accent} headingFont={headingFont}>
+      <p>{parseSkills(data.skills).join(" · ")}</p>
+    </Section>
+  );
+}
+
+function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+  return (
+    <Section title="Projects" accent={accent} headingFont={headingFont}>
+      {data.projects.map(p => (
+        <div key={p.id} style={{ marginBottom: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ fontWeight: 600 }}>{p.name}{p.link ? <span style={{ fontWeight: 400, color: "#4a4a4a" }}> · {p.link}</span> : null}</div>
+            <div style={{ color: "#666", whiteSpace: "nowrap" }}>{p.date}</div>
+          </div>
+          {p.bullets && (
+            <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
+              {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}>{b}</li>)}
+            </ul>
+          )}
+        </div>
+      ))}
+    </Section>
+  );
+}
+
+function CertSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+  return (
+    <Section title="Certifications" accent={accent} headingFont={headingFont}>
+      {data.certifications.map(c => (
+        <div key={c.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
+          <div><span style={{ fontWeight: 600 }}>{c.name}</span>{c.issuer ? ` · ${c.issuer}` : ""}</div>
+          <div style={{ color: "#666", whiteSpace: "nowrap" }}>{c.date}</div>
+        </div>
+      ))}
+    </Section>
+  );
+}
+
+function AwardsSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+  return (
+    <Section title="Awards" accent={accent} headingFont={headingFont}>
+      {data.awards.map(a => (
+        <div key={a.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
+          <div><span style={{ fontWeight: 600 }}>{a.name}</span>{a.issuer ? ` · ${a.issuer}` : ""}</div>
+          <div style={{ color: "#666", whiteSpace: "nowrap" }}>{a.date}</div>
+        </div>
+      ))}
+    </Section>
+  );
+}
+
+function LanguagesSection({ data, accent, headingFont, template }: { data: ResumeData; accent: string; headingFont: string; template: string }) {
+  if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
+  return (
+    <Section title="Languages" accent={accent} headingFont={headingFont}>
+      <p>{data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(" · ")}</p>
+    </Section>
+  );
+}
