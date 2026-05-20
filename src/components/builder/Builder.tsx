@@ -700,12 +700,27 @@ export function Builder() {
           {data.jobDescription && (
             <div className="rounded-xl border border-border bg-card p-5">
               <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">Keyword match · {(score.coverage * 100).toFixed(0)}%</div>
+              {score.matched.length > 0 && (
+                <>
+                  <div className="text-xs text-muted-foreground mb-2">Matched ({score.matched.length}):</div>
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {score.matched.slice(0, 24).map(k => (
+                      <span key={k} className="text-xs px-2 py-1 rounded-md bg-[var(--navy-light)]/10 text-[var(--navy-light)] border border-[var(--navy-light)]/20">{k}</span>
+                    ))}
+                  </div>
+                </>
+              )}
               {score.missing.length > 0 ? (
                 <>
-                  <div className="text-xs text-muted-foreground mb-2">Missing from your resume:</div>
+                  <div className="text-xs text-muted-foreground mb-2">Missing ({score.missing.length}) — click to add to ATS keywords:</div>
                   <div className="flex flex-wrap gap-1.5">
-                    {score.missing.slice(0, 20).map(k => (
-                      <span key={k} className="text-xs px-2 py-1 rounded-md bg-destructive/10 text-destructive border border-destructive/20">{k}</span>
+                    {score.missing.slice(0, 24).map(k => (
+                      <button
+                        key={k}
+                        onClick={() => update("extraKeywords", data.extraKeywords ? `${data.extraKeywords}, ${k}` : k)}
+                        className="text-xs px-2 py-1 rounded-md bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20"
+                        title="Add to ATS keywords"
+                      >+ {k}</button>
                     ))}
                   </div>
                 </>
