@@ -21,6 +21,9 @@ import { parseSkills } from "@/lib/parseSkills";
 import { cn } from "@/lib/utils";
 import { FormattableTextarea } from "./FormattableTextarea";
 import { AtsPanel } from "./AtsPanel";
+import { PreviewToolbar } from "./PreviewToolbar";
+import { decompressFromEncodedURIComponent } from "lz-string";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -73,10 +76,31 @@ export function Builder() {
   const [jdDialogText, setJdDialogText] = useState("");
   const [mounted, setMounted] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [atsSheetOpen, setAtsSheetOpen] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
   useEffect(() => { setSaved(resumeStore.list()); }, []);
   useEffect(() => { setMounted(true); }, []);
+
+  // Load shared resume from URL hash (#r=...) once on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (!hash.startsWith("#r=")) return;
+    try {
+      const raw = decompressFromEncodedURIComponent(hash.slice(3));
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<ResumeData>;
+      setData(d => ({ ...d, ...parsed }));
+      setCurrentName("Shared resume");
+      setCurrentId(null);
+      toast.success("Loaded shared resume");
+      window.history.replaceState(null, "", window.location.pathname);
+    } catch {
+      // ignore malformed share links
+    }
+  }, []);
 
   const refreshList = () => setSaved(resumeStore.list());
 
@@ -930,23 +954,76 @@ export function Builder() {
               <PanelRightOpen className="h-3.5 w-3.5" /> ATS · {score.score}
             </button>
           )}
+          <PreviewToolbar
+            zoom={zoom}
+            setZoom={setZoom}
+            data={data}
+            onPdf={() => window.print()}
+            onDocx={handleDocx}
+            docxBusy={exporting}
+          />
+          {/* Mobile ATS trigger */}
+          <div className="no-print lg:hidden mb-3">
+            <Sheet open={atsSheetOpen} onOpenChange={setAtsSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="w-full">
+                  <Gauge className="h-4 w-4" /> Open ATS analysis · {score.score}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-0">
+                <div className="p-4">
+                  <AtsPanel
+                    data={data}
+                    onClose={() => setAtsSheetOpen(false)}
+                    onAppendBulletsToFirstExperience={(bullets) => {
+                      setData(d => {
+                        const exp = [...d.experience];
+                        if (exp.length === 0) {
+                          exp.push({ id: uid(), title: d.headline || "Role", company: "", date: "", bullets: bullets.join("\n") });
+                        } else {
+                          exp[0] = { ...exp[0], bullets: [exp[0].bullets, ...bullets].filter(Boolean).join("\n") };
+                        }
+                        return { ...d, experience: exp };
+                      });
+                    }}
+                    onAddExtraKeywords={(kw) => {
+                      const existing = data.extraKeywords.split(",").map(s => s.trim()).filter(Boolean);
+                      const merged = Array.from(new Set([...existing, ...kw])).join(", ");
+                      update("extraKeywords", merged);
+                    }}
+                    onOneClickOptimize={generateFromJD}
+                    optimizing={generating}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
           <div className="overflow-auto rounded-xl">
-            <ResumeDocument
-              data={data}
-              onSectionClick={inlineEdit ? undefined : scrollToEditor}
-              editable={inlineEdit}
-              handlers={{
-                onUpdate: updatePatch,
-                onUpdateExperienceBullets: (id, bullets) => updateExp(id, { bullets }),
-                onRewrite: rewriteFromPreview,
-                rewritingKey: rewriting ? "summary" : rewritingKey,
+            <div
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: "top center",
+                width: zoom < 1 ? "100%" : undefined,
               }}
-            />
+            >
+              <ResumeDocument
+                data={data}
+                onSectionClick={inlineEdit ? undefined : scrollToEditor}
+                editable={inlineEdit}
+                handlers={{
+                  onUpdate: updatePatch,
+                  onUpdateExperienceBullets: (id, bullets) => updateExp(id, { bullets }),
+                  onRewrite: rewriteFromPreview,
+                  rewritingKey: rewriting ? "summary" : rewritingKey,
+                }}
+              />
+            </div>
           </div>
         </div>
 
         {/* ATS panel */}
         {atsOpen && (
+        <div className="no-print hidden lg:block">
         <AtsPanel
           data={data}
           onClose={() => setAtsOpen(false)}
@@ -969,6 +1046,7 @@ export function Builder() {
           onOneClickOptimize={generateFromJD}
           optimizing={generating}
         />
+        </div>
         )}
       </div>
     </div>
