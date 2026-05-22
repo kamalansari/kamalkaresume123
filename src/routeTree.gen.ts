@@ -15,6 +15,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
 import { Route as ApiRewriteSectionRouteImport } from './routes/api/rewrite-section'
 import { Route as ApiRecommendJobsRouteImport } from './routes/api/recommend-jobs'
+import { Route as ApiNovaChatRouteImport } from './routes/api/nova-chat'
+import { Route as ApiKeywordBulletsRouteImport } from './routes/api/keyword-bullets'
 import { Route as ApiJobTipRouteImport } from './routes/api/job-tip'
 import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-from-jd'
 
@@ -48,6 +50,16 @@ const ApiRecommendJobsRoute = ApiRecommendJobsRouteImport.update({
   path: '/api/recommend-jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiNovaChatRoute = ApiNovaChatRouteImport.update({
+  id: '/api/nova-chat',
+  path: '/api/nova-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKeywordBulletsRoute = ApiKeywordBulletsRouteImport.update({
+  id: '/api/keyword-bullets',
+  path: '/api/keyword-bullets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiJobTipRoute = ApiJobTipRouteImport.update({
   id: '/api/job-tip',
   path: '/api/job-tip',
@@ -65,6 +77,8 @@ export interface FileRoutesByFullPath {
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/job-tip': typeof ApiJobTipRoute
+  '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
+  '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -75,6 +89,8 @@ export interface FileRoutesByTo {
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/job-tip': typeof ApiJobTipRoute
+  '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
+  '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -86,6 +102,8 @@ export interface FileRoutesById {
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/job-tip': typeof ApiJobTipRoute
+  '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
+  '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -98,6 +116,8 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/api/generate-from-jd'
     | '/api/job-tip'
+    | '/api/keyword-bullets'
+    | '/api/nova-chat'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
@@ -108,6 +128,8 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/api/generate-from-jd'
     | '/api/job-tip'
+    | '/api/keyword-bullets'
+    | '/api/nova-chat'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
@@ -118,6 +140,8 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/api/generate-from-jd'
     | '/api/job-tip'
+    | '/api/keyword-bullets'
+    | '/api/nova-chat'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
@@ -129,6 +153,8 @@ export interface RootRouteChildren {
   JobsRoute: typeof JobsRoute
   ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
   ApiJobTipRoute: typeof ApiJobTipRoute
+  ApiKeywordBulletsRoute: typeof ApiKeywordBulletsRoute
+  ApiNovaChatRoute: typeof ApiNovaChatRoute
   ApiRecommendJobsRoute: typeof ApiRecommendJobsRoute
   ApiRewriteSectionRoute: typeof ApiRewriteSectionRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
@@ -178,6 +204,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRecommendJobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/nova-chat': {
+      id: '/api/nova-chat'
+      path: '/api/nova-chat'
+      fullPath: '/api/nova-chat'
+      preLoaderRoute: typeof ApiNovaChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/keyword-bullets': {
+      id: '/api/keyword-bullets'
+      path: '/api/keyword-bullets'
+      fullPath: '/api/keyword-bullets'
+      preLoaderRoute: typeof ApiKeywordBulletsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/job-tip': {
       id: '/api/job-tip'
       path: '/api/job-tip'
@@ -201,6 +241,8 @@ const rootRouteChildren: RootRouteChildren = {
   JobsRoute: JobsRoute,
   ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
   ApiJobTipRoute: ApiJobTipRoute,
+  ApiKeywordBulletsRoute: ApiKeywordBulletsRoute,
+  ApiNovaChatRoute: ApiNovaChatRoute,
   ApiRecommendJobsRoute: ApiRecommendJobsRoute,
   ApiRewriteSectionRoute: ApiRewriteSectionRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
