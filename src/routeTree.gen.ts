@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
 import { Route as ApiRewriteSectionRouteImport } from './routes/api/rewrite-section'
 import { Route as ApiRecommendJobsRouteImport } from './routes/api/recommend-jobs'
+import { Route as ApiKeywordBulletsRouteImport } from './routes/api/keyword-bullets'
 import { Route as ApiJobTipRouteImport } from './routes/api/job-tip'
 import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-from-jd'
 
@@ -48,6 +49,11 @@ const ApiRecommendJobsRoute = ApiRecommendJobsRouteImport.update({
   path: '/api/recommend-jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiKeywordBulletsRoute = ApiKeywordBulletsRouteImport.update({
+  id: '/api/keyword-bullets',
+  path: '/api/keyword-bullets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiJobTipRoute = ApiJobTipRouteImport.update({
   id: '/api/job-tip',
   path: '/api/job-tip',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/job-tip': typeof ApiJobTipRoute
+  '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/job-tip': typeof ApiJobTipRoute
+  '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/job-tip': typeof ApiJobTipRoute
+  '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/api/generate-from-jd'
     | '/api/job-tip'
+    | '/api/keyword-bullets'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/api/generate-from-jd'
     | '/api/job-tip'
+    | '/api/keyword-bullets'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/jobs'
     | '/api/generate-from-jd'
     | '/api/job-tip'
+    | '/api/keyword-bullets'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   JobsRoute: typeof JobsRoute
   ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
   ApiJobTipRoute: typeof ApiJobTipRoute
+  ApiKeywordBulletsRoute: typeof ApiKeywordBulletsRoute
   ApiRecommendJobsRoute: typeof ApiRecommendJobsRoute
   ApiRewriteSectionRoute: typeof ApiRewriteSectionRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRecommendJobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/keyword-bullets': {
+      id: '/api/keyword-bullets'
+      path: '/api/keyword-bullets'
+      fullPath: '/api/keyword-bullets'
+      preLoaderRoute: typeof ApiKeywordBulletsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/job-tip': {
       id: '/api/job-tip'
       path: '/api/job-tip'
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   JobsRoute: JobsRoute,
   ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
   ApiJobTipRoute: ApiJobTipRoute,
+  ApiKeywordBulletsRoute: ApiKeywordBulletsRoute,
   ApiRecommendJobsRoute: ApiRecommendJobsRoute,
   ApiRewriteSectionRoute: ApiRewriteSectionRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
@@ -208,3 +229,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
