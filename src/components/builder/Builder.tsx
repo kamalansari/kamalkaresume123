@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { FormattableTextarea } from "./FormattableTextarea";
 import { AtsPanel } from "./AtsPanel";
 import { PreviewToolbar } from "./PreviewToolbar";
+import { SavedResumesGallery } from "./SavedResumesGallery";
 import { decompressFromEncodedURIComponent } from "lz-string";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
