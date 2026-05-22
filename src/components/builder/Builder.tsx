@@ -556,6 +556,69 @@ export function Builder() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
+                <Button variant="outline" title="Manage profile templates">
+                  <IdCard /> <span className="hidden sm:inline">Profile</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground inline-flex items-center gap-1.5">
+                  <User className="h-3 w-3" /> Profiles ({profiles.length})
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {profiles.length === 0 && (
+                  <div className="px-2 py-2 text-xs text-muted-foreground">
+                    No profiles yet. Edit your personal info and a default profile is created automatically.
+                  </div>
+                )}
+                <div className="max-h-64 overflow-auto">
+                  {profiles.map(p => (
+                    <div key={p.id} className="group rounded-sm px-1 py-1 hover:bg-accent/40">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => switchProfile(p.id)}
+                          className="flex-1 text-left rounded-sm px-2 py-1"
+                          title={`Apply ${p.name}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {p.id === activeProfileId
+                              ? <Check className="h-3.5 w-3.5 text-emerald-600" />
+                              : <span className="inline-block w-3.5" />
+                            }
+                            <span className="truncate text-sm font-medium">{p.name}</span>
+                          </div>
+                          <div className="ml-5 truncate text-[11px] text-muted-foreground">
+                            {p.fields.name || "—"}{p.fields.email ? ` · ${p.fields.email}` : ""}
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => { setProfileRenameId(p.id); setProfileNameDraft(p.name); }}
+                          className="rounded p-1 opacity-60 hover:opacity-100 hover:bg-accent"
+                          title="Rename profile"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deleteProfile(p.id, p.name)}
+                          className="rounded p-1 opacity-60 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                          title="Delete profile"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { setProfileNameDraft(""); setProfileDialogOpen(true); }}>
+                  <UserPlus className="h-4 w-4" /> Save current as new profile…
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={resetProfile}>
+                  <RotateCcw className="h-4 w-4" /> Reset active profile
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="outline">
                   <FolderOpen /> <span className="hidden sm:inline">Resumes</span>
                 </Button>
