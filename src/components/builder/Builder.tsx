@@ -531,6 +531,22 @@ export function Builder() {
             <div className="space-y-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Template</Label>
+                <div className="mt-2 mb-2 flex gap-2">
+                  <button
+                    onClick={() => update("template", "classic")}
+                    className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
+                      (data.template === "classic" || data.template === "modern") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                  >
+                    <Square className="h-3.5 w-3.5" /> Single column
+                  </button>
+                  <button
+                    onClick={() => update("template", "two-column")}
+                    className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
+                      (data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                  >
+                    <Columns className="h-3.5 w-3.5" /> Two column
+                  </button>
+                </div>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {TEMPLATES.map(t => (
                     <button
@@ -627,6 +643,14 @@ export function Builder() {
                     <Bold className="h-4 w-4" /> Bold text
                   </button>
                 </div>
+                <button
+                  onClick={() => setInlineEdit(v => !v)}
+                  className={cn("mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
+                    inlineEdit ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                  title="Click text in the preview to edit it directly"
+                >
+                  <MousePointerClick className="h-4 w-4" /> Edit on preview {inlineEdit ? "· ON" : "· OFF"}
+                </button>
               </div>
 
               <div>
@@ -906,7 +930,17 @@ export function Builder() {
             </button>
           )}
           <div className="overflow-auto rounded-xl">
-            <ResumeDocument data={data} onSectionClick={scrollToEditor} />
+            <ResumeDocument
+              data={data}
+              onSectionClick={inlineEdit ? undefined : scrollToEditor}
+              editable={inlineEdit}
+              handlers={{
+                onUpdate: updatePatch,
+                onUpdateExperienceBullets: (id, bullets) => updateExp(id, { bullets }),
+                onRewrite: rewriteFromPreview,
+                rewritingKey: rewriting ? "summary" : rewritingKey,
+              }}
+            />
           </div>
         </div>
 
