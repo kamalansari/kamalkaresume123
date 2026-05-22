@@ -743,6 +743,7 @@ export function Builder() {
         const id = newId();
         const name = (jdTailoredName.trim() || `Tailored — ${new Date().toLocaleDateString()}`);
         resumeStore.upsert({ id, name, updatedAt: Date.now(), data: tailored });
+        resumeStore.saveDraft(tailored);
         setData(tailored);
         setCurrentId(id);
         setCurrentName(name);
