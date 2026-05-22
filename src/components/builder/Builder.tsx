@@ -396,11 +396,12 @@ export function Builder() {
                   <div className="px-2 py-2 text-xs text-muted-foreground">No saved resumes yet. Use “Save as new…” to create one per job.</div>
                 )}
                 <div className="max-h-72 overflow-auto">
-                  {saved.map(s => (
-                    <div key={s.id} className="group flex items-center gap-1 px-1.5 py-0.5">
+                {saved.map(s => (
+                    <div key={s.id} className="group rounded-sm px-1.5 py-1 hover:bg-accent/40">
                       <button
                         onClick={() => loadSaved(s.id)}
-                        className="flex-1 text-left rounded-sm px-2 py-1.5 hover:bg-accent hover:text-accent-foreground"
+                        className="w-full text-left rounded-sm px-2 py-1"
+                        title="Open in editor"
                       >
                         <div className="flex items-center gap-2 text-sm font-medium truncate">
                           {currentId === s.id && <Check className="h-3.5 w-3.5 text-[var(--navy-light)]" />}
@@ -410,13 +411,14 @@ export function Builder() {
                           {new Date(s.updatedAt).toLocaleString()}
                         </div>
                       </button>
-                      <button
-                        onClick={() => deleteSaved(s.id, s.name)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="mt-1 flex items-center gap-1 px-1">
+                        <RowAction icon={<OpenIcon className="h-3.5 w-3.5" />} label="Open" onClick={() => loadSaved(s.id)} />
+                        <RowAction icon={<Pencil className="h-3.5 w-3.5" />} label="Rename" onClick={() => openRenameFor(s.id, s.name)} />
+                        <RowAction icon={<Copy className="h-3.5 w-3.5" />} label="Duplicate" onClick={() => duplicateSaved(s.id)} />
+                        <RowAction icon={<Download className="h-3.5 w-3.5" />} label="DOCX" onClick={() => downloadSavedDocx(s.id)} />
+                        <RowAction icon={<FileText className="h-3.5 w-3.5" />} label="PDF" onClick={() => { loadSaved(s.id); setTimeout(() => window.print(), 250); }} />
+                        <RowAction icon={<Trash2 className="h-3.5 w-3.5" />} label="Delete" danger onClick={() => deleteSaved(s.id, s.name)} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -494,7 +496,11 @@ export function Builder() {
         </DialogContent>
       </Dialog>
 
-      <div className="mx-auto max-w-[1600px] grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)_minmax(0,360px)] gap-6 px-6 py-6">
+      <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-6 py-6",
+        atsOpen
+          ? "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)_minmax(0,360px)]"
+          : "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]"
+      )}>
         {/* Editor */}
         <div className="no-print space-y-6">
           <Card title="Design">
@@ -858,7 +864,7 @@ export function Builder() {
             </button>
           )}
           <div className="overflow-auto rounded-xl">
-            <ResumeDocument data={data} />
+            <ResumeDocument data={data} onSectionClick={scrollToEditor} />
           </div>
         </div>
 
