@@ -56,8 +56,18 @@ export function ResumeDocument({
   const preset = FONT_PRESETS.find(f => f.id === data.fontId) ?? FONT_PRESETS[0];
   const headingFont = `${preset.heading}, system-ui, sans-serif`;
   const bodyFont = `${preset.body}, system-ui, sans-serif`;
-  const accent = data.accentHex;
+  // Per-template accent overrides (minimal uses near-black for a quiet look).
+  const accent = data.template === "minimal" ? "#1f1f1f" : data.accentHex;
   const fs = data.fontSize ?? 10.5;
+  // Map new template ids onto base layouts while preserving distinct vibes.
+  const variant: "classic" | "modern" | "two-column" | "sidebar-right" | "compact-two" =
+    data.template === "professional" || data.template === "minimal"
+      ? "classic"
+      : data.template === "executive"
+        ? "modern"
+        : data.template === "fresher"
+          ? "compact-two"
+          : data.template;
 
   const ed = editable && handlers ? handlers : undefined;
 
@@ -69,11 +79,11 @@ export function ResumeDocument({
     summary: (data.summary || ed) ? wrap("summary", <SummarySection data={data} accent={accent} headingFont={headingFont} ed={ed} />) : null,
     experience: data.experience.length ? wrap("experience", <ExperienceSection data={data} accent={accent} headingFont={headingFont} ed={ed} />) : null,
     education: data.education.length ? wrap("education", <EducationSection data={data} accent={accent} headingFont={headingFont} />) : null,
-    skills: (data.skills || ed) ? wrap("skills", <SkillsSection data={data} accent={accent} headingFont={headingFont} template={data.template} ed={ed} />) : null,
+    skills: (data.skills || ed) ? wrap("skills", <SkillsSection data={data} accent={accent} headingFont={headingFont} template={variant} ed={ed} />) : null,
     projects: data.projects?.length ? wrap("projects", <ProjectsSection data={data} accent={accent} headingFont={headingFont} />) : null,
     certifications: data.certifications?.length ? wrap("certifications", <CertSection data={data} accent={accent} headingFont={headingFont} />) : null,
     awards: data.awards?.length ? wrap("awards", <AwardsSection data={data} accent={accent} headingFont={headingFont} />) : null,
-    languages: data.languages?.length ? wrap("languages", <LanguagesSection data={data} accent={accent} headingFont={headingFont} template={data.template} />) : null,
+    languages: data.languages?.length ? wrap("languages", <LanguagesSection data={data} accent={accent} headingFont={headingFont} template={variant} />) : null,
   };
 
   const ordered = data.sectionOrder.map(id => sections[id]);
@@ -98,9 +108,9 @@ export function ResumeDocument({
     ? { onClick: () => onSectionClick("header"), className: "preview-clickable", title: "Click to edit personal details" }
     : {};
 
-  if (data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two") {
-    const sidebarRight = data.template === "sidebar-right";
-    const compact = data.template === "compact-two";
+  if (variant === "two-column" || variant === "sidebar-right" || variant === "compact-two") {
+    const sidebarRight = variant === "sidebar-right";
+    const compact = variant === "compact-two";
     const sidebarBg = compact ? "#f4f3ef" : accent;
     const sidebarText = compact ? "#1a1a1a" : "#ffffff";
     const sidebar = (
@@ -156,11 +166,12 @@ export function ResumeDocument({
     );
   }
 
-  if (data.template === "modern") {
+  if (variant === "modern") {
+    const exec = data.template === "executive";
     return (
       <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
-        <header {...headerClickProps} style={{ padding: "0.5in 0.6in", background: accent, color: "#fff", cursor: onSectionClick ? "pointer" : undefined }}>
-          <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.6}pt`, fontWeight: 800, letterSpacing: "-0.01em" }}>{data.name || "Your Name"}</h1>
+        <header {...headerClickProps} style={{ padding: "0.5in 0.6in", background: accent, color: "#fff", cursor: onSectionClick ? "pointer" : undefined, borderBottom: exec ? "4px solid rgba(0,0,0,0.35)" : undefined }}>
+          <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.6}pt`, fontWeight: 800, letterSpacing: exec ? "0.08em" : "-0.01em", textTransform: exec ? "uppercase" : undefined }}>{data.name || "Your Name"}</h1>
           <div style={{ fontSize: `${fs + 1.5}pt`, opacity: 0.92, marginTop: 2 }}>{data.headline}</div>
           <div style={{ marginTop: 8, color: "#fff", opacity: 0.92 }}><ContactRow data={data} color="#ffffff" /></div>
         </header>
@@ -169,13 +180,15 @@ export function ResumeDocument({
     );
   }
 
-  // classic
+  // classic (also used for "professional" and "minimal")
+  const isProfessional = data.template === "professional";
+  const isMinimal = data.template === "minimal";
   return (
     <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: "0.6in" }}>
-      <header {...headerClickProps} style={{ textAlign: "center", borderBottom: `2px solid ${accent}`, paddingBottom: 10, cursor: onSectionClick ? "pointer" : undefined }}>
-        <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.45}pt`, fontWeight: 700, letterSpacing: "-0.01em", color: accent }}>{data.name || "Your Name"}</h1>
+      <header {...headerClickProps} style={{ textAlign: isMinimal ? "left" : "center", borderBottom: isMinimal ? `1px solid #d4d4d4` : `2px solid ${accent}`, paddingBottom: 10, cursor: onSectionClick ? "pointer" : undefined }}>
+        <h1 style={{ fontFamily: headingFont, fontSize: `${fs * (isMinimal ? 2.1 : 2.45)}pt`, fontWeight: isMinimal ? 600 : 700, letterSpacing: isProfessional ? "0.12em" : "-0.01em", textTransform: isProfessional ? "uppercase" : undefined, color: isMinimal ? "#1a1a1a" : accent }}>{data.name || "Your Name"}</h1>
         <div style={{ fontSize: `${fs + 0.5}pt`, color: "#4a4a4a", marginTop: 2 }}>{data.headline}</div>
-        <div style={{ marginTop: 6, display: "flex", justifyContent: "center" }}>{contactLine}</div>
+        <div style={{ marginTop: 6, display: "flex", justifyContent: isMinimal ? "flex-start" : "center" }}>{contactLine}</div>
       </header>
       {ordered}
     </div>
