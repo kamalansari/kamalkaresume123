@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Mail, Phone, MapPin, Link as LinkIcon } from "lucide-react";
+import { Mail, Phone, MapPin, Link as LinkIcon, Sparkles, Loader2 } from "lucide-react";
 import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
@@ -32,7 +32,26 @@ function splitLinks(s: string): string[] {
   return s.split(/[·,|]/g).map(x => x.trim()).filter(Boolean);
 }
 
-export function ResumeDocument({ data, onSectionClick }: { data: ResumeData; onSectionClick?: (id: SectionId | "header") => void }) {
+export type EditableRewriteKind = "summary" | "skills" | "experience-bullets";
+
+export type EditableHandlers = {
+  onUpdate: (patch: Partial<ResumeData>) => void;
+  onUpdateExperienceBullets: (id: string, bullets: string) => void;
+  onRewrite: (kind: EditableRewriteKind, refId?: string) => void;
+  rewritingKey?: string | null;
+};
+
+export function ResumeDocument({
+  data,
+  onSectionClick,
+  editable,
+  handlers,
+}: {
+  data: ResumeData;
+  onSectionClick?: (id: SectionId | "header") => void;
+  editable?: boolean;
+  handlers?: EditableHandlers;
+}) {
   useFont(data.fontId);
   const preset = FONT_PRESETS.find(f => f.id === data.fontId) ?? FONT_PRESETS[0];
   const headingFont = `${preset.heading}, system-ui, sans-serif`;
@@ -40,15 +59,17 @@ export function ResumeDocument({ data, onSectionClick }: { data: ResumeData; onS
   const accent = data.accentHex;
   const fs = data.fontSize ?? 10.5;
 
+  const ed = editable && handlers ? handlers : undefined;
+
   const wrap = (id: SectionId, node: React.ReactNode) => (
     <ClickableSection key={id} id={id} onClick={onSectionClick}>{node}</ClickableSection>
   );
 
   const sections: Record<SectionId, React.ReactNode> = {
-    summary: data.summary ? wrap("summary", <SummarySection data={data} accent={accent} headingFont={headingFont} />) : null,
-    experience: data.experience.length ? wrap("experience", <ExperienceSection data={data} accent={accent} headingFont={headingFont} />) : null,
+    summary: (data.summary || ed) ? wrap("summary", <SummarySection data={data} accent={accent} headingFont={headingFont} ed={ed} />) : null,
+    experience: data.experience.length ? wrap("experience", <ExperienceSection data={data} accent={accent} headingFont={headingFont} ed={ed} />) : null,
     education: data.education.length ? wrap("education", <EducationSection data={data} accent={accent} headingFont={headingFont} />) : null,
-    skills: data.skills ? wrap("skills", <SkillsSection data={data} accent={accent} headingFont={headingFont} template={data.template} />) : null,
+    skills: (data.skills || ed) ? wrap("skills", <SkillsSection data={data} accent={accent} headingFont={headingFont} template={data.template} ed={ed} />) : null,
     projects: data.projects?.length ? wrap("projects", <ProjectsSection data={data} accent={accent} headingFont={headingFont} />) : null,
     certifications: data.certifications?.length ? wrap("certifications", <CertSection data={data} accent={accent} headingFont={headingFont} />) : null,
     awards: data.awards?.length ? wrap("awards", <AwardsSection data={data} accent={accent} headingFont={headingFont} />) : null,
@@ -220,20 +241,39 @@ function SidebarBlock({ title, headingFont, children, dark }: { title: string; h
   );
 }
 
-function Section({ title, accent, headingFont, children }: { title: string; accent: string; headingFont: string; children: React.ReactNode }) {
+function Section({ title, accent, headingFont, children, ed, kind }: { title: string; accent: string; headingFont: string; children: React.ReactNode; ed?: EditableHandlers; kind?: EditableRewriteKind }) {
   return (
     <section style={{ marginTop: 16 }}>
-      <h2 style={{ fontFamily: headingFont, fontSize: "10.5pt", fontWeight: 700, letterSpacing: "0.18em", color: accent, textTransform: "uppercase", borderBottom: `1px solid ${accent}33`, paddingBottom: 4, marginBottom: 8 }}>{title}</h2>
+      <h2 style={{ fontFamily: headingFont, fontSize: "10.5pt", fontWeight: 700, letterSpacing: "0.18em", color: accent, textTransform: "uppercase", borderBottom: `1px solid ${accent}33`, paddingBottom: 4, marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span>{title}</span>
+        {ed && kind && kind !== "experience-bullets" && (
+          <RewriteButton busy={ed.rewritingKey === kind} onClick={() => ed.onRewrite(kind)} />
+        )}
+      </h2>
       {children}
     </section>
   );
 }
 
-function SummarySection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
-  return <Section title="Summary" accent={accent} headingFont={headingFont}><p><InlineText text={data.summary} /></p></Section>;
+function SummarySection({ data, accent, headingFont, ed }: { data: ResumeData; accent: string; headingFont: string; ed?: EditableHandlers }) {
+  return (
+    <Section title="Summary" accent={accent} headingFont={headingFont} ed={ed} kind="summary">
+      {ed ? (
+        <p
+          contentEditable
+          suppressContentEditableWarning
+          className="preview-editable"
+          onClick={e => e.stopPropagation()}
+          onBlur={e => ed.onUpdate({ summary: e.currentTarget.innerText })}
+        >{data.summary}</p>
+      ) : (
+        <p><InlineText text={data.summary} /></p>
+      )}
+    </Section>
+  );
 }
 
-function ExperienceSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData; accent: string; headingFont: string; ed?: EditableHandlers }) {
   return (
     <Section title="Experience" accent={accent} headingFont={headingFont}>
       {data.experience.map(e => (
@@ -242,11 +282,29 @@ function ExperienceSection({ data, accent, headingFont }: { data: ResumeData; ac
             <div style={{ fontWeight: 600 }}>
               {e.title || "Role"} <span style={{ fontWeight: 400, color: "#4a4a4a" }}>· {e.company}</span>
             </div>
-            <div style={{ color: "#666", whiteSpace: "nowrap" }}>{e.date}</div>
+            <div style={{ color: "#666", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}>
+              <span>{e.date}</span>
+              {ed && <RewriteButton busy={ed.rewritingKey === `exp-${e.id}`} onClick={() => ed.onRewrite("experience-bullets", e.id)} />}
+            </div>
           </div>
-          <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
-            {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
-          </ul>
+          {ed ? (
+            <div
+              contentEditable
+              suppressContentEditableWarning
+              className="preview-editable"
+              style={{ marginTop: 4, marginLeft: 18, whiteSpace: "pre-wrap" }}
+              onClick={ev => ev.stopPropagation()}
+              onBlur={ev => ed.onUpdateExperienceBullets(e.id, ev.currentTarget.innerText.replace(/^•\s*/gm, ""))}
+            >
+              {e.bullets.split("\n").filter(Boolean).map((b, i) => (
+                <div key={i}>• {b}</div>
+              ))}
+            </div>
+          ) : (
+            <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
+              {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
+            </ul>
+          )}
         </div>
       ))}
     </Section>
@@ -266,11 +324,21 @@ function EducationSection({ data, accent, headingFont }: { data: ResumeData; acc
   );
 }
 
-function SkillsSection({ data, accent, headingFont, template }: { data: ResumeData; accent: string; headingFont: string; template: string }) {
+function SkillsSection({ data, accent, headingFont, template, ed }: { data: ResumeData; accent: string; headingFont: string; template: string; ed?: EditableHandlers }) {
   if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
   return (
-    <Section title="Skills" accent={accent} headingFont={headingFont}>
-      <p>{parseSkills(data.skills).join(" · ")}</p>
+    <Section title="Skills" accent={accent} headingFont={headingFont} ed={ed} kind="skills">
+      {ed ? (
+        <p
+          contentEditable
+          suppressContentEditableWarning
+          className="preview-editable"
+          onClick={e => e.stopPropagation()}
+          onBlur={e => ed.onUpdate({ skills: e.currentTarget.innerText })}
+        >{parseSkills(data.skills).join(" | ")}</p>
+      ) : (
+        <p>{parseSkills(data.skills).join(" | ")}</p>
+      )}
     </Section>
   );
 }
@@ -327,5 +395,23 @@ function LanguagesSection({ data, accent, headingFont, template }: { data: Resum
     <Section title="Languages" accent={accent} headingFont={headingFont}>
       <p>{data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(" · ")}</p>
     </Section>
+  );
+}
+
+function RewriteButton({ onClick, busy }: { onClick: () => void; busy?: boolean }) {
+  return (
+    <button
+      onClick={e => { e.stopPropagation(); onClick(); }}
+      title="AI rewrite this section"
+      className="no-print"
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 3, fontSize: "8pt",
+        padding: "2px 6px", borderRadius: 4, border: "1px solid currentColor",
+        opacity: 0.75, cursor: "pointer", background: "transparent", color: "inherit",
+        letterSpacing: 0, textTransform: "none", fontWeight: 500,
+      }}
+    >
+      {busy ? <Loader2 size={9} className="animate-spin" /> : <Sparkles size={9} />} AI
+    </button>
   );
 }

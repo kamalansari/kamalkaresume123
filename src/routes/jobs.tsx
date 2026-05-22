@@ -259,7 +259,7 @@ function JobsPage() {
 
         {!loading && jobs.length > 0 && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {jobs.map(job => <JobCard key={job.id} job={job} onScore={() => setScoreJob(job)} onNova={() => askNova(job)} naukriUrl={naukriUrl} />)}
+            {jobs.map(job => <JobCard key={job.id} job={job} resume={activeResume} onScore={() => setScoreJob(job)} onNova={() => askNova(job)} naukriUrl={naukriUrl} />)}
           </div>
         )}
       </div>
@@ -318,7 +318,12 @@ function SelectInline({ value, onChange, options }: { value: string; onChange: (
   );
 }
 
-function JobCard({ job, onScore, onNova, naukriUrl }: { job: Job; onScore: () => void; onNova: () => void; naukriUrl: (t: string) => string }) {
+function JobCard({ job, resume, onScore, onNova, naukriUrl }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; naukriUrl: (t: string) => string }) {
+  const score = useMemo(() => computeScore({ ...resume, jobDescription: job.jd }).score, [resume, job.jd]);
+  const tone = score >= 80 ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+    : score >= 60 ? "bg-[var(--navy-light)]/10 text-[var(--navy-light)] border-[var(--navy-light)]/20"
+    : score >= 40 ? "bg-amber-500/10 text-amber-700 border-amber-500/30"
+    : "bg-destructive/10 text-destructive border-destructive/30";
   return (
     <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3 hover:border-[var(--navy-light)] hover:shadow-[var(--shadow-soft)] transition-all">
       <div className="flex items-start justify-between gap-2">
@@ -331,9 +336,14 @@ function JobCard({ job, onScore, onNova, naukriUrl }: { job: Job; onScore: () =>
             <div className="text-sm text-muted-foreground truncate">{job.company}</div>
           </div>
         </div>
-        <button className="text-muted-foreground hover:text-foreground" title="Save">
-          <Bookmark className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold", tone)} title="Live ATS match against selected resume">
+            <Gauge className="h-3 w-3" /> {score}
+          </span>
+          <button className="text-muted-foreground hover:text-foreground" title="Save">
+            <Bookmark className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-1.5 text-xs">

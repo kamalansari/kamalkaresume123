@@ -30,6 +30,13 @@ export const FONT_PRESETS: FontPreset[] = [
   { id: "serif-source", label: "Source Serif · Source Sans", heading: "'Source Serif 4'", body: "'Source Sans 3'", googleHref: "https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:wght@500;600;700&display=swap" },
   { id: "plex", label: "IBM Plex Serif · Sans", heading: "'IBM Plex Serif'", body: "'IBM Plex Sans'", googleHref: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600;700&display=swap" },
   { id: "playfair", label: "Playfair · Lato", heading: "'Playfair Display'", body: "Lato", googleHref: "https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@600;700&display=swap" },
+  { id: "dm-serif-inter", label: "DM Serif Display · Inter", heading: "'DM Serif Display'", body: "Inter", googleHref: "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" },
+  { id: "fraunces-poppins", label: "Fraunces · Poppins", heading: "Fraunces", body: "Poppins", googleHref: "https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" },
+  { id: "cormorant-jakarta", label: "Cormorant Garamond · Plus Jakarta", heading: "'Cormorant Garamond'", body: "'Plus Jakarta Sans'", googleHref: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" },
+  { id: "montserrat-lora", label: "Montserrat · Lora", heading: "Montserrat", body: "Lora", googleHref: "https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Montserrat:wght@500;600;700;800&display=swap" },
+  { id: "raleway-nunito", label: "Raleway · Nunito Sans", heading: "Raleway", body: "'Nunito Sans'", googleHref: "https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700&family=Raleway:wght@500;600;700;800&display=swap" },
+  { id: "spacegrotesk-dmsans", label: "Space Grotesk · DM Sans", heading: "'Space Grotesk'", body: "'DM Sans'", googleHref: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" },
+  { id: "bricolage-figtree", label: "Bricolage Grotesque · Figtree", heading: "'Bricolage Grotesque'", body: "Figtree", googleHref: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Figtree:wght@400;500;600;700&display=swap" },
 ];
 
 export type ColorPreset = { id: string; label: string; hex: string };

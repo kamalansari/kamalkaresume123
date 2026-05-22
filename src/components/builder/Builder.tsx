@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
@@ -71,6 +71,7 @@ export function Builder() {
   const [jdDialogOpen, setJdDialogOpen] = useState(false);
   const [jdDialogText, setJdDialogText] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [inlineEdit, setInlineEdit] = useState(true);
   const score = useMemo(() => computeScore(data), [data]);
 
   useEffect(() => { setSaved(resumeStore.list()); }, []);
@@ -163,6 +164,8 @@ export function Builder() {
   };
 
   const update = <K extends keyof ResumeData>(k: K, v: ResumeData[K]) => setData(d => ({ ...d, [k]: v }));
+
+  const updatePatch = (patch: Partial<ResumeData>) => setData(d => ({ ...d, ...patch }));
 
   const updateExp = (id: string, patch: Partial<Experience>) =>
     setData(d => ({ ...d, experience: d.experience.map(e => e.id === id ? { ...e, ...patch } : e) }));
@@ -267,6 +270,21 @@ export function Builder() {
       return null;
     } finally {
       setRewritingKey(null);
+    }
+  };
+
+  const rewriteFromPreview = async (kind: "summary" | "skills" | "experience-bullets", refId?: string) => {
+    if (kind === "summary") { await rewriteSummary(); return; }
+    if (kind === "skills") {
+      const out = await rewriteWithAI("skills", data.skills, {}, "skills");
+      if (out) { update("skills", out); toast.success("Skills rewritten"); }
+      return;
+    }
+    if (kind === "experience-bullets" && refId) {
+      const e = data.experience.find(x => x.id === refId);
+      if (!e) return;
+      const out = await rewriteWithAI("bullets", e.bullets, { title: e.title, company: e.company }, `exp-${e.id}`);
+      if (out) { updateExp(e.id, { bullets: out }); toast.success("Bullets rewritten"); }
     }
   };
 
@@ -427,9 +445,12 @@ export function Builder() {
             <Button variant="outline" onClick={() => { setJdDialogText(data.jobDescription); setJdDialogOpen(true); }}>
               <Wand2 /> <span className="hidden sm:inline">JD → Resume</span>
             </Button>
-            <Button variant="outline" asChild>
-              <Link to="/jobs"><Briefcase /> <span className="hidden sm:inline">Find Jobs</span></Link>
-            </Button>
+            <Link
+              to="/jobs"
+              className="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
+            >
+              <Briefcase className="h-4 w-4" /> <span className="hidden sm:inline">Find Jobs</span>
+            </Link>
             <Button variant="outline" onClick={handleDocx} disabled={exporting}>
               {exporting ? <Loader2 className="animate-spin" /> : <FileType />} DOCX
             </Button>
@@ -510,6 +531,22 @@ export function Builder() {
             <div className="space-y-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Template</Label>
+                <div className="mt-2 mb-2 flex gap-2">
+                  <button
+                    onClick={() => update("template", "classic")}
+                    className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
+                      (data.template === "classic" || data.template === "modern") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                  >
+                    <Square className="h-3.5 w-3.5" /> Single column
+                  </button>
+                  <button
+                    onClick={() => update("template", "two-column")}
+                    className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
+                      (data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                  >
+                    <Columns className="h-3.5 w-3.5" /> Two column
+                  </button>
+                </div>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {TEMPLATES.map(t => (
                     <button
@@ -606,6 +643,14 @@ export function Builder() {
                     <Bold className="h-4 w-4" /> Bold text
                   </button>
                 </div>
+                <button
+                  onClick={() => setInlineEdit(v => !v)}
+                  className={cn("mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
+                    inlineEdit ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                  title="Click text in the preview to edit it directly"
+                >
+                  <MousePointerClick className="h-4 w-4" /> Edit on preview {inlineEdit ? "· ON" : "· OFF"}
+                </button>
               </div>
 
               <div>
@@ -885,7 +930,17 @@ export function Builder() {
             </button>
           )}
           <div className="overflow-auto rounded-xl">
-            <ResumeDocument data={data} onSectionClick={scrollToEditor} />
+            <ResumeDocument
+              data={data}
+              onSectionClick={inlineEdit ? undefined : scrollToEditor}
+              editable={inlineEdit}
+              handlers={{
+                onUpdate: updatePatch,
+                onUpdateExperienceBullets: (id, bullets) => updateExp(id, { bullets }),
+                onRewrite: rewriteFromPreview,
+                rewritingKey: rewriting ? "summary" : rewritingKey,
+              }}
+            />
           </div>
         </div>
 

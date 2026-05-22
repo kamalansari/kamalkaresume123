@@ -189,3 +189,21 @@
 @media print {
   .preview-clickable { outline: none !important; background: transparent !important; }
 }
+
+.preview-editable {
+  outline: 1px dashed transparent;
+  outline-offset: 3px;
+  border-radius: 3px;
+  transition: outline-color 120ms ease, background-color 120ms ease;
+}
+.preview-editable:hover {
+  outline-color: oklch(0.55 0.18 250 / 0.4);
+  background-color: oklch(0.55 0.18 250 / 0.04);
+}
+.preview-editable:focus {
+  outline: 2px solid oklch(0.55 0.18 250 / 0.7) !important;
+  background-color: oklch(0.55 0.18 250 / 0.06);
+}
+@media print {
+  .preview-editable { outline: none !important; background: transparent !important; }
+}
