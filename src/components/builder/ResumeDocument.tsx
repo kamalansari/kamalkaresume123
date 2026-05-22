@@ -275,8 +275,10 @@ function SummarySection({ data, accent, headingFont, ed }: { data: ResumeData; a
     <Section title="Summary" accent={accent} headingFont={headingFont} ed={ed} kind="summary">
       {ed ? (
         <p
+          key={`summary-${data.summary}`}
           contentEditable
           suppressContentEditableWarning
+          data-preview-edit="summary"
           className="preview-editable"
           onClick={e => e.stopPropagation()}
           onBlur={e => ed.onUpdate({ summary: e.currentTarget.innerText })}
@@ -304,8 +306,11 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
           </div>
           {ed ? (
             <div
+              key={`exp-${e.id}-${e.bullets}`}
               contentEditable
               suppressContentEditableWarning
+              data-preview-edit="experience-bullets"
+              data-preview-exp-id={e.id}
               className="preview-editable"
               style={{ marginTop: 4, marginLeft: 18, whiteSpace: "pre-wrap" }}
               onClick={ev => ev.stopPropagation()}
@@ -345,8 +350,10 @@ function SkillsSection({ data, accent, headingFont, template, ed }: { data: Resu
     <Section title="Skills" accent={accent} headingFont={headingFont} ed={ed} kind="skills">
       {ed ? (
         <p
+          key={`skills-${data.skills}`}
           contentEditable
           suppressContentEditableWarning
+          data-preview-edit="skills"
           className="preview-editable"
           onClick={e => e.stopPropagation()}
           onBlur={e => ed.onUpdate({ skills: e.currentTarget.innerText })}
