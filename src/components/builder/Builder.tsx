@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
@@ -671,6 +671,12 @@ export function Builder() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => { setProfileNameDraft(""); setProfileDialogOpen(true); }}>
                   <UserPlus className="h-4 w-4" /> Save current as new profile…
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportProfiles} disabled={profiles.length === 0}>
+                  <Download className="h-4 w-4" /> Export profiles (.json)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={importProfiles}>
+                  <Upload className="h-4 w-4" /> Import profiles…
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={resetProfile}>
                   <RotateCcw className="h-4 w-4" /> Reset active profile
