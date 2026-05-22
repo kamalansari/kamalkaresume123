@@ -314,40 +314,110 @@ export function Builder() {
     toast.success(`Exported ${list.length} profile${list.length === 1 ? "" : "s"}`);
   };
 
+  const exportSingleProfile = (p: Profile) => {
+    const payload = {
+      type: "resumeforge.profile",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      profile: p,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const safe = (p.name || "profile").replace(/[^a-z0-9\-_]+/gi, "-").toLowerCase();
+    a.download = `resumeforge-profile-${safe}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported "${p.name}"`);
+  };
+
+  const previewProfile = (p: Profile) => {
+    // Switch + scroll the live preview into view so the user can see it instantly.
+    switchProfile(p.id);
+    setTimeout(() => {
+      const el = document.getElementById("resume-preview");
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
   const importProfiles = () => {
     if (typeof window === "undefined") return;
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "application/json,.json";
+    input.multiple = true;
     input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const text = await file.text();
-        const parsed = JSON.parse(text) as { type?: string; profiles?: Profile[] };
-        if (parsed?.type !== "resumeforge.profiles" || !Array.isArray(parsed.profiles)) {
-          toast.error("Not a valid profiles export file");
-          return;
+      const files = Array.from(input.files ?? []);
+      if (!files.length) return;
+
+      // Collect profile candidates from every supported file shape:
+      //  - { type: "resumeforge.profiles", profiles: [...] }
+      //  - { type: "resumeforge.profile",  profile: {...} }
+      //  - a single Profile object
+      //  - a saved resume / raw ResumeData (extract profile fields)
+      const candidates: Profile[] = [];
+      for (const file of files) {
+        try {
+          const text = await file.text();
+          const parsed = JSON.parse(text);
+          const pushFromFields = (name: string, src: Partial<ResumeData> & { id?: string }) => {
+            candidates.push({
+              id: src.id ?? "",
+              name: name || src.name || "Imported",
+              fields: {
+                name: src.name ?? "",
+                headline: src.headline ?? "",
+                email: src.email ?? "",
+                phone: src.phone ?? "",
+                location: src.location ?? "",
+                links: src.links ?? "",
+                education: src.education ?? [],
+              },
+            });
+          };
+          if (parsed?.type === "resumeforge.profiles" && Array.isArray(parsed.profiles)) {
+            for (const p of parsed.profiles) if (p?.fields) candidates.push(p as Profile);
+          } else if (parsed?.type === "resumeforge.profile" && parsed.profile?.fields) {
+            candidates.push(parsed.profile as Profile);
+          } else if (parsed?.fields && typeof parsed.fields === "object") {
+            candidates.push(parsed as Profile);
+          } else if (parsed?.data && typeof parsed.data === "object") {
+            // Saved-resume export shape: { id, name, data: ResumeData }
+            pushFromFields(parsed.name || file.name.replace(/\.json$/i, ""), parsed.data);
+          } else if (parsed && typeof parsed === "object") {
+            // Raw ResumeData / arbitrary object with profile-like fields
+            pushFromFields(parsed.name || file.name.replace(/\.json$/i, ""), parsed);
+          }
+        } catch {
+          toast.error(`Could not read "${file.name}"`);
         }
-        const replace = window.confirm(
-          `Import ${parsed.profiles.length} profile(s)?\n\nOK = Replace all existing profiles\nCancel = Merge (add as new profiles)`
-        );
-        if (replace) {
-          profileStore.list().forEach(p => profileStore.remove(p.id));
-        }
-        let imported = 0;
-        for (const p of parsed.profiles) {
-          if (!p || typeof p !== "object" || !p.fields) continue;
-          profileStore.create(p.name || "Imported", p.fields);
-          imported++;
-        }
-        refreshProfiles();
-        const active = profileStore.get();
-        if (active) setData(d => ({ ...d, ...active }));
-        toast.success(`Imported ${imported} profile${imported === 1 ? "" : "s"}`);
-      } catch {
-        toast.error("Could not read profiles file");
       }
+
+      if (!candidates.length) { toast.error("No profiles found in selected file(s)"); return; }
+
+      const replace = window.confirm(
+        `Import ${candidates.length} profile(s)?\n\nOK = Replace all existing profiles\nCancel = Merge (skip duplicates by id)`
+      );
+      if (replace) profileStore.list().forEach(p => profileStore.remove(p.id));
+
+      let added = 0, updated = 0;
+      const seen = new Set<string>();
+      for (const p of candidates) {
+        // Prevent duplicates within the same import batch as well
+        if (p.id && seen.has(p.id)) { updated++; continue; }
+        const res = profileStore.upsert(p, { preserveId: !!p.id });
+        if (p.id) seen.add(res.profile.id);
+        if (res.status === "added") added++; else updated++;
+      }
+      refreshProfiles();
+      const active = profileStore.get();
+      if (active) setData(d => ({ ...d, ...active }));
+      toast.success(
+        `Imported ${added} new${updated ? `, updated ${updated}` : ""} profile${added + updated === 1 ? "" : "s"}`
+      );
     };
     input.click();
   };
