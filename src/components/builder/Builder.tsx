@@ -623,12 +623,23 @@ export function Builder() {
         </DialogContent>
       </Dialog>
 
+      <SavedResumesGallery
+        saved={saved}
+        currentId={currentId}
+        primaryId={primaryId}
+        onOpen={loadSaved}
+        onRename={(id, name) => { resumeStore.rename(id, name); if (id === currentId) setCurrentName(name); refreshList(); toast.success("Renamed"); }}
+        onDuplicate={duplicateSaved}
+        onDelete={deleteSaved}
+        onNew={newResume}
+        onSetPrimary={setAsPrimary}
+      />
+
       <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-6 py-6",
         atsOpen
           ? "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)_minmax(0,360px)]"
           : "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]"
       )}>
-        {/* Saved resumes inserted above grid via portal-less render below */}
         {/* Editor */}
         <div className="no-print space-y-6">
           <Card title="Design">
