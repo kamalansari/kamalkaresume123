@@ -86,6 +86,19 @@ export function Builder() {
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
+  const profileApplied = useMemo(() => {
+    const p = profileStore.get();
+    if (!p) return false;
+    const eq = (a: unknown, b: unknown) => JSON.stringify(a ?? "") === JSON.stringify(b ?? "");
+    const hasAny = !!(p.name || p.headline || p.email || p.phone || p.location || (p.links && (p.links as string).length) || (p.education && (p.education as unknown[]).length));
+    if (!hasAny) return false;
+    return (
+      eq(p.name, data.name) && eq(p.headline, data.headline) && eq(p.email, data.email) &&
+      eq(p.phone, data.phone) && eq(p.location, data.location) && eq(p.links, data.links) &&
+      eq(p.education, data.education)
+    );
+  }, [data.name, data.headline, data.email, data.phone, data.location, data.links, data.education]);
+
   useEffect(() => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); }, []);
   useEffect(() => { setMounted(true); }, []);
 
@@ -473,6 +486,14 @@ export function Builder() {
           </Link>
           <div className="font-display font-semibold">ResumeForge Builder</div>
           <div className="flex items-center gap-2">
+            {profileApplied && (
+              <span
+                className="hidden md:inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300"
+                title="Your saved profile (name, contact, education) is applied to this resume"
+              >
+                <CheckCircle2 className="h-3 w-3" /> Profile applied
+              </span>
+            )}
             <Button variant="accent" onClick={saveCurrent} title={currentId ? `Save "${currentName}"` : "Save resume"}>
               <Save /> <span className="hidden sm:inline">{currentId ? "Save" : "Save…"}</span>
             </Button>
