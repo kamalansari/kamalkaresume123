@@ -559,16 +559,16 @@ export function Builder() {
                 <Label className="text-xs text-muted-foreground">Template</Label>
                 <div className="mt-2 mb-2 flex gap-2">
                   <button
-                    onClick={() => update("template", "classic")}
+                    onClick={() => update("template", "professional")}
                     className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
-                      (data.template === "classic" || data.template === "modern") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                      (data.template === "classic" || data.template === "modern" || data.template === "professional" || data.template === "executive" || data.template === "minimal") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
                   >
                     <Square className="h-3.5 w-3.5" /> Single column
                   </button>
                   <button
                     onClick={() => update("template", "two-column")}
                     className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
-                      (data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                      (data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two" || data.template === "fresher") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
                   >
                     <Columns className="h-3.5 w-3.5" /> Two column
                   </button>
