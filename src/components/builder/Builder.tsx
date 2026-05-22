@@ -757,6 +757,42 @@ export function Builder() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Save current personal info as profile</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Saves the current name, contact, links, and education as a reusable profile template you can switch between per resume.
+          </p>
+          <Input
+            autoFocus
+            placeholder="e.g. Personal, Freelance, Consulting"
+            value={profileNameDraft}
+            onChange={e => setProfileNameDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") createProfile(profileNameDraft, true); }}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setProfileDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => createProfile(profileNameDraft, true)}>Create profile</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!profileRenameId} onOpenChange={(o) => { if (!o) { setProfileRenameId(null); setProfileNameDraft(""); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Rename profile</DialogTitle></DialogHeader>
+          <Input
+            autoFocus
+            value={profileNameDraft}
+            onChange={e => setProfileNameDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && profileRenameId) renameProfile(profileRenameId, profileNameDraft); }}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setProfileRenameId(null); setProfileNameDraft(""); }}>Cancel</Button>
+            <Button onClick={() => profileRenameId && renameProfile(profileRenameId, profileNameDraft)}>Save name</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={jdDialogOpen} onOpenChange={setJdDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Generate ATS-ready resume from a job description</DialogTitle></DialogHeader>
