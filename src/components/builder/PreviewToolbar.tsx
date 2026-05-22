@@ -52,7 +52,7 @@ export function PreviewToolbar({ zoom, setZoom, data, onPdf, onDocx, docxBusy, e
         <Button size="sm" variant="outline" onClick={share} title="Copy shareable link">
           <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share</span>
         </Button>
-        <Button size="sm" variant="outline" onClick={() => window.print()} title="Print">
+        <Button size="sm" variant="outline" onClick={onPdf} title="Print">
           <Printer className="h-4 w-4" /> <span className="hidden sm:inline">Print</span>
         </Button>
         <DropdownMenu>
