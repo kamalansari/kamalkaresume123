@@ -427,6 +427,9 @@ export function Builder() {
             <Button variant="outline" onClick={() => { setJdDialogText(data.jobDescription); setJdDialogOpen(true); }}>
               <Wand2 /> <span className="hidden sm:inline">JD → Resume</span>
             </Button>
+            <Button variant="outline" asChild>
+              <Link to="/jobs"><Briefcase /> <span className="hidden sm:inline">Find Jobs</span></Link>
+            </Button>
             <Button variant="outline" onClick={handleDocx} disabled={exporting}>
               {exporting ? <Loader2 className="animate-spin" /> : <FileType />} DOCX
             </Button>

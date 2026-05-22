@@ -9,12 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as BuilderRouteImport } from './routes/builder'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
 import { Route as ApiRewriteSectionRouteImport } from './routes/api/rewrite-section'
+import { Route as ApiRecommendJobsRouteImport } from './routes/api/recommend-jobs'
+import { Route as ApiJobTipRouteImport } from './routes/api/job-tip'
 import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-from-jd'
 
+const JobsRoute = JobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BuilderRoute = BuilderRouteImport.update({
   id: '/builder',
   path: '/builder',
@@ -35,6 +43,16 @@ const ApiRewriteSectionRoute = ApiRewriteSectionRouteImport.update({
   path: '/api/rewrite-section',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRecommendJobsRoute = ApiRecommendJobsRouteImport.update({
+  id: '/api/recommend-jobs',
+  path: '/api/recommend-jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiJobTipRoute = ApiJobTipRouteImport.update({
+  id: '/api/job-tip',
+  path: '/api/job-tip',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGenerateFromJdRoute = ApiGenerateFromJdRouteImport.update({
   id: '/api/generate-from-jd',
   path: '/api/generate-from-jd',
@@ -44,14 +62,20 @@ const ApiGenerateFromJdRoute = ApiGenerateFromJdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
+  '/api/job-tip': typeof ApiJobTipRoute
+  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
+  '/api/job-tip': typeof ApiJobTipRoute
+  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
 }
@@ -59,7 +83,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
+  '/api/job-tip': typeof ApiJobTipRoute
+  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
 }
@@ -68,21 +95,30 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/builder'
+    | '/jobs'
     | '/api/generate-from-jd'
+    | '/api/job-tip'
+    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/builder'
+    | '/jobs'
     | '/api/generate-from-jd'
+    | '/api/job-tip'
+    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
   id:
     | '__root__'
     | '/'
     | '/builder'
+    | '/jobs'
     | '/api/generate-from-jd'
+    | '/api/job-tip'
+    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
   fileRoutesById: FileRoutesById
@@ -90,13 +126,23 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BuilderRoute: typeof BuilderRoute
+  JobsRoute: typeof JobsRoute
   ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
+  ApiJobTipRoute: typeof ApiJobTipRoute
+  ApiRecommendJobsRoute: typeof ApiRecommendJobsRoute
   ApiRewriteSectionRoute: typeof ApiRewriteSectionRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/jobs': {
+      id: '/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof JobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/builder': {
       id: '/builder'
       path: '/builder'
@@ -125,6 +171,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRewriteSectionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/recommend-jobs': {
+      id: '/api/recommend-jobs'
+      path: '/api/recommend-jobs'
+      fullPath: '/api/recommend-jobs'
+      preLoaderRoute: typeof ApiRecommendJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/job-tip': {
+      id: '/api/job-tip'
+      path: '/api/job-tip'
+      fullPath: '/api/job-tip'
+      preLoaderRoute: typeof ApiJobTipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/generate-from-jd': {
       id: '/api/generate-from-jd'
       path: '/api/generate-from-jd'
@@ -138,7 +198,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BuilderRoute: BuilderRoute,
+  JobsRoute: JobsRoute,
   ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
+  ApiJobTipRoute: ApiJobTipRoute,
+  ApiRecommendJobsRoute: ApiRecommendJobsRoute,
   ApiRewriteSectionRoute: ApiRewriteSectionRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
 }
