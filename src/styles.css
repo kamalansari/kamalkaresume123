@@ -176,3 +176,16 @@
   @page { margin: 0; size: auto; }
   html, body { background: #ffffff; }
 }
+
+.preview-clickable {
+  transition: outline-color 120ms ease, background-color 120ms ease;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.preview-clickable:hover {
+  outline-color: oklch(0.55 0.18 250 / 0.5);
+  background-color: oklch(0.55 0.18 250 / 0.04);
+}
+@media print {
+  .preview-clickable { outline: none !important; background: transparent !important; }
+}
