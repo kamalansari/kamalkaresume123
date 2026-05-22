@@ -377,17 +377,20 @@ export function Builder() {
     if (!jd) { toast.error("Paste a job description first."); return; }
     setGenerating(true);
     try {
+      // Always tailor from Primary Resume if set (keeps career data secure & editable)
+      const primary = resumeStore.getPrimary();
+      const source: ResumeData = primary ? { ...defaultResume, ...primary.data } : data;
       const res = await fetch("/api/generate-from-jd", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           jobDescription: jd,
           current: {
-            name: data.name,
-            headline: data.headline,
-            summary: data.summary,
-            skills: data.skills,
-            experience: data.experience.map(e => ({ id: e.id, title: e.title, company: e.company, bullets: e.bullets })),
+            name: source.name,
+            headline: source.headline,
+            summary: source.summary,
+            skills: source.skills,
+            experience: source.experience.map(e => ({ id: e.id, title: e.title, company: e.company, bullets: e.bullets })),
           },
         }),
       });
@@ -395,20 +398,34 @@ export function Builder() {
       if (res.status === 402) { toast.error("AI credits exhausted."); return; }
       if (!res.ok) { toast.error("AI generation failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
-      setData(d => ({
-        ...d,
+      const tailored: ResumeData = {
+        ...source,
         jobDescription: jd,
-        headline: out.headline || d.headline,
-        summary: out.summary || d.summary,
-        skills: out.skills || d.skills,
-        experience: d.experience.map(e => {
+        headline: out.headline || source.headline,
+        summary: out.summary || source.summary,
+        skills: out.skills || source.skills,
+        experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
           return match ? { ...e, bullets: match.bullets } : e;
         }),
-      }));
+      };
+      if (jdSaveAsNew) {
+        // Save tailored version as a NEW resume — Primary stays untouched
+        const id = newId();
+        const name = (jdTailoredName.trim() || `Tailored — ${new Date().toLocaleDateString()}`);
+        resumeStore.upsert({ id, name, updatedAt: Date.now(), data: tailored });
+        setData(tailored);
+        setCurrentId(id);
+        setCurrentName(name);
+        refreshList();
+        toast.success(primary ? `Tailored from Primary, saved as "${name}"` : `Tailored resume saved as "${name}"`);
+      } else {
+        setData(tailored);
+        toast.success("ATS-tailored resume generated");
+      }
       setJdDialogOpen(false);
       setJdDialogText("");
-      toast.success("ATS-tailored resume generated");
+      setJdTailoredName("");
     } catch {
       toast.error("Network error.");
     } finally {
