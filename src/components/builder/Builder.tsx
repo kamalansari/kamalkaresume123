@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
@@ -290,6 +290,66 @@ export function Builder() {
     const next = profileStore.get();
     if (next) setData(d => ({ ...d, ...next }));
     toast.success(`Deleted "${name}"`);
+  };
+
+  const exportProfiles = () => {
+    const list = profileStore.list();
+    if (!list.length) { toast.error("No profiles to export"); return; }
+    const payload = {
+      type: "resumeforge.profiles",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      activeId: profileStore.getActiveId(),
+      profiles: list,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `resumeforge-profiles-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${list.length} profile${list.length === 1 ? "" : "s"}`);
+  };
+
+  const importProfiles = () => {
+    if (typeof window === "undefined") return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text) as { type?: string; profiles?: Profile[] };
+        if (parsed?.type !== "resumeforge.profiles" || !Array.isArray(parsed.profiles)) {
+          toast.error("Not a valid profiles export file");
+          return;
+        }
+        const replace = window.confirm(
+          `Import ${parsed.profiles.length} profile(s)?\n\nOK = Replace all existing profiles\nCancel = Merge (add as new profiles)`
+        );
+        if (replace) {
+          profileStore.list().forEach(p => profileStore.remove(p.id));
+        }
+        let imported = 0;
+        for (const p of parsed.profiles) {
+          if (!p || typeof p !== "object" || !p.fields) continue;
+          profileStore.create(p.name || "Imported", p.fields);
+          imported++;
+        }
+        refreshProfiles();
+        const active = profileStore.get();
+        if (active) setData(d => ({ ...d, ...active }));
+        toast.success(`Imported ${imported} profile${imported === 1 ? "" : "s"}`);
+      } catch {
+        toast.error("Could not read profiles file");
+      }
+    };
+    input.click();
   };
 
   const resetProfile = () => {
@@ -611,6 +671,12 @@ export function Builder() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => { setProfileNameDraft(""); setProfileDialogOpen(true); }}>
                   <UserPlus className="h-4 w-4" /> Save current as new profile…
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportProfiles} disabled={profiles.length === 0}>
+                  <Download className="h-4 w-4" /> Export profiles (.json)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={importProfiles}>
+                  <Upload className="h-4 w-4" /> Import profiles…
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={resetProfile}>
                   <RotateCcw className="h-4 w-4" /> Reset active profile
