@@ -644,6 +644,7 @@ export function Builder() {
             </div>
           </Card>
 
+          <div id="edit-personal" className="rounded-xl">
           <Card title="Personal">
             <Grid>
               <Field label="Full name"><Input value={data.name} onChange={e => update("name", e.target.value)} /></Field>
@@ -654,7 +655,9 @@ export function Builder() {
               <Field label="Links"><Input value={data.links} onChange={e => update("links", e.target.value)} /></Field>
             </Grid>
           </Card>
+          </div>
 
+          <div id="edit-summary" className="rounded-xl">
           <Card
             title="Summary"
             action={
@@ -667,7 +670,9 @@ export function Builder() {
             <FormattableTextarea rows={4} value={data.summary} onChange={v => update("summary", v)} placeholder="2-3 sentences on who you are and what you do." />
             <p className="mt-2 text-xs text-muted-foreground">Select text and click <b>B</b> to bold it. Tip: paste a job description below for a tailored rewrite.</p>
           </Card>
+          </div>
 
+          <div id="edit-experience" className="rounded-xl">
           <Card title="Experience" action={<Button size="sm" variant="outline" onClick={addExp}><Plus /> Add</Button>}>
             <div className="space-y-4">
               {data.experience.map(e => (
@@ -700,7 +705,9 @@ export function Builder() {
               ))}
             </div>
           </Card>
+          </div>
 
+          <div id="edit-education" className="rounded-xl">
           <Card title="Education" action={<Button size="sm" variant="outline" onClick={addEdu}><Plus /> Add</Button>}>
             <div className="space-y-3">
               {data.education.map(ed => (
@@ -717,7 +724,9 @@ export function Builder() {
               ))}
             </div>
           </Card>
+          </div>
 
+          <div id="edit-skills" className="rounded-xl">
           <Card
             title="Skills"
             action={
@@ -733,8 +742,10 @@ export function Builder() {
             <Textarea rows={3} value={data.skills} onChange={e => update("skills", e.target.value)} placeholder="Comma or pipe separated: React | TypeScript, Figma | Design Systems" />
             <p className="mt-2 text-xs text-muted-foreground">Separate with <code>,</code> or <code>|</code>. {parseSkills(data.skills).length} skills detected.</p>
           </Card>
+          </div>
 
           {data.sectionOrder.includes("projects") && (
+            <div id="edit-projects" className="rounded-xl">
             <Card title="Projects" action={<Button size="sm" variant="outline" onClick={addProject}><Plus /> Add</Button>}>
               <div className="space-y-4">
                 {data.projects.map(p => (
@@ -764,9 +775,11 @@ export function Builder() {
                 ))}
               </div>
             </Card>
+            </div>
           )}
 
           {data.sectionOrder.includes("certifications") && (
+            <div id="edit-certifications" className="rounded-xl">
             <Card title="Certifications" action={<Button size="sm" variant="outline" onClick={addCert}><Plus /> Add</Button>}>
               <div className="space-y-3">
                 {data.certifications.map(c => (
@@ -783,9 +796,11 @@ export function Builder() {
                 ))}
               </div>
             </Card>
+            </div>
           )}
 
           {data.sectionOrder.includes("awards") && (
+            <div id="edit-awards" className="rounded-xl">
             <Card title="Awards" action={<Button size="sm" variant="outline" onClick={addAward}><Plus /> Add</Button>}>
               <div className="space-y-3">
                 {data.awards.map(a => (
@@ -802,9 +817,11 @@ export function Builder() {
                 ))}
               </div>
             </Card>
+            </div>
           )}
 
           {data.sectionOrder.includes("languages") && (
+            <div id="edit-languages" className="rounded-xl">
             <Card title="Languages" action={<Button size="sm" variant="outline" onClick={addLang}><Plus /> Add</Button>}>
               <div className="space-y-3">
                 {data.languages.map(l => (
@@ -820,6 +837,7 @@ export function Builder() {
                 ))}
               </div>
             </Card>
+            </div>
           )}
 
           <Card
