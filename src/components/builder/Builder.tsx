@@ -1397,7 +1397,7 @@ export function Builder() {
         </div>
 
         {/* Preview */}
-        <div className="min-w-0 relative">
+        <div id="resume-preview" className="min-w-0 relative scroll-mt-20">
           {!atsOpen && (
             <button
               onClick={() => setAtsOpen(true)}
