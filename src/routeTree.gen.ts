@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as JobsRouteImport } from './routes/jobs'
+import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CoverLetterRouteImport } from './routes/cover-letter'
 import { Route as BuilderRouteImport } from './routes/builder'
@@ -25,6 +26,11 @@ import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-fro
 const JobsRoute = JobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterviewRoute = InterviewRouteImport.update({
+  id: '/interview',
+  path: '/interview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/builder': typeof BuilderRoute
   '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
+  '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/job-tip': typeof ApiJobTipRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/builder': typeof BuilderRoute
   '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
+  '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/job-tip': typeof ApiJobTipRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/builder': typeof BuilderRoute
   '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
+  '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/job-tip': typeof ApiJobTipRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/builder'
     | '/cover-letter'
     | '/dashboard'
+    | '/interview'
     | '/jobs'
     | '/api/generate-from-jd'
     | '/api/job-tip'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/builder'
     | '/cover-letter'
     | '/dashboard'
+    | '/interview'
     | '/jobs'
     | '/api/generate-from-jd'
     | '/api/job-tip'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/builder'
     | '/cover-letter'
     | '/dashboard'
+    | '/interview'
     | '/jobs'
     | '/api/generate-from-jd'
     | '/api/job-tip'
@@ -176,6 +188,7 @@ export interface RootRouteChildren {
   BuilderRoute: typeof BuilderRoute
   CoverLetterRoute: typeof CoverLetterRoute
   DashboardRoute: typeof DashboardRoute
+  InterviewRoute: typeof InterviewRoute
   JobsRoute: typeof JobsRoute
   ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
   ApiJobTipRoute: typeof ApiJobTipRoute
@@ -193,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/jobs'
       fullPath: '/jobs'
       preLoaderRoute: typeof JobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interview': {
+      id: '/interview'
+      path: '/interview'
+      fullPath: '/interview'
+      preLoaderRoute: typeof InterviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -280,6 +300,7 @@ const rootRouteChildren: RootRouteChildren = {
   BuilderRoute: BuilderRoute,
   CoverLetterRoute: CoverLetterRoute,
   DashboardRoute: DashboardRoute,
+  InterviewRoute: InterviewRoute,
   JobsRoute: JobsRoute,
   ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
   ApiJobTipRoute: ApiJobTipRoute,
