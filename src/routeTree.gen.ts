@@ -13,6 +13,7 @@ import { Route as BuilderRouteImport } from './routes/builder'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
 import { Route as ApiRewriteSectionRouteImport } from './routes/api/rewrite-section'
+import { Route as ApiRecommendJobsRouteImport } from './routes/api/recommend-jobs'
 import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-from-jd'
 
 const BuilderRoute = BuilderRouteImport.update({
@@ -35,6 +36,11 @@ const ApiRewriteSectionRoute = ApiRewriteSectionRouteImport.update({
   path: '/api/rewrite-section',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRecommendJobsRoute = ApiRecommendJobsRouteImport.update({
+  id: '/api/recommend-jobs',
+  path: '/api/recommend-jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGenerateFromJdRoute = ApiGenerateFromJdRouteImport.update({
   id: '/api/generate-from-jd',
   path: '/api/generate-from-jd',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
+  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
+  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
 }
@@ -60,6 +68,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
+  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
 }
@@ -69,6 +78,7 @@ export interface FileRouteTypes {
     | '/'
     | '/builder'
     | '/api/generate-from-jd'
+    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
   fileRoutesByTo: FileRoutesByTo
@@ -76,6 +86,7 @@ export interface FileRouteTypes {
     | '/'
     | '/builder'
     | '/api/generate-from-jd'
+    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
   id:
@@ -83,6 +94,7 @@ export interface FileRouteTypes {
     | '/'
     | '/builder'
     | '/api/generate-from-jd'
+    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
   fileRoutesById: FileRoutesById
@@ -91,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BuilderRoute: typeof BuilderRoute
   ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
+  ApiRecommendJobsRoute: typeof ApiRecommendJobsRoute
   ApiRewriteSectionRoute: typeof ApiRewriteSectionRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
 }
@@ -125,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRewriteSectionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/recommend-jobs': {
+      id: '/api/recommend-jobs'
+      path: '/api/recommend-jobs'
+      fullPath: '/api/recommend-jobs'
+      preLoaderRoute: typeof ApiRecommendJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/generate-from-jd': {
       id: '/api/generate-from-jd'
       path: '/api/generate-from-jd'
@@ -139,9 +159,20 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BuilderRoute: BuilderRoute,
   ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
+  ApiRecommendJobsRoute: ApiRecommendJobsRoute,
   ApiRewriteSectionRoute: ApiRewriteSectionRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
