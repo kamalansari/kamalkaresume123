@@ -110,8 +110,9 @@ function JobsPage() {
       if (res.status === 402) { toast.error("AI credits exhausted."); return; }
       if (!res.ok) { toast.error("Search failed."); return; }
       const out = (await res.json()) as { jobs?: Job[] };
-      setJobs(out.jobs ?? []);
-      toast.success(`${out.jobs?.length ?? 0} jobs matched`);
+      const nextJobs = normalizeJobs(out.jobs ?? []);
+      setJobs(nextJobs);
+      toast.success(`${nextJobs.length} jobs matched`);
     } catch { toast.error("Network error."); }
     finally { setLoading(false); }
   };
@@ -289,7 +290,7 @@ function JobsPage() {
       <Dialog open={!!scoreJob} onOpenChange={o => { if (!o) { setScoreJob(null); setScoreResume(null); } }}>
         <DialogContent className="max-w-xl">
           <DialogHeader><DialogTitle>ATS Score · {scoreJob?.title}</DialogTitle></DialogHeader>
-          {scoreJob && <ScoreView jd={scoreJob.jd} resume={scoreResume ?? activeResume} />}
+          {scoreJob && <ScoreView jd={getJobScoringText(scoreJob)} resume={scoreResume ?? activeResume} />}
         </DialogContent>
       </Dialog>
 
