@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, Printer, FileText, FileType, Share2, Loader2, Maximize2 } from "lucide-react";
+import { ZoomIn, ZoomOut, Printer, FileText, FileType, Share2, Loader2, Maximize2, Download, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { compressToEncodedURIComponent } from "lz-string";
 import type { ResumeData } from "./types";
@@ -46,13 +52,24 @@ export function PreviewToolbar({ zoom, setZoom, data, onPdf, onDocx, docxBusy }:
         <Button size="sm" variant="outline" onClick={() => window.print()} title="Print">
           <Printer className="h-4 w-4" /> <span className="hidden sm:inline">Print</span>
         </Button>
-        <Button size="sm" variant="outline" onClick={onDocx} disabled={docxBusy} title="Download DOCX">
-          {docxBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileType className="h-4 w-4" />}
-          <span className="hidden sm:inline">DOCX</span>
-        </Button>
-        <Button size="sm" onClick={onPdf} title="Save as PDF" style={{ background: "var(--gradient-hero)", color: "white" }}>
-          <FileText className="h-4 w-4" /> PDF
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" title="Download resume" style={{ background: "var(--gradient-hero)", color: "white" }}>
+              {docxBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              <span className="hidden sm:inline">Download</span>
+              <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onClick={onPdf}>
+              <FileText className="h-4 w-4" /> PDF document (.pdf)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onDocx} disabled={docxBusy}>
+              {docxBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileType className="h-4 w-4" />}
+              Word document (.docx)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
