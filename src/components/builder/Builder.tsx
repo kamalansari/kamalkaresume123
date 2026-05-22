@@ -244,6 +244,54 @@ export function Builder() {
     toast.success("Started a new resume");
   };
 
+  const refreshProfiles = () => {
+    setProfiles(profileStore.list());
+    setActiveProfileId(profileStore.getActiveId());
+  };
+
+  const applyProfileFields = (p: Profile) => {
+    setData(d => ({ ...d, ...p.fields }));
+  };
+
+  const switchProfile = (id: string) => {
+    const p = profileStore.list().find(x => x.id === id);
+    if (!p) return;
+    profileStore.setActive(id);
+    applyProfileFields(p);
+    refreshProfiles();
+    toast.success(`Switched to "${p.name}"`);
+  };
+
+  const createProfile = (name: string, fromCurrent: boolean) => {
+    const trimmed = name.trim() || "Untitled profile";
+    const p = profileStore.create(trimmed, fromCurrent ? {
+      name: data.name, headline: data.headline, email: data.email,
+      phone: data.phone, location: data.location, links: data.links, education: data.education,
+    } : {});
+    if (!fromCurrent) applyProfileFields(p);
+    refreshProfiles();
+    setProfileDialogOpen(false);
+    setProfileNameDraft("");
+    toast.success(`Profile "${p.name}" created`);
+  };
+
+  const renameProfile = (id: string, name: string) => {
+    profileStore.rename(id, name);
+    refreshProfiles();
+    setProfileRenameId(null);
+    setProfileNameDraft("");
+    toast.success("Profile renamed");
+  };
+
+  const deleteProfile = (id: string, name: string) => {
+    if (typeof window !== "undefined" && !window.confirm(`Delete profile "${name}"? Saved resumes are not affected.`)) return;
+    profileStore.remove(id);
+    refreshProfiles();
+    const next = profileStore.get();
+    if (next) setData(d => ({ ...d, ...next }));
+    toast.success(`Deleted "${name}"`);
+  };
+
   const resetProfile = () => {
     if (typeof window !== "undefined" && !window.confirm("Reset your saved profile? This clears your name, contact info, links, and education from this device. Saved resumes are not affected.")) return;
     profileStore.clear();
