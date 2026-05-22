@@ -277,7 +277,7 @@ function JobsPage() {
       </div>
 
       {/* Score Dialog */}
-      <Dialog open={!!scoreJob} onOpenChange={o => !o && setScoreJob(null)}>
+      <Dialog open={!!scoreJob} onOpenChange={o => { if (!o) { setScoreJob(null); setScoreResume(null); } }}>
         <DialogContent className="max-w-xl">
           <DialogHeader><DialogTitle>ATS Score · {scoreJob?.title}</DialogTitle></DialogHeader>
           {scoreJob && <ScoreView jd={scoreJob.jd} resume={scoreResume ?? activeResume} />}
