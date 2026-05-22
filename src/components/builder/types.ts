@@ -5,7 +5,16 @@ export type Certification = { id: string; name: string; issuer: string; date: st
 export type Award = { id: string; name: string; issuer: string; date: string };
 export type Language = { id: string; name: string; level: string };
 
-export type TemplateId = "classic" | "two-column" | "modern" | "sidebar-right" | "compact-two";
+export type TemplateId =
+  | "classic"
+  | "two-column"
+  | "modern"
+  | "sidebar-right"
+  | "compact-two"
+  | "professional"
+  | "executive"
+  | "minimal"
+  | "fresher";
 export type SectionId =
   | "summary"
   | "experience"

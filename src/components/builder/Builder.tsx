@@ -43,11 +43,12 @@ const SECTION_LABELS: Record<SectionId, string> = {
 };
 
 const TEMPLATES: { id: TemplateId; label: string; desc: string }[] = [
-  { id: "classic", label: "Classic", desc: "Centered header" },
-  { id: "two-column", label: "Two column", desc: "Sidebar layout" },
+  { id: "professional", label: "Professional", desc: "Uppercase classic" },
   { id: "modern", label: "Modern", desc: "Bold header bar" },
-  { id: "sidebar-right", label: "Sidebar right", desc: "Sidebar on right" },
-  { id: "compact-two", label: "Compact two", desc: "Cream sidebar" },
+  { id: "executive", label: "Executive", desc: "Authoritative band" },
+  { id: "minimal", label: "Minimal", desc: "Quiet & spacious" },
+  { id: "two-column", label: "Two column", desc: "Sidebar layout" },
+  { id: "fresher", label: "Fresher", desc: "Friendly cream sidebar" },
 ];
 
 const BG_PRESETS = [
@@ -558,16 +559,16 @@ export function Builder() {
                 <Label className="text-xs text-muted-foreground">Template</Label>
                 <div className="mt-2 mb-2 flex gap-2">
                   <button
-                    onClick={() => update("template", "classic")}
+                    onClick={() => update("template", "professional")}
                     className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
-                      (data.template === "classic" || data.template === "modern") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                      (data.template === "classic" || data.template === "modern" || data.template === "professional" || data.template === "executive" || data.template === "minimal") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
                   >
                     <Square className="h-3.5 w-3.5" /> Single column
                   </button>
                   <button
                     onClick={() => update("template", "two-column")}
                     className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium transition-colors",
-                      (data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
+                      (data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two" || data.template === "fresher") ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]" : "border-border hover:border-[var(--navy-light)]")}
                   >
                     <Columns className="h-3.5 w-3.5" /> Two column
                   </button>
@@ -1145,10 +1146,14 @@ function SortableSectionRow({ id, onRemove }: { id: SectionId; onRemove?: () => 
 }
 
 function TemplateThumb({ id, accent }: { id: TemplateId; accent: string }) {
-  if (id === "two-column") {
+  if (id === "two-column" || id === "fresher") {
+    const cream = id === "fresher";
     return (
       <div className="aspect-[3/4] w-full rounded bg-white border border-border overflow-hidden flex">
-        <div className="w-1/3 h-full" style={{ background: accent }} />
+        <div className="w-1/3 h-full p-1 space-y-1" style={{ background: cream ? "#f4f3ef" : accent }}>
+          <div className="h-1 w-3/4 rounded" style={{ background: cream ? accent : "rgba(255,255,255,0.85)" }} />
+          <div className="h-0.5 w-full rounded" style={{ background: cream ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.5)" }} />
+        </div>
         <div className="flex-1 p-1 space-y-1">
           <div className="h-1 w-3/4 rounded bg-foreground/30" />
           <div className="h-0.5 w-full rounded bg-foreground/10" />
@@ -1184,10 +1189,11 @@ function TemplateThumb({ id, accent }: { id: TemplateId; accent: string }) {
       </div>
     );
   }
-  if (id === "modern") {
+  if (id === "modern" || id === "executive") {
+    const exec = id === "executive";
     return (
       <div className="aspect-[3/4] w-full rounded bg-white border border-border overflow-hidden">
-        <div className="h-1/4 w-full p-1 flex items-end" style={{ background: accent }}>
+        <div className="h-1/4 w-full p-1 flex items-end" style={{ background: accent, borderBottom: exec ? "2px solid rgba(0,0,0,0.4)" : undefined }}>
           <div className="h-1 w-2/3 rounded bg-white/80" />
         </div>
         <div className="p-1 space-y-1">
@@ -1198,9 +1204,25 @@ function TemplateThumb({ id, accent }: { id: TemplateId; accent: string }) {
       </div>
     );
   }
+  if (id === "minimal") {
+    return (
+      <div className="aspect-[3/4] w-full rounded bg-white border border-border overflow-hidden p-1.5 flex flex-col">
+        <div className="h-1 w-1/2 rounded bg-foreground/80" />
+        <div className="mt-0.5 h-0.5 w-1/3 rounded bg-foreground/30" />
+        <div className="mt-1 h-px w-full bg-foreground/15" />
+        <div className="mt-1 space-y-1">
+          <div className="h-0.5 w-full rounded bg-foreground/10" />
+          <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+          <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+        </div>
+      </div>
+    );
+  }
+  // classic + professional
+  const pro = id === "professional";
   return (
     <div className="aspect-[3/4] w-full rounded bg-white border border-border overflow-hidden p-1.5 flex flex-col items-center">
-      <div className="h-1 w-2/3 rounded" style={{ background: accent }} />
+      <div className={cn("h-1 rounded", pro ? "w-3/4" : "w-2/3")} style={{ background: accent, letterSpacing: pro ? "0.2em" : undefined }} />
       <div className="mt-0.5 h-0.5 w-1/2 rounded bg-foreground/30" />
       <div className="mt-1 h-px w-full" style={{ background: accent, opacity: 0.4 }} />
       <div className="mt-1 self-stretch space-y-1">

@@ -99,15 +99,15 @@ export async function exportDocx(data: ResumeData) {
 
   const header: Paragraph[] = [
     new Paragraph({
-      alignment: data.template === "modern" ? AlignmentType.LEFT : AlignmentType.CENTER,
+      alignment: (data.template === "modern" || data.template === "executive" || data.template === "minimal") ? AlignmentType.LEFT : AlignmentType.CENTER,
       children: [new TextRun({ text: data.name || "Your Name", bold: true, size: 52, color, font: headingFont })],
     }),
     new Paragraph({
-      alignment: data.template === "modern" ? AlignmentType.LEFT : AlignmentType.CENTER,
+      alignment: (data.template === "modern" || data.template === "executive" || data.template === "minimal") ? AlignmentType.LEFT : AlignmentType.CENTER,
       children: [new TextRun({ text: data.headline, size: 24, color: "444444" })],
     }),
     new Paragraph({
-      alignment: data.template === "modern" ? AlignmentType.LEFT : AlignmentType.CENTER,
+      alignment: (data.template === "modern" || data.template === "executive" || data.template === "minimal") ? AlignmentType.LEFT : AlignmentType.CENTER,
       spacing: { after: 160 },
       children: [new TextRun({ text: [data.email, data.phone, data.location, data.links].filter(Boolean).join(" · "), size: 18, color: "555555" })],
     }),
@@ -115,9 +115,9 @@ export async function exportDocx(data: ResumeData) {
 
   let body: Paragraph[] | Table[] = [];
 
-  const twoCol = data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two";
+  const twoCol = data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two" || data.template === "fresher";
   if (twoCol) {
-    const compact = data.template === "compact-two";
+    const compact = data.template === "compact-two" || data.template === "fresher";
     const sidebarFill = compact ? "F4F3EF" : color;
     const sidebarText = compact ? "1A1A1A" : "FFFFFF";
     const sidebarMuted = compact ? "555555" : "EEEEEE";
