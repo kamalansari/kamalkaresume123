@@ -84,6 +84,11 @@ export function Builder() {
   const [inlineEdit, setInlineEdit] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [profileNameDraft, setProfileNameDraft] = useState("");
+  const [profileRenameId, setProfileRenameId] = useState<string | null>(null);
   const score = useMemo(() => computeScore(data), [data]);
 
   const profileApplied = useMemo(() => {
@@ -102,16 +107,20 @@ export function Builder() {
   useEffect(() => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); }, []);
   useEffect(() => { setMounted(true); }, []);
 
-  // Apply saved profile (name, contact, education) on first mount so it persists across refresh / new resumes
+  // Load profiles and apply active profile on first mount
   useEffect(() => {
+    setProfiles(profileStore.list());
+    setActiveProfileId(profileStore.getActiveId());
     const p = profileStore.get();
     if (p) setData(d => ({ ...d, ...p }));
   }, []);
 
-  // Auto-save profile fields whenever they change
+  // Auto-save profile fields to the active profile whenever they change
   useEffect(() => {
     if (!mounted) return;
     profileStore.save(data);
+    setProfiles(profileStore.list());
+    setActiveProfileId(profileStore.getActiveId());
   }, [mounted, data.name, data.headline, data.email, data.phone, data.location, data.links, data.education]);
 
   // Load shared resume from URL hash (#r=...) once on mount
