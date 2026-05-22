@@ -29,7 +29,7 @@ Return ONLY strict JSON, no markdown, matching:
     }
   ]
 }
-Generate 6 plausible Indian-market listings unless the location implies otherwise. Mark this is sample data; do NOT claim they are real openings.`;
+Generate 12 plausible Indian-market listings unless the location implies otherwise. Vary companies, salary bands, and seniority. Mark this is sample data; do NOT claim they are real openings.`;
 
 export const Route = createFileRoute("/api/recommend-jobs")({
   server: {
