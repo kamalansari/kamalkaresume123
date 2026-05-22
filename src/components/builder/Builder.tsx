@@ -1464,6 +1464,7 @@ export function Builder() {
             zoom={zoom}
             setZoom={setZoom}
             data={data}
+            getData={() => commitPreviewEdits()}
             onPdf={printCurrentResume}
             onDocx={handleDocx}
             docxBusy={exporting}
