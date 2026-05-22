@@ -364,9 +364,9 @@ function JobCard({ job, resume, onScore, onNova, naukriUrl }: { job: Job; resume
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold", tone)} title="Live ATS match against selected resume">
+          <button type="button" onClick={onScore} className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold", tone)} title="Open live ATS match against selected resume">
             <Gauge className="h-3 w-3" /> {score}
-          </span>
+          </button>
           <button className="text-muted-foreground hover:text-foreground" title="Save">
             <Bookmark className="h-4 w-4" />
           </button>
@@ -381,7 +381,7 @@ function JobCard({ job, resume, onScore, onNova, naukriUrl }: { job: Job; resume
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>Source: Naukri</span>
-        <button onClick={onScore} className="inline-flex items-center gap-1 rounded-full bg-[var(--navy-light)]/10 text-[var(--navy-light)] px-2.5 py-1 hover:bg-[var(--navy-light)]/20">
+        <button type="button" onClick={onScore} className="inline-flex items-center gap-1 rounded-full bg-[var(--navy-light)]/10 text-[var(--navy-light)] px-2.5 py-1 hover:bg-[var(--navy-light)]/20">
           <Gauge className="h-3 w-3" /> Check Score
         </button>
       </div>
