@@ -521,6 +521,7 @@ export function Builder() {
       if (storeTimer) clearTimeout(storeTimer);
       storeTimer = setTimeout(() => {
         const next = commitPreviewEdits(data, { sync: false });
+        resumeStore.saveDraft(next);
         if (currentId) {
           resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data: next });
           setSaved(resumeStore.list());
