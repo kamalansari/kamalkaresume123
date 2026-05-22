@@ -322,6 +322,7 @@ function JobsPage() {
 }
 
 function getLatestResume(activeResumeId: string, fallback: ResumeData): ResumeData {
+  if (activeResumeId === DRAFT_RESUME_ID) return resumeStore.getDraft() ?? fallback;
   const selected = activeResumeId ? resumeStore.get(activeResumeId)?.data : null;
   return selected ?? resumeStore.getDraft() ?? fallback;
 }
