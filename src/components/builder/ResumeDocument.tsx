@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Mail, Phone, MapPin, Link as LinkIcon } from "lucide-react";
+import { Mail, Phone, MapPin, Link as LinkIcon, Sparkles, Loader2 } from "lucide-react";
 import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
