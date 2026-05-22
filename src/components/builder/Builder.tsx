@@ -628,6 +628,7 @@ export function Builder() {
           ? "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)_minmax(0,360px)]"
           : "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]"
       )}>
+        {/* Saved resumes inserted above grid via portal-less render below */}
         {/* Editor */}
         <div className="no-print space-y-6">
           <Card title="Design">
