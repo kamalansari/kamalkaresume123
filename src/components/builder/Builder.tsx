@@ -501,6 +501,9 @@ export function Builder() {
                 <DropdownMenuItem onClick={newResume}>
                   <Plus className="h-4 w-4" /> New blank resume
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={resetProfile}>
+                  <RotateCcw className="h-4 w-4" /> Reset profile
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground inline-flex items-center gap-1.5">
                   <Shield className="h-3 w-3" /> Primary Resume
