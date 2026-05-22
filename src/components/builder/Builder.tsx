@@ -443,6 +443,9 @@ export function Builder() {
           </Link>
           <div className="font-display font-semibold">ResumeForge Builder</div>
           <div className="flex items-center gap-2">
+            <Button variant="accent" onClick={saveCurrent} title={currentId ? `Save "${currentName}"` : "Save resume"}>
+              <Save /> <span className="hidden sm:inline">{currentId ? "Save" : "Save…"}</span>
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
