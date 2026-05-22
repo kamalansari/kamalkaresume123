@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -443,6 +444,45 @@ export function Builder() {
   const update = <K extends keyof ResumeData>(k: K, v: ResumeData[K]) => setData(d => ({ ...d, [k]: v }));
 
   const updatePatch = (patch: Partial<ResumeData>) => setData(d => ({ ...d, ...patch }));
+
+  const commitPreviewEdits = (source: ResumeData = data): ResumeData => {
+    if (typeof document === "undefined") return source;
+    const root = document.getElementById("resume-preview");
+    if (!root) return source;
+
+    let next = source;
+    let dirty = false;
+    root.querySelectorAll<HTMLElement>("[data-preview-edit]").forEach(el => {
+      const kind = el.dataset.previewEdit;
+      if (kind === "summary") {
+        const value = el.innerText;
+        if (value !== source.summary) { next = { ...next, summary: value }; dirty = true; }
+      }
+      if (kind === "skills") {
+        const value = el.innerText;
+        const displayed = parseSkills(source.skills).join(" | ");
+        if (value !== displayed && value !== source.skills) { next = { ...next, skills: value }; dirty = true; }
+      }
+      if (kind === "experience-bullets") {
+        const id = el.dataset.previewExpId;
+        const current = source.experience.find(e => e.id === id);
+        if (!id || !current) return;
+        const bullets = el.innerText.split("\n").map(line => line.replace(/^\s*[•-]\s*/, "").trim()).filter(Boolean).join("\n");
+        if (bullets !== current.bullets) {
+          next = { ...next, experience: next.experience.map(e => e.id === id ? { ...e, bullets } : e) };
+          dirty = true;
+        }
+      }
+    });
+
+    if (dirty) flushSync(() => setData(next));
+    return next;
+  };
+
+  const printCurrentResume = () => {
+    commitPreviewEdits();
+    requestAnimationFrame(() => window.print());
+  };
 
   const updateExp = (id: string, patch: Partial<Experience>) =>
     setData(d => ({ ...d, experience: d.experience.map(e => e.id === id ? { ...e, ...patch } : e) }));
