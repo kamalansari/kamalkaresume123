@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
@@ -75,13 +75,16 @@ export function Builder() {
   const [generating, setGenerating] = useState(false);
   const [jdDialogOpen, setJdDialogOpen] = useState(false);
   const [jdDialogText, setJdDialogText] = useState("");
+  const [jdSaveAsNew, setJdSaveAsNew] = useState(true);
+  const [jdTailoredName, setJdTailoredName] = useState("");
+  const [primaryId, setPrimaryId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
-  useEffect(() => { setSaved(resumeStore.list()); }, []);
+  useEffect(() => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); }, []);
   useEffect(() => { setMounted(true); }, []);
 
   // Load shared resume from URL hash (#r=...) once on mount
@@ -103,7 +106,22 @@ export function Builder() {
     }
   }, []);
 
-  const refreshList = () => setSaved(resumeStore.list());
+  const refreshList = () => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); };
+
+  const setAsPrimary = (id: string, name: string) => {
+    resumeStore.setPrimary(id);
+    refreshList();
+    toast.success(`"${name}" is now your Primary Resume`);
+  };
+
+  const loadPrimary = () => {
+    const p = resumeStore.getPrimary();
+    if (!p) { toast.error("No Primary Resume set. Save one and mark it as Primary."); return; }
+    setData({ ...defaultResume, ...p.data });
+    setCurrentId(p.id);
+    setCurrentName(p.name);
+    toast.success(`Loaded Primary: "${p.name}"`);
+  };
 
   const saveCurrent = () => {
     if (!currentId) { setNameDraft(data.name ? `${data.name}'s resume` : "Untitled resume"); setSaveAsOpen(true); return; }
