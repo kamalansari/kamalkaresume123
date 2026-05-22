@@ -102,6 +102,32 @@ export const profileStore = {
     const activeId = s.activeId === id ? (profiles[0]?.id ?? null) : s.activeId;
     write({ activeId, profiles });
   },
+  /**
+   * Insert a profile while guaranteeing a unique id.
+   * - If the incoming id already exists, the existing profile is overwritten.
+   * - If no id (or a colliding one we want to keep distinct) is provided,
+   *   a fresh id is generated so we never end up with duplicate ids.
+   * Returns `{ profile, status }` where status is "added" | "updated".
+   */
+  upsert(input: Partial<Profile> & { fields: ProfileFields }, opts?: { preserveId?: boolean }): { profile: Profile; status: "added" | "updated" } {
+    const s = read();
+    const incomingId = input.id;
+    const exists = incomingId ? s.profiles.find(p => p.id === incomingId) : null;
+    if (exists && opts?.preserveId) {
+      const updated: Profile = { ...exists, name: input.name?.trim() || exists.name, fields: { ...emptyFields(), ...input.fields } };
+      write({ ...s, profiles: s.profiles.map(p => p.id === exists.id ? updated : p) });
+      return { profile: updated, status: "updated" };
+    }
+    let id = incomingId && !exists ? incomingId : newId();
+    while (s.profiles.some(p => p.id === id)) id = newId();
+    const profile: Profile = {
+      id,
+      name: (input.name ?? "").trim() || "Untitled profile",
+      fields: { ...emptyFields(), ...input.fields },
+    };
+    write({ activeId: s.activeId ?? id, profiles: [...s.profiles, profile] });
+    return { profile, status: "added" };
+  },
   updateActive(data: Partial<ResumeData>) {
     const s = read();
     if (!s.activeId) return;
