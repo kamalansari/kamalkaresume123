@@ -56,6 +56,7 @@ function JobsPage() {
   const [loading, setLoading] = useState(false);
   const [activeRoleTab, setActiveRoleTab] = useState("Data Analyst");
   const [scoreJob, setScoreJob] = useState<Job | null>(null);
+  const [scoreResume, setScoreResume] = useState<ResumeData | null>(null);
   const [novaJob, setNovaJob] = useState<Job | null>(null);
   const [novaLoading, setNovaLoading] = useState(false);
   const [novaResp, setNovaResp] = useState<{ tips: string[]; keywords: string[] } | null>(null);
@@ -270,7 +271,7 @@ function JobsPage() {
 
         {!loading && jobs.length > 0 && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {jobs.map(job => <JobCard key={job.id} job={job} resume={activeResume} onScore={() => { refreshResumes(); setScoreJob(job); }} onNova={() => askNova(job)} naukriUrl={naukriUrl} />)}
+            {jobs.map(job => <JobCard key={job.id} job={job} resume={activeResume} onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }} onNova={() => askNova(job)} naukriUrl={naukriUrl} />)}
           </div>
         )}
       </div>
@@ -279,7 +280,7 @@ function JobsPage() {
       <Dialog open={!!scoreJob} onOpenChange={o => !o && setScoreJob(null)}>
         <DialogContent className="max-w-xl">
           <DialogHeader><DialogTitle>ATS Score · {scoreJob?.title}</DialogTitle></DialogHeader>
-          {scoreJob && <ScoreView jd={scoreJob.jd} resume={activeResume} />}
+          {scoreJob && <ScoreView jd={scoreJob.jd} resume={scoreResume ?? activeResume} />}
         </DialogContent>
       </Dialog>
 
