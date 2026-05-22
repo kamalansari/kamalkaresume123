@@ -32,7 +32,26 @@ function splitLinks(s: string): string[] {
   return s.split(/[·,|]/g).map(x => x.trim()).filter(Boolean);
 }
 
-export function ResumeDocument({ data, onSectionClick }: { data: ResumeData; onSectionClick?: (id: SectionId | "header") => void }) {
+export type EditableRewriteKind = "summary" | "skills" | "experience-bullets";
+
+export type EditableHandlers = {
+  onUpdate: (patch: Partial<ResumeData>) => void;
+  onUpdateExperienceBullets: (id: string, bullets: string) => void;
+  onRewrite: (kind: EditableRewriteKind, refId?: string) => void;
+  rewritingKey?: string | null;
+};
+
+export function ResumeDocument({
+  data,
+  onSectionClick,
+  editable,
+  handlers,
+}: {
+  data: ResumeData;
+  onSectionClick?: (id: SectionId | "header") => void;
+  editable?: boolean;
+  handlers?: EditableHandlers;
+}) {
   useFont(data.fontId);
   const preset = FONT_PRESETS.find(f => f.id === data.fontId) ?? FONT_PRESETS[0];
   const headingFont = `${preset.heading}, system-ui, sans-serif`;
@@ -40,15 +59,17 @@ export function ResumeDocument({ data, onSectionClick }: { data: ResumeData; onS
   const accent = data.accentHex;
   const fs = data.fontSize ?? 10.5;
 
+  const ed = editable && handlers ? handlers : undefined;
+
   const wrap = (id: SectionId, node: React.ReactNode) => (
     <ClickableSection key={id} id={id} onClick={onSectionClick}>{node}</ClickableSection>
   );
 
   const sections: Record<SectionId, React.ReactNode> = {
-    summary: data.summary ? wrap("summary", <SummarySection data={data} accent={accent} headingFont={headingFont} />) : null,
-    experience: data.experience.length ? wrap("experience", <ExperienceSection data={data} accent={accent} headingFont={headingFont} />) : null,
+    summary: (data.summary || ed) ? wrap("summary", <SummarySection data={data} accent={accent} headingFont={headingFont} ed={ed} />) : null,
+    experience: data.experience.length ? wrap("experience", <ExperienceSection data={data} accent={accent} headingFont={headingFont} ed={ed} />) : null,
     education: data.education.length ? wrap("education", <EducationSection data={data} accent={accent} headingFont={headingFont} />) : null,
-    skills: data.skills ? wrap("skills", <SkillsSection data={data} accent={accent} headingFont={headingFont} template={data.template} />) : null,
+    skills: (data.skills || ed) ? wrap("skills", <SkillsSection data={data} accent={accent} headingFont={headingFont} template={data.template} ed={ed} />) : null,
     projects: data.projects?.length ? wrap("projects", <ProjectsSection data={data} accent={accent} headingFont={headingFont} />) : null,
     certifications: data.certifications?.length ? wrap("certifications", <CertSection data={data} accent={accent} headingFont={headingFont} />) : null,
     awards: data.awards?.length ? wrap("awards", <AwardsSection data={data} accent={accent} headingFont={headingFont} />) : null,
