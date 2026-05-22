@@ -43,11 +43,12 @@ const SECTION_LABELS: Record<SectionId, string> = {
 };
 
 const TEMPLATES: { id: TemplateId; label: string; desc: string }[] = [
-  { id: "classic", label: "Classic", desc: "Centered header" },
-  { id: "two-column", label: "Two column", desc: "Sidebar layout" },
+  { id: "professional", label: "Professional", desc: "Uppercase classic" },
   { id: "modern", label: "Modern", desc: "Bold header bar" },
-  { id: "sidebar-right", label: "Sidebar right", desc: "Sidebar on right" },
-  { id: "compact-two", label: "Compact two", desc: "Cream sidebar" },
+  { id: "executive", label: "Executive", desc: "Authoritative band" },
+  { id: "minimal", label: "Minimal", desc: "Quiet & spacious" },
+  { id: "two-column", label: "Two column", desc: "Sidebar layout" },
+  { id: "fresher", label: "Fresher", desc: "Friendly cream sidebar" },
 ];
 
 const BG_PRESETS = [
