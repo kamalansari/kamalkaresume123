@@ -721,6 +721,20 @@ export function Builder() {
                           </div>
                         </button>
                         <button
+                          onClick={() => previewProfile(p)}
+                          className="rounded p-1 opacity-60 hover:opacity-100 hover:bg-accent"
+                          title="Preview in resume"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => exportSingleProfile(p)}
+                          className="rounded p-1 opacity-60 hover:opacity-100 hover:bg-accent"
+                          title="Download this profile (.json)"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                        </button>
+                        <button
                           onClick={() => { setProfileRenameId(p.id); setProfileNameDraft(p.name); }}
                           className="rounded p-1 opacity-60 hover:opacity-100 hover:bg-accent"
                           title="Rename profile"
