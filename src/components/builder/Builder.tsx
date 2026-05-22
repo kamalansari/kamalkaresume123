@@ -232,7 +232,7 @@ export function Builder() {
       email: "",
       phone: "",
       location: "",
-      links: [],
+      links: "",
       education: [],
     }));
     toast.success("Profile reset");
