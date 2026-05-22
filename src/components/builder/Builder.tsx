@@ -20,6 +20,7 @@ import { Slider } from "@/components/ui/slider";
 import { parseSkills } from "@/lib/parseSkills";
 import { cn } from "@/lib/utils";
 import { FormattableTextarea } from "./FormattableTextarea";
+import { AtsPanel } from "./AtsPanel";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -946,83 +947,28 @@ export function Builder() {
 
         {/* ATS panel */}
         {atsOpen && (
-        <aside className="no-print space-y-4 lg:sticky lg:top-20 self-start">
-          <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Gauge className="h-4 w-4 text-[var(--navy-light)]" /> ATS SCORE
-              </div>
-              <button
-                onClick={() => setAtsOpen(false)}
-                className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                aria-label="Close ATS panel"
-                title="Hide panel"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="mt-1 flex items-baseline gap-1">
-              <span className="font-display text-5xl font-bold">{score.score}</span>
-              <span className="text-muted-foreground">/100</span>
-            </div>
-            <div className="mt-3 h-2 rounded-full bg-secondary overflow-hidden">
-              <div className="h-full rounded-full transition-all" style={{ width: `${score.score}%`, background: "var(--gradient-accent)" }} />
-            </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              {score.score >= 85 ? "Excellent — ready to apply." : score.score >= 65 ? "Solid. A few fixes will push it higher." : "Needs work. Tackle the items below."}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">Checks</div>
-            <ul className="space-y-2.5">
-              {score.checks.map(c => (
-                <li key={c.label} className="flex gap-2.5 text-sm">
-                  {c.pass
-                    ? <CheckCircle2 className="h-4 w-4 mt-0.5 text-[var(--navy-light)] shrink-0" />
-                    : <XCircle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />}
-                  <div>
-                    <div className={c.pass ? "" : "font-medium"}>{c.label}</div>
-                    {!c.pass && c.hint && <div className="text-xs text-muted-foreground">{c.hint}</div>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {data.jobDescription && (
-            <div className="rounded-xl border border-border bg-card p-5">
-              <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">Keyword match · {(score.coverage * 100).toFixed(0)}%</div>
-              {score.matched.length > 0 && (
-                <>
-                  <div className="text-xs text-muted-foreground mb-2">Matched ({score.matched.length}):</div>
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {score.matched.slice(0, 24).map(k => (
-                      <span key={k} className="text-xs px-2 py-1 rounded-md bg-[var(--navy-light)]/10 text-[var(--navy-light)] border border-[var(--navy-light)]/20">{k}</span>
-                    ))}
-                  </div>
-                </>
-              )}
-              {score.missing.length > 0 ? (
-                <>
-                  <div className="text-xs text-muted-foreground mb-2">Missing ({score.missing.length}) — click to add to ATS keywords:</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {score.missing.slice(0, 24).map(k => (
-                      <button
-                        key={k}
-                        onClick={() => update("extraKeywords", data.extraKeywords ? `${data.extraKeywords}, ${k}` : k)}
-                        className="text-xs px-2 py-1 rounded-md bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20"
-                        title="Add to ATS keywords"
-                      >+ {k}</button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">Every keyword from the JD appears in your resume. 🎯</p>
-              )}
-            </div>
-          )}
-        </aside>
+        <AtsPanel
+          data={data}
+          onClose={() => setAtsOpen(false)}
+          onAppendBulletsToFirstExperience={(bullets) => {
+            setData(d => {
+              const exp = [...d.experience];
+              if (exp.length === 0) {
+                exp.push({ id: uid(), title: d.headline || "Role", company: "", date: "", bullets: bullets.join("\n") });
+              } else {
+                exp[0] = { ...exp[0], bullets: [exp[0].bullets, ...bullets].filter(Boolean).join("\n") };
+              }
+              return { ...d, experience: exp };
+            });
+          }}
+          onAddExtraKeywords={(kw) => {
+            const existing = data.extraKeywords.split(",").map(s => s.trim()).filter(Boolean);
+            const merged = Array.from(new Set([...existing, ...kw])).join(", ");
+            update("extraKeywords", merged);
+          }}
+          onOneClickOptimize={generateFromJD}
+          optimizing={generating}
+        />
         )}
       </div>
     </div>
