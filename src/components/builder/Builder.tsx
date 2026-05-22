@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
@@ -65,6 +65,7 @@ export function Builder() {
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+  const [renameTargetId, setRenameTargetId] = useState<string | null>(null);
   const [atsOpen, setAtsOpen] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [jdDialogOpen, setJdDialogOpen] = useState(false);
@@ -106,10 +107,12 @@ export function Builder() {
 
   const renameCurrent = (name: string) => {
     const trimmed = name.trim();
-    if (!trimmed || !currentId) return;
-    resumeStore.rename(currentId, trimmed);
-    setCurrentName(trimmed);
+    const targetId = renameTargetId ?? currentId;
+    if (!trimmed || !targetId) return;
+    resumeStore.rename(targetId, trimmed);
+    if (targetId === currentId) setCurrentName(trimmed);
     setRenameOpen(false);
+    setRenameTargetId(null);
     refreshList();
     toast.success("Renamed");
   };
@@ -119,6 +122,37 @@ export function Builder() {
     if (currentId === id) { setCurrentId(null); setCurrentName("Untitled resume"); }
     refreshList();
     toast.success(`Deleted "${name}"`);
+  };
+
+  const duplicateSaved = (id: string) => {
+    const copy = resumeStore.duplicate(id);
+    if (!copy) { toast.error("Could not duplicate"); return; }
+    refreshList();
+    toast.success(`Duplicated as "${copy.name}"`);
+  };
+
+  const downloadSavedDocx = async (id: string) => {
+    const entry = resumeStore.get(id);
+    if (!entry) return;
+    try { await exportDocx(entry.data); toast.success(`Downloaded "${entry.name}"`); }
+    catch { toast.error("DOCX export failed"); }
+  };
+
+  const openRenameFor = (id: string, name: string) => {
+    setRenameTargetId(id);
+    setNameDraft(name);
+    setRenameOpen(true);
+  };
+
+  const scrollToEditor = (id: SectionId | "header") => {
+    const anchor = id === "header" ? "edit-personal" : `edit-${id}`;
+    const el = document.getElementById(anchor);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.classList.add("ring-2", "ring-[var(--navy-light)]");
+    setTimeout(() => el.classList.remove("ring-2", "ring-[var(--navy-light)]"), 1400);
+    const firstInput = el.querySelector<HTMLInputElement | HTMLTextAreaElement>("input, textarea");
+    firstInput?.focus();
   };
 
   const newResume = () => {
@@ -431,7 +465,7 @@ export function Builder() {
             onKeyDown={e => { if (e.key === "Enter") renameCurrent(nameDraft); }}
           />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setRenameOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => { setRenameOpen(false); setRenameTargetId(null); }}>Cancel</Button>
             <Button onClick={() => renameCurrent(nameDraft)}>Save name</Button>
           </DialogFooter>
         </DialogContent>
