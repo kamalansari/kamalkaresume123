@@ -954,23 +954,76 @@ export function Builder() {
               <PanelRightOpen className="h-3.5 w-3.5" /> ATS · {score.score}
             </button>
           )}
+          <PreviewToolbar
+            zoom={zoom}
+            setZoom={setZoom}
+            data={data}
+            onPdf={() => window.print()}
+            onDocx={handleDocx}
+            docxBusy={exporting}
+          />
+          {/* Mobile ATS trigger */}
+          <div className="no-print lg:hidden mb-3">
+            <Sheet open={atsSheetOpen} onOpenChange={setAtsSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="w-full">
+                  <Gauge className="h-4 w-4" /> Open ATS analysis · {score.score}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-0">
+                <div className="p-4">
+                  <AtsPanel
+                    data={data}
+                    onClose={() => setAtsSheetOpen(false)}
+                    onAppendBulletsToFirstExperience={(bullets) => {
+                      setData(d => {
+                        const exp = [...d.experience];
+                        if (exp.length === 0) {
+                          exp.push({ id: uid(), title: d.headline || "Role", company: "", date: "", bullets: bullets.join("\n") });
+                        } else {
+                          exp[0] = { ...exp[0], bullets: [exp[0].bullets, ...bullets].filter(Boolean).join("\n") };
+                        }
+                        return { ...d, experience: exp };
+                      });
+                    }}
+                    onAddExtraKeywords={(kw) => {
+                      const existing = data.extraKeywords.split(",").map(s => s.trim()).filter(Boolean);
+                      const merged = Array.from(new Set([...existing, ...kw])).join(", ");
+                      update("extraKeywords", merged);
+                    }}
+                    onOneClickOptimize={generateFromJD}
+                    optimizing={generating}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
           <div className="overflow-auto rounded-xl">
-            <ResumeDocument
-              data={data}
-              onSectionClick={inlineEdit ? undefined : scrollToEditor}
-              editable={inlineEdit}
-              handlers={{
-                onUpdate: updatePatch,
-                onUpdateExperienceBullets: (id, bullets) => updateExp(id, { bullets }),
-                onRewrite: rewriteFromPreview,
-                rewritingKey: rewriting ? "summary" : rewritingKey,
+            <div
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: "top center",
+                width: zoom < 1 ? "100%" : undefined,
               }}
-            />
+            >
+              <ResumeDocument
+                data={data}
+                onSectionClick={inlineEdit ? undefined : scrollToEditor}
+                editable={inlineEdit}
+                handlers={{
+                  onUpdate: updatePatch,
+                  onUpdateExperienceBullets: (id, bullets) => updateExp(id, { bullets }),
+                  onRewrite: rewriteFromPreview,
+                  rewritingKey: rewriting ? "summary" : rewritingKey,
+                }}
+              />
+            </div>
           </div>
         </div>
 
         {/* ATS panel */}
         {atsOpen && (
+        <div className="no-print hidden lg:block">
         <AtsPanel
           data={data}
           onClose={() => setAtsOpen(false)}
@@ -993,6 +1046,7 @@ export function Builder() {
           onOneClickOptimize={generateFromJD}
           optimizing={generating}
         />
+        </div>
         )}
       </div>
     </div>
