@@ -110,6 +110,11 @@ export function Builder() {
   useEffect(() => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); }, []);
   useEffect(() => { setMounted(true); }, []);
 
+  useEffect(() => {
+    if (!mounted) return;
+    resumeStore.saveDraft(data);
+  }, [mounted, data]);
+
   // Load profiles and apply active profile on first mount
   useEffect(() => {
     setProfiles(profileStore.list());
@@ -165,6 +170,7 @@ export function Builder() {
   const saveCurrent = () => {
     if (!currentId) { setNameDraft(data.name ? `${data.name}'s resume` : "Untitled resume"); setSaveAsOpen(true); return; }
     resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data });
+    resumeStore.saveDraft(data);
     refreshList();
     toast.success(`Saved "${currentName}"`);
   };
@@ -173,6 +179,7 @@ export function Builder() {
     const trimmed = name.trim() || "Untitled resume";
     const id = newId();
     resumeStore.upsert({ id, name: trimmed, updatedAt: Date.now(), data });
+    resumeStore.saveDraft(data);
     setCurrentId(id);
     setCurrentName(trimmed);
     setSaveAsOpen(false);
