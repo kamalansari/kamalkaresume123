@@ -468,6 +468,24 @@ export function Builder() {
                   <Plus className="h-4 w-4" /> New blank resume
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground inline-flex items-center gap-1.5">
+                  <Shield className="h-3 w-3" /> Primary Resume
+                </DropdownMenuLabel>
+                <DropdownMenuItem onClick={loadPrimary} disabled={!primaryId}>
+                  <OpenIcon className="h-4 w-4" /> Open Primary
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={!currentId}
+                  onClick={() => currentId && setAsPrimary(currentId, currentName)}
+                >
+                  <Star className="h-4 w-4" /> Mark current as Primary
+                </DropdownMenuItem>
+                {primaryId && (
+                  <DropdownMenuItem onClick={() => { resumeStore.setPrimary(null); refreshList(); toast.success("Primary cleared"); }}>
+                    <X className="h-4 w-4" /> Clear Primary
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">
                   Saved ({saved.length})
                 </DropdownMenuLabel>
@@ -484,7 +502,9 @@ export function Builder() {
                       >
                         <div className="flex items-center gap-2 text-sm font-medium truncate">
                           {currentId === s.id && <Check className="h-3.5 w-3.5 text-[var(--navy-light)]" />}
+                          {primaryId === s.id && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />}
                           <span className="truncate">{s.name}</span>
+                          {primaryId === s.id && <span className="text-[10px] uppercase tracking-widest text-amber-600">Primary</span>}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           {new Date(s.updatedAt).toLocaleString()}
@@ -492,6 +512,7 @@ export function Builder() {
                       </button>
                       <div className="mt-1 flex items-center gap-1 px-1">
                         <RowAction icon={<OpenIcon className="h-3.5 w-3.5" />} label="Open" onClick={() => loadSaved(s.id)} />
+                        <RowAction icon={<Star className={cn("h-3.5 w-3.5", primaryId === s.id && "fill-amber-400 text-amber-500")} />} label={primaryId === s.id ? "Primary" : "Set Primary"} onClick={() => setAsPrimary(s.id, s.name)} />
                         <RowAction icon={<Pencil className="h-3.5 w-3.5" />} label="Rename" onClick={() => openRenameFor(s.id, s.name)} />
                         <RowAction icon={<Copy className="h-3.5 w-3.5" />} label="Duplicate" onClick={() => duplicateSaved(s.id)} />
                         <RowAction icon={<Download className="h-3.5 w-3.5" />} label="DOCX" onClick={() => downloadSavedDocx(s.id)} />
