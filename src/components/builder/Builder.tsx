@@ -583,8 +583,15 @@ export function Builder() {
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Generate ATS-ready resume from a job description</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Paste the full job posting below. AI will rewrite your headline, summary, skills and experience bullets to match — keeping your real employers and dates.
+            Paste the job posting below. AI will tailor your headline, summary, skills and bullets to match — keeping your real employers and dates.
           </p>
+          <div className={cn("rounded-md border px-3 py-2 text-xs flex items-center gap-2",
+            primaryId ? "border-amber-300/60 bg-amber-50 text-amber-900" : "border-border bg-muted text-muted-foreground")}>
+            <Shield className="h-3.5 w-3.5" />
+            {primaryId
+              ? <>Tailoring from your <strong>Primary Resume</strong> — your original career data stays untouched.</>
+              : <>No Primary Resume set. Tailoring will use the current editor data. Tip: mark one resume as Primary to keep a secure master copy.</>}
+          </div>
           <Textarea
             autoFocus
             rows={12}
@@ -592,6 +599,19 @@ export function Builder() {
             onChange={e => setJdDialogText(e.target.value)}
             placeholder="Paste the job description here…"
           />
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={jdSaveAsNew} onChange={e => setJdSaveAsNew(e.target.checked)} />
+              Save tailored result as a new resume (keeps Primary safe)
+            </label>
+            {jdSaveAsNew && (
+              <Input
+                value={jdTailoredName}
+                onChange={e => setJdTailoredName(e.target.value)}
+                placeholder="Name this tailored version (e.g. “Stripe — Senior PM”)"
+              />
+            )}
+          </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setJdDialogOpen(false)}>Cancel</Button>
             <Button onClick={generateAtsResumeFromDialog} disabled={generating || !jdDialogText.trim()}>
