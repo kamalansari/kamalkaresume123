@@ -21,6 +21,9 @@ import { parseSkills } from "@/lib/parseSkills";
 import { cn } from "@/lib/utils";
 import { FormattableTextarea } from "./FormattableTextarea";
 import { AtsPanel } from "./AtsPanel";
+import { PreviewToolbar } from "./PreviewToolbar";
+import { decompressFromEncodedURIComponent } from "lz-string";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -73,10 +76,31 @@ export function Builder() {
   const [jdDialogText, setJdDialogText] = useState("");
   const [mounted, setMounted] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [atsSheetOpen, setAtsSheetOpen] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
   useEffect(() => { setSaved(resumeStore.list()); }, []);
   useEffect(() => { setMounted(true); }, []);
+
+  // Load shared resume from URL hash (#r=...) once on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (!hash.startsWith("#r=")) return;
+    try {
+      const raw = decompressFromEncodedURIComponent(hash.slice(3));
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<ResumeData>;
+      setData(d => ({ ...d, ...parsed }));
+      setCurrentName("Shared resume");
+      setCurrentId(null);
+      toast.success("Loaded shared resume");
+      window.history.replaceState(null, "", window.location.pathname);
+    } catch {
+      // ignore malformed share links
+    }
+  }, []);
 
   const refreshList = () => setSaved(resumeStore.list());
 
