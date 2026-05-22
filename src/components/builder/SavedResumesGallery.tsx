@@ -33,15 +33,17 @@ export function SavedResumesGallery({
       const hay = [
         s.name,
         d.template,
-        d.personal?.fullName,
-        d.personal?.title,
-        d.personal?.email,
-        d.personal?.location,
+        d.name,
+        d.headline,
+        d.email,
+        d.location,
+        d.links,
         d.summary,
-        d.skills?.join(" "),
-        d.experience?.map(e => `${e.company} ${e.role} ${e.description}`).join(" "),
+        d.skills,
+        d.extraKeywords,
+        d.experience?.map(e => `${e.company} ${e.title} ${e.bullets}`).join(" "),
         d.education?.map(e => `${e.school} ${e.degree}`).join(" "),
-        d.projects?.map(p => `${p.name} ${p.description}`).join(" "),
+        d.projects?.map(p => `${p.name} ${p.bullets}`).join(" "),
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
