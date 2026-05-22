@@ -292,6 +292,66 @@ export function Builder() {
     toast.success(`Deleted "${name}"`);
   };
 
+  const exportProfiles = () => {
+    const list = profileStore.list();
+    if (!list.length) { toast.error("No profiles to export"); return; }
+    const payload = {
+      type: "resumeforge.profiles",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      activeId: profileStore.getActiveId(),
+      profiles: list,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `resumeforge-profiles-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${list.length} profile${list.length === 1 ? "" : "s"}`);
+  };
+
+  const importProfiles = () => {
+    if (typeof window === "undefined") return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text) as { type?: string; profiles?: Profile[] };
+        if (parsed?.type !== "resumeforge.profiles" || !Array.isArray(parsed.profiles)) {
+          toast.error("Not a valid profiles export file");
+          return;
+        }
+        const replace = window.confirm(
+          `Import ${parsed.profiles.length} profile(s)?\n\nOK = Replace all existing profiles\nCancel = Merge (add as new profiles)`
+        );
+        if (replace) {
+          profileStore.list().forEach(p => profileStore.remove(p.id));
+        }
+        let imported = 0;
+        for (const p of parsed.profiles) {
+          if (!p || typeof p !== "object" || !p.fields) continue;
+          profileStore.create(p.name || "Imported", p.fields);
+          imported++;
+        }
+        refreshProfiles();
+        const active = profileStore.get();
+        if (active) setData(d => ({ ...d, ...active }));
+        toast.success(`Imported ${imported} profile${imported === 1 ? "" : "s"}`);
+      } catch {
+        toast.error("Could not read profiles file");
+      }
+    };
+    input.click();
+  };
+
   const resetProfile = () => {
     if (typeof window !== "undefined" && !window.confirm("Reset your saved profile? This clears your name, contact info, links, and education from this device. Saved resumes are not affected.")) return;
     profileStore.clear();
