@@ -1518,6 +1518,7 @@ export function Builder() {
           </div>
           <div className="overflow-auto rounded-xl">
             <div
+              className="resume-preview-scale"
               style={{
                 transform: `scale(${zoom})`,
                 transformOrigin: "top center",
