@@ -11,6 +11,7 @@ import { computeScore } from "./atsScore";
 import { ResumeDocument } from "./ResumeDocument";
 import { exportDocx } from "./exportDocx";
 import { resumeStore, newId, type SavedResume } from "./resumeStore";
+import { profileStore } from "./profileStore";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
@@ -87,6 +88,18 @@ export function Builder() {
 
   useEffect(() => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); }, []);
   useEffect(() => { setMounted(true); }, []);
+
+  // Apply saved profile (name, contact, education) on first mount so it persists across refresh / new resumes
+  useEffect(() => {
+    const p = profileStore.get();
+    if (p) setData(d => ({ ...d, ...p }));
+  }, []);
+
+  // Auto-save profile fields whenever they change
+  useEffect(() => {
+    if (!mounted) return;
+    profileStore.save(data);
+  }, [mounted, data.name, data.headline, data.email, data.phone, data.location, data.links, data.education]);
 
   // Load shared resume from URL hash (#r=...) once on mount
   useEffect(() => {
@@ -202,7 +215,8 @@ export function Builder() {
   };
 
   const newResume = () => {
-    setData(defaultResume);
+    const p = profileStore.get();
+    setData({ ...defaultResume, ...(p ?? {}) });
     setCurrentId(null);
     setCurrentName("Untitled resume");
     toast.success("Started a new resume");
