@@ -41,6 +41,7 @@ const EXPERIENCES = ["Fresher", "0-1 years", "1-2 years", "2 years", "2-5 years"
 
 function JobsPage() {
   const [resumes, setResumes] = useState<SavedResume[]>([]);
+  const [draftResume, setDraftResume] = useState<ResumeData | null>(null);
   const [activeResumeId, setActiveResumeId] = useState<string>("");
   const [jobTitle, setJobTitle] = useState("Data Analyst");
   const [experience, setExperience] = useState("2 years");
@@ -59,18 +60,28 @@ function JobsPage() {
   const [novaLoading, setNovaLoading] = useState(false);
   const [novaResp, setNovaResp] = useState<{ tips: string[]; keywords: string[] } | null>(null);
 
-  useEffect(() => {
+  const refreshResumes = () => {
     const list = resumeStore.list();
+    const primaryId = resumeStore.getPrimaryId();
     setResumes(list);
-    if (list[0]) setActiveResumeId(list[0].id);
+    setDraftResume(resumeStore.getDraft());
+    setActiveResumeId(current => {
+      if (current && list.some(r => r.id === current)) return current;
+      if (primaryId && list.some(r => r.id === primaryId)) return primaryId;
+      return list[0]?.id ?? "";
+    });
+  };
+
+  useEffect(() => {
+    refreshResumes();
   }, []);
 
   const activeResume: ResumeData = useMemo(() => {
     const r = resumes.find(x => x.id === activeResumeId);
-    return r?.data ?? defaultResume;
-  }, [resumes, activeResumeId]);
+    return r?.data ?? draftResume ?? defaultResume;
+  }, [resumes, activeResumeId, draftResume]);
 
-  const activeResumeName = resumes.find(r => r.id === activeResumeId)?.name ?? "Default sample";
+  const activeResumeName = resumes.find(r => r.id === activeResumeId)?.name ?? (draftResume ? "Current draft" : "Default sample");
 
   const filterCount = [industry !== INDUSTRIES[0], role !== ROLES[0], datePosted !== "All time", alias, keywords].filter(Boolean).length;
 
@@ -259,7 +270,7 @@ function JobsPage() {
 
         {!loading && jobs.length > 0 && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {jobs.map(job => <JobCard key={job.id} job={job} resume={activeResume} onScore={() => setScoreJob(job)} onNova={() => askNova(job)} naukriUrl={naukriUrl} />)}
+            {jobs.map(job => <JobCard key={job.id} job={job} resume={activeResume} onScore={() => { refreshResumes(); setScoreJob(job); }} onNova={() => askNova(job)} naukriUrl={naukriUrl} />)}
           </div>
         )}
       </div>
