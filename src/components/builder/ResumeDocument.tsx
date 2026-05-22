@@ -61,13 +61,15 @@ export function ResumeDocument({
   const fs = data.fontSize ?? 10.5;
   // Map new template ids onto base layouts while preserving distinct vibes.
   const variant: "classic" | "modern" | "two-column" | "sidebar-right" | "compact-two" =
-    data.template === "professional" || data.template === "minimal"
+    data.template === "professional" || data.template === "minimal" || data.template === "elegant"
       ? "classic"
-      : data.template === "executive"
+      : data.template === "executive" || data.template === "bold"
         ? "modern"
         : data.template === "fresher"
           ? "compact-two"
-          : data.template;
+          : data.template === "contemporary"
+            ? "sidebar-right"
+            : data.template;
 
   const ed = editable && handlers ? handlers : undefined;
 
@@ -167,7 +169,7 @@ export function ResumeDocument({
   }
 
   if (variant === "modern") {
-    const exec = data.template === "executive";
+    const exec = data.template === "executive" || data.template === "bold";
     return (
       <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
         <header {...headerClickProps} style={{ padding: "0.5in 0.6in", background: accent, color: "#fff", cursor: onSectionClick ? "pointer" : undefined, borderBottom: exec ? "4px solid rgba(0,0,0,0.35)" : undefined }}>

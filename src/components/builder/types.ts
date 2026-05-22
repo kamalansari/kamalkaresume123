@@ -14,7 +14,10 @@ export type TemplateId =
   | "professional"
   | "executive"
   | "minimal"
-  | "fresher";
+  | "fresher"
+  | "elegant"
+  | "contemporary"
+  | "bold";
 export type SectionId =
   | "summary"
   | "experience"

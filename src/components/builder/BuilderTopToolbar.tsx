@@ -1,0 +1,348 @@
+import { useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, verticalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { COLOR_PRESETS, FONT_PRESETS, type ResumeData, type SectionId, type TemplateId } from "./types";
+
+export type TemplateMeta = {
+  id: TemplateId;
+  label: string;
+  desc: string;
+  cols: 1 | 2;
+};
+
+export const ALL_TEMPLATES: TemplateMeta[] = [
+  { id: "classic", label: "Classic", desc: "Timeless centered", cols: 1 },
+  { id: "professional", label: "Professional", desc: "Uppercase formal", cols: 1 },
+  { id: "executive", label: "Executive", desc: "Authoritative band", cols: 1 },
+  { id: "minimal", label: "Minimal", desc: "Quiet & spacious", cols: 1 },
+  { id: "modern", label: "Modern", desc: "Bold header bar", cols: 1 },
+  { id: "elegant", label: "Elegant", desc: "Refined classic", cols: 1 },
+  { id: "bold", label: "Bold", desc: "Statement banner", cols: 1 },
+  { id: "two-column", label: "Two column", desc: "Dark sidebar", cols: 2 },
+  { id: "sidebar-right", label: "Sidebar right", desc: "Right rail accent", cols: 2 },
+  { id: "compact-two", label: "Compact two", desc: "Tight two-col", cols: 2 },
+  { id: "fresher", label: "Fresher", desc: "Cream sidebar", cols: 2 },
+  { id: "contemporary", label: "Contemporary", desc: "Modern sidebar", cols: 2 },
+];
+
+const BG_PRESETS = [
+  { id: "white", label: "White", hex: "#ffffff" },
+  { id: "ivory", label: "Ivory", hex: "#fbf9f4" },
+  { id: "stone", label: "Stone", hex: "#f5f4f0" },
+  { id: "sky", label: "Sky", hex: "#f1f5fb" },
+  { id: "mint", label: "Mint", hex: "#f1f7f3" },
+];
+
+const SECTION_LABELS: Record<SectionId, string> = {
+  summary: "Summary",
+  experience: "Experience",
+  education: "Education",
+  skills: "Skills",
+  projects: "Projects",
+  certifications: "Certifications",
+  awards: "Awards",
+  languages: "Languages",
+};
+
+function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active: boolean }) {
+  const id = t.id;
+  const inner = (() => {
+    if (id === "two-column" || id === "fresher") {
+      const cream = id === "fresher";
+      return (
+        <div className="h-full w-full flex">
+          <div className="w-1/3 h-full p-1 space-y-1" style={{ background: cream ? "#f4f3ef" : accent }}>
+            <div className="h-1.5 w-3/4 rounded" style={{ background: cream ? accent : "rgba(255,255,255,0.85)" }} />
+            <div className="h-0.5 w-full rounded" style={{ background: cream ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.5)" }} />
+            <div className="h-0.5 w-2/3 rounded" style={{ background: cream ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.5)" }} />
+          </div>
+          <div className="flex-1 p-1 space-y-1">
+            <div className="h-1 w-3/4 rounded bg-foreground/30" />
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-2/3 rounded bg-foreground/10" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "sidebar-right" || id === "contemporary") {
+      return (
+        <div className="h-full w-full flex">
+          <div className="flex-1 p-1 space-y-1">
+            <div className="h-1 w-3/4 rounded bg-foreground/30" />
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-2/3 rounded bg-foreground/10" />
+          </div>
+          <div className="w-1/3 h-full p-1 space-y-1" style={{ background: accent }}>
+            <div className="h-1 w-3/4 rounded bg-white/80" />
+            <div className="h-0.5 w-full rounded bg-white/40" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "compact-two") {
+      return (
+        <div className="h-full w-full flex">
+          <div className="w-1/3 h-full p-1 space-y-1" style={{ background: "#f4f3ef" }}>
+            <div className="h-1 w-3/4 rounded" style={{ background: accent }} />
+            <div className="h-0.5 w-full rounded bg-foreground/15" />
+          </div>
+          <div className="flex-1 p-1 space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "modern" || id === "executive" || id === "bold") {
+      const exec = id === "executive" || id === "bold";
+      return (
+        <div className="h-full w-full">
+          <div className="h-1/4 w-full p-1 flex items-end" style={{ background: accent, borderBottom: exec ? "2px solid rgba(0,0,0,0.4)" : undefined }}>
+            <div className="h-1 w-2/3 rounded bg-white/80" />
+          </div>
+          <div className="p-1 space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-2/3 rounded bg-foreground/10" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "minimal") {
+      return (
+        <div className="h-full w-full p-1.5 flex flex-col">
+          <div className="h-1 w-1/2 rounded bg-foreground/80" />
+          <div className="mt-0.5 h-0.5 w-1/3 rounded bg-foreground/30" />
+          <div className="mt-1 h-px w-full bg-foreground/15" />
+          <div className="mt-1 space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+          </div>
+        </div>
+      );
+    }
+    // classic, professional, elegant
+    const pro = id === "professional";
+    return (
+      <div className="h-full w-full p-1.5 flex flex-col items-center">
+        <div className={cn("h-1 rounded", pro ? "w-3/4" : "w-2/3")} style={{ background: accent }} />
+        <div className="mt-0.5 h-0.5 w-1/2 rounded bg-foreground/30" />
+        <div className="mt-1 h-px w-full" style={{ background: accent, opacity: 0.4 }} />
+        <div className="mt-1 self-stretch space-y-1">
+          <div className="h-0.5 w-full rounded bg-foreground/10" />
+          <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+          <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+        </div>
+      </div>
+    );
+  })();
+  return (
+    <div className={cn("aspect-[3/4] w-full rounded-md bg-white border-2 overflow-hidden relative transition", active ? "border-primary shadow-md" : "border-border hover:border-foreground/40")}>
+      {inner}
+      {active && (
+        <div className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow">
+          <Check className="h-3 w-3" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TemplatesGrid({ data, onPick, filter }: { data: ResumeData; onPick: (id: TemplateId) => void; filter: "all" | 1 | 2 }) {
+  const list = ALL_TEMPLATES.filter(t => filter === "all" ? true : t.cols === filter);
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {list.map(t => (
+        <button key={t.id} onClick={() => onPick(t.id)} className="text-left group">
+          <Thumb t={t} accent={data.accentHex} active={data.template === t.id} />
+          <div className="mt-1.5 text-xs font-medium">{t.label}</div>
+          {data.template === t.id ? (
+            <div className="text-[10px] text-primary font-medium">Active</div>
+          ) : (
+            <div className="text-[10px] text-muted-foreground">{t.desc}</div>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function TemplatesPopover({ data, onPick }: { data: ResumeData; onPick: (id: TemplateId) => void }) {
+  const counts = {
+    all: ALL_TEMPLATES.length,
+    one: ALL_TEMPLATES.filter(t => t.cols === 1).length,
+    two: ALL_TEMPLATES.filter(t => t.cols === 2).length,
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8">
+          <LayoutTemplate className="h-4 w-4" /> <span className="hidden sm:inline">Templates</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[min(92vw,640px)] max-h-[70vh] overflow-y-auto p-3">
+        <Tabs defaultValue="all">
+          <TabsList>
+            <TabsTrigger value="all">All <span className="ml-1.5 text-xs opacity-70">{counts.all}</span></TabsTrigger>
+            <TabsTrigger value="1">Single Column <span className="ml-1.5 text-xs opacity-70">{counts.one}</span></TabsTrigger>
+            <TabsTrigger value="2">Double Column <span className="ml-1.5 text-xs opacity-70">{counts.two}</span></TabsTrigger>
+          </TabsList>
+          <TabsContent value="all" className="mt-3"><TemplatesGrid data={data} onPick={onPick} filter="all" /></TabsContent>
+          <TabsContent value="1" className="mt-3"><TemplatesGrid data={data} onPick={onPick} filter={1} /></TabsContent>
+          <TabsContent value="2" className="mt-3"><TemplatesGrid data={data} onPick={onPick} filter={2} /></TabsContent>
+        </Tabs>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function SortableRow({ id, onRemove }: { id: SectionId; onRemove: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-sm">
+      <button {...attributes} {...listeners} className="cursor-grab touch-none text-muted-foreground hover:text-foreground" aria-label="Drag">
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <span className="flex-1 font-medium">{SECTION_LABELS[id]}</span>
+      <button onClick={onRemove} className="text-muted-foreground hover:text-destructive" aria-label="Remove section">
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
+export function SectionsPopover({ data, onUpdate, onAdd, onRemove }: {
+  data: ResumeData;
+  onUpdate: (order: SectionId[]) => void;
+  onAdd: (id: SectionId) => void;
+  onRemove: (id: SectionId) => void;
+}) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const onEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const a = data.sectionOrder.indexOf(active.id as SectionId);
+    const b = data.sectionOrder.indexOf(over.id as SectionId);
+    if (a < 0 || b < 0) return;
+    onUpdate(arrayMove(data.sectionOrder, a, b));
+  };
+  const available: SectionId[] = ["summary","experience","education","skills","projects","certifications","awards","languages"];
+  const missing = available.filter(id => !data.sectionOrder.includes(id));
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8">
+          <ListOrdered className="h-4 w-4" /> <span className="hidden sm:inline">Sections</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-3">
+        <div className="text-xs font-medium mb-2">Section order</div>
+        <p className="text-[11px] text-muted-foreground mb-2">Drag to reorder. Click × to hide a section.</p>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onEnd}>
+          <SortableContext items={data.sectionOrder} strategy={verticalListSortingStrategy}>
+            <div className="space-y-1.5">
+              {data.sectionOrder.map(id => <SortableRow key={id} id={id} onRemove={() => onRemove(id)} />)}
+            </div>
+          </SortableContext>
+        </DndContext>
+        {missing.length > 0 && (
+          <div className="mt-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="w-full"><Plus className="h-4 w-4" /> Add section</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {missing.map(id => (
+                  <DropdownMenuItem key={id} onClick={() => onAdd(id)}>{SECTION_LABELS[id]}</DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p: Partial<ResumeData>) => void }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8">
+          <Palette className="h-4 w-4" /> <span className="hidden sm:inline">Style</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-3 space-y-4">
+        <div>
+          <Label className="text-xs text-muted-foreground">Accent color</Label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {COLOR_PRESETS.map(c => (
+              <button key={c.id} title={c.label} onClick={() => onPatch({ accentHex: c.hex })}
+                className={cn("h-7 w-7 rounded-full border-2 transition-transform hover:scale-110", data.accentHex === c.hex ? "border-foreground ring-2 ring-foreground/20" : "border-white shadow-sm")}
+                style={{ background: c.hex }} />
+            ))}
+            <label className="h-7 w-7 rounded-full border-2 border-dashed border-border flex items-center justify-center cursor-pointer overflow-hidden">
+              <input type="color" value={data.accentHex} onChange={e => onPatch({ accentHex: e.target.value })} className="h-10 w-10 cursor-pointer border-0 bg-transparent p-0" />
+            </label>
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Background</Label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {BG_PRESETS.map(c => (
+              <button key={c.id} title={c.label} onClick={() => onPatch({ bgHex: c.hex })}
+                className={cn("h-7 w-7 rounded-full border-2 transition-transform hover:scale-110", data.bgHex === c.hex ? "border-foreground ring-2 ring-foreground/20" : "border-border")}
+                style={{ background: c.hex }} />
+            ))}
+            <label className="h-7 w-7 rounded-full border-2 border-dashed border-border flex items-center justify-center cursor-pointer overflow-hidden">
+              <input type="color" value={data.bgHex} onChange={e => onPatch({ bgHex: e.target.value })} className="h-10 w-10 cursor-pointer border-0 bg-transparent p-0" />
+            </label>
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Font</Label>
+          <select value={data.fontId} onChange={e => onPatch({ fontId: e.target.value })}
+            className="mt-1.5 w-full h-9 rounded-md border border-input bg-background px-3 text-sm">
+            {FONT_PRESETS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Font size</Label>
+            <span className="text-xs tabular-nums text-muted-foreground">{data.fontSize.toFixed(1)} pt</span>
+          </div>
+          <Slider className="mt-2" min={9} max={13} step={0.5} value={[data.fontSize]} onValueChange={([v]) => onPatch({ fontSize: v })} />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Text style</Label>
+          <div className="mt-2 flex gap-2">
+            <button onClick={() => onPatch({ justifyText: !data.justifyText })}
+              className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium",
+                data.justifyText ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40")}>
+              <AlignJustify className="h-4 w-4" /> Justify
+            </button>
+            <button onClick={() => onPatch({ boldBody: !data.boldBody })}
+              className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium",
+                data.boldBody ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40")}>
+              <Bold className="h-4 w-4" /> Bold
+            </button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
