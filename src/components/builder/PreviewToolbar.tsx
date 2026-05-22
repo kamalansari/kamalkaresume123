@@ -17,9 +17,10 @@ type Props = {
   onPdf: () => void;
   onDocx: () => void;
   docxBusy?: boolean;
+  extras?: React.ReactNode;
 };
 
-export function PreviewToolbar({ zoom, setZoom, data, onPdf, onDocx, docxBusy }: Props) {
+export function PreviewToolbar({ zoom, setZoom, data, onPdf, onDocx, docxBusy, extras }: Props) {
   const share = async () => {
     try {
       const payload = compressToEncodedURIComponent(JSON.stringify(data));
@@ -45,6 +46,7 @@ export function PreviewToolbar({ zoom, setZoom, data, onPdf, onDocx, docxBusy }:
           <Maximize2 className="h-4 w-4" />
         </Button>
       </div>
+      {extras && <div className="flex items-center gap-1.5 mx-auto">{extras}</div>}
       <div className="ml-auto flex items-center gap-1.5">
         <Button size="sm" variant="outline" onClick={share} title="Copy shareable link">
           <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share</span>
