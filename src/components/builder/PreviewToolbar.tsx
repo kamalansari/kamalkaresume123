@@ -15,16 +15,17 @@ type Props = {
   zoom: number;
   setZoom: (z: number) => void;
   data: ResumeData;
+  getData?: () => ResumeData;
   onPdf: () => void;
   onDocx: () => void;
   docxBusy?: boolean;
   extras?: React.ReactNode;
 };
 
-export function PreviewToolbar({ zoom, setZoom, data, onPdf, onDocx, docxBusy, extras }: Props) {
+export function PreviewToolbar({ zoom, setZoom, data, getData, onPdf, onDocx, docxBusy, extras }: Props) {
   const share = async () => {
     try {
-      const payload = compressToEncodedURIComponent(JSON.stringify(data));
+      const payload = compressToEncodedURIComponent(JSON.stringify(getData?.() ?? data));
       const url = `${window.location.origin}/builder#r=${payload}`;
       await navigator.clipboard.writeText(url);
       toast.success("Share link copied to clipboard");
