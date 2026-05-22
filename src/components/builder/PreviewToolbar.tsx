@@ -46,7 +46,7 @@ export function PreviewToolbar({ zoom, setZoom, data, onPdf, onDocx, docxBusy, e
           <Maximize2 className="h-4 w-4" />
         </Button>
       </div>
-      {extras && <div className="flex items-center gap-1.5 mx-auto">{extras}</div>}
+      {extras && <div className="flex items-center gap-1.5">{extras}</div>}
       <div className="ml-auto flex items-center gap-1.5">
         <Button size="sm" variant="outline" onClick={share} title="Copy shareable link">
           <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share</span>
