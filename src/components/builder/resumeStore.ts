@@ -49,6 +49,20 @@ export const resumeStore = {
     item.updatedAt = Date.now();
     write(list);
   },
+  duplicate(id: string): SavedResume | undefined {
+    const list = read();
+    const item = list.find(r => r.id === id);
+    if (!item) return undefined;
+    const copy: SavedResume = {
+      id: newId(),
+      name: `${item.name} (copy)`,
+      updatedAt: Date.now(),
+      data: JSON.parse(JSON.stringify(item.data)),
+    };
+    list.push(copy);
+    write(list);
+    return copy;
+  },
 };
 
 export function newId() {

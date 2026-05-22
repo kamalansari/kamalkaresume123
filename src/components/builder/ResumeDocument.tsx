@@ -32,7 +32,7 @@ function splitLinks(s: string): string[] {
   return s.split(/[·,|]/g).map(x => x.trim()).filter(Boolean);
 }
 
-export function ResumeDocument({ data }: { data: ResumeData }) {
+export function ResumeDocument({ data, onSectionClick }: { data: ResumeData; onSectionClick?: (id: SectionId | "header") => void }) {
   useFont(data.fontId);
   const preset = FONT_PRESETS.find(f => f.id === data.fontId) ?? FONT_PRESETS[0];
   const headingFont = `${preset.heading}, system-ui, sans-serif`;
@@ -40,15 +40,19 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
   const accent = data.accentHex;
   const fs = data.fontSize ?? 10.5;
 
+  const wrap = (id: SectionId, node: React.ReactNode) => (
+    <ClickableSection key={id} id={id} onClick={onSectionClick}>{node}</ClickableSection>
+  );
+
   const sections: Record<SectionId, React.ReactNode> = {
-    summary: data.summary ? <SummarySection key="summary" data={data} accent={accent} headingFont={headingFont} /> : null,
-    experience: data.experience.length ? <ExperienceSection key="experience" data={data} accent={accent} headingFont={headingFont} /> : null,
-    education: data.education.length ? <EducationSection key="education" data={data} accent={accent} headingFont={headingFont} /> : null,
-    skills: data.skills ? <SkillsSection key="skills" data={data} accent={accent} headingFont={headingFont} template={data.template} /> : null,
-    projects: data.projects?.length ? <ProjectsSection key="projects" data={data} accent={accent} headingFont={headingFont} /> : null,
-    certifications: data.certifications?.length ? <CertSection key="certs" data={data} accent={accent} headingFont={headingFont} /> : null,
-    awards: data.awards?.length ? <AwardsSection key="awards" data={data} accent={accent} headingFont={headingFont} /> : null,
-    languages: data.languages?.length ? <LanguagesSection key="langs" data={data} accent={accent} headingFont={headingFont} template={data.template} /> : null,
+    summary: data.summary ? wrap("summary", <SummarySection data={data} accent={accent} headingFont={headingFont} />) : null,
+    experience: data.experience.length ? wrap("experience", <ExperienceSection data={data} accent={accent} headingFont={headingFont} />) : null,
+    education: data.education.length ? wrap("education", <EducationSection data={data} accent={accent} headingFont={headingFont} />) : null,
+    skills: data.skills ? wrap("skills", <SkillsSection data={data} accent={accent} headingFont={headingFont} template={data.template} />) : null,
+    projects: data.projects?.length ? wrap("projects", <ProjectsSection data={data} accent={accent} headingFont={headingFont} />) : null,
+    certifications: data.certifications?.length ? wrap("certifications", <CertSection data={data} accent={accent} headingFont={headingFont} />) : null,
+    awards: data.awards?.length ? wrap("awards", <AwardsSection data={data} accent={accent} headingFont={headingFont} />) : null,
+    languages: data.languages?.length ? wrap("languages", <LanguagesSection data={data} accent={accent} headingFont={headingFont} template={data.template} />) : null,
   };
 
   const ordered = data.sectionOrder.map(id => sections[id]);
@@ -69,13 +73,17 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
     <ContactRow data={data} color="#5a5a5a" />
   );
 
+  const headerClickProps = onSectionClick
+    ? { onClick: () => onSectionClick("header"), className: "preview-clickable", title: "Click to edit personal details" }
+    : {};
+
   if (data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two") {
     const sidebarRight = data.template === "sidebar-right";
     const compact = data.template === "compact-two";
     const sidebarBg = compact ? "#f4f3ef" : accent;
     const sidebarText = compact ? "#1a1a1a" : "#ffffff";
     const sidebar = (
-      <aside style={{ background: sidebarBg, color: sidebarText, padding: "0.55in 0.4in" }}>
+      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.55in 0.4in", cursor: onSectionClick ? "pointer" : undefined }}>
         <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}>{data.name || "Your Name"}</h1>
         <div style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}>{data.headline}</div>
         <div style={{ height: 1, background: compact ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.3)", margin: "16px 0" }} />
@@ -130,7 +138,7 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
   if (data.template === "modern") {
     return (
       <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
-        <header style={{ padding: "0.5in 0.6in", background: accent, color: "#fff" }}>
+        <header {...headerClickProps} style={{ padding: "0.5in 0.6in", background: accent, color: "#fff", cursor: onSectionClick ? "pointer" : undefined }}>
           <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.6}pt`, fontWeight: 800, letterSpacing: "-0.01em" }}>{data.name || "Your Name"}</h1>
           <div style={{ fontSize: `${fs + 1.5}pt`, opacity: 0.92, marginTop: 2 }}>{data.headline}</div>
           <div style={{ marginTop: 8, color: "#fff", opacity: 0.92 }}><ContactRow data={data} color="#ffffff" /></div>
@@ -143,12 +151,26 @@ export function ResumeDocument({ data }: { data: ResumeData }) {
   // classic
   return (
     <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: "0.6in" }}>
-      <header style={{ textAlign: "center", borderBottom: `2px solid ${accent}`, paddingBottom: 10 }}>
+      <header {...headerClickProps} style={{ textAlign: "center", borderBottom: `2px solid ${accent}`, paddingBottom: 10, cursor: onSectionClick ? "pointer" : undefined }}>
         <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.45}pt`, fontWeight: 700, letterSpacing: "-0.01em", color: accent }}>{data.name || "Your Name"}</h1>
         <div style={{ fontSize: `${fs + 0.5}pt`, color: "#4a4a4a", marginTop: 2 }}>{data.headline}</div>
         <div style={{ marginTop: 6, display: "flex", justifyContent: "center" }}>{contactLine}</div>
       </header>
       {ordered}
+    </div>
+  );
+}
+
+function ClickableSection({ id, onClick, children }: { id: SectionId; onClick?: (id: SectionId | "header") => void; children: React.ReactNode }) {
+  if (!onClick) return <>{children}</>;
+  return (
+    <div
+      onClick={() => onClick(id)}
+      className="preview-clickable"
+      style={{ cursor: "pointer", borderRadius: 4 }}
+      title="Click to edit this section"
+    >
+      {children}
     </div>
   );
 }

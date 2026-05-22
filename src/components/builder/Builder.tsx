@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
@@ -65,6 +65,7 @@ export function Builder() {
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+  const [renameTargetId, setRenameTargetId] = useState<string | null>(null);
   const [atsOpen, setAtsOpen] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [jdDialogOpen, setJdDialogOpen] = useState(false);
@@ -106,10 +107,12 @@ export function Builder() {
 
   const renameCurrent = (name: string) => {
     const trimmed = name.trim();
-    if (!trimmed || !currentId) return;
-    resumeStore.rename(currentId, trimmed);
-    setCurrentName(trimmed);
+    const targetId = renameTargetId ?? currentId;
+    if (!trimmed || !targetId) return;
+    resumeStore.rename(targetId, trimmed);
+    if (targetId === currentId) setCurrentName(trimmed);
     setRenameOpen(false);
+    setRenameTargetId(null);
     refreshList();
     toast.success("Renamed");
   };
@@ -119,6 +122,37 @@ export function Builder() {
     if (currentId === id) { setCurrentId(null); setCurrentName("Untitled resume"); }
     refreshList();
     toast.success(`Deleted "${name}"`);
+  };
+
+  const duplicateSaved = (id: string) => {
+    const copy = resumeStore.duplicate(id);
+    if (!copy) { toast.error("Could not duplicate"); return; }
+    refreshList();
+    toast.success(`Duplicated as "${copy.name}"`);
+  };
+
+  const downloadSavedDocx = async (id: string) => {
+    const entry = resumeStore.get(id);
+    if (!entry) return;
+    try { await exportDocx(entry.data); toast.success(`Downloaded "${entry.name}"`); }
+    catch { toast.error("DOCX export failed"); }
+  };
+
+  const openRenameFor = (id: string, name: string) => {
+    setRenameTargetId(id);
+    setNameDraft(name);
+    setRenameOpen(true);
+  };
+
+  const scrollToEditor = (id: SectionId | "header") => {
+    const anchor = id === "header" ? "edit-personal" : `edit-${id}`;
+    const el = document.getElementById(anchor);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.classList.add("ring-2", "ring-[var(--navy-light)]");
+    setTimeout(() => el.classList.remove("ring-2", "ring-[var(--navy-light)]"), 1400);
+    const firstInput = el.querySelector<HTMLInputElement | HTMLTextAreaElement>("input, textarea");
+    firstInput?.focus();
   };
 
   const newResume = () => {
@@ -362,11 +396,12 @@ export function Builder() {
                   <div className="px-2 py-2 text-xs text-muted-foreground">No saved resumes yet. Use “Save as new…” to create one per job.</div>
                 )}
                 <div className="max-h-72 overflow-auto">
-                  {saved.map(s => (
-                    <div key={s.id} className="group flex items-center gap-1 px-1.5 py-0.5">
+                {saved.map(s => (
+                    <div key={s.id} className="group rounded-sm px-1.5 py-1 hover:bg-accent/40">
                       <button
                         onClick={() => loadSaved(s.id)}
-                        className="flex-1 text-left rounded-sm px-2 py-1.5 hover:bg-accent hover:text-accent-foreground"
+                        className="w-full text-left rounded-sm px-2 py-1"
+                        title="Open in editor"
                       >
                         <div className="flex items-center gap-2 text-sm font-medium truncate">
                           {currentId === s.id && <Check className="h-3.5 w-3.5 text-[var(--navy-light)]" />}
@@ -376,13 +411,14 @@ export function Builder() {
                           {new Date(s.updatedAt).toLocaleString()}
                         </div>
                       </button>
-                      <button
-                        onClick={() => deleteSaved(s.id, s.name)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="mt-1 flex items-center gap-1 px-1">
+                        <RowAction icon={<OpenIcon className="h-3.5 w-3.5" />} label="Open" onClick={() => loadSaved(s.id)} />
+                        <RowAction icon={<Pencil className="h-3.5 w-3.5" />} label="Rename" onClick={() => openRenameFor(s.id, s.name)} />
+                        <RowAction icon={<Copy className="h-3.5 w-3.5" />} label="Duplicate" onClick={() => duplicateSaved(s.id)} />
+                        <RowAction icon={<Download className="h-3.5 w-3.5" />} label="DOCX" onClick={() => downloadSavedDocx(s.id)} />
+                        <RowAction icon={<FileText className="h-3.5 w-3.5" />} label="PDF" onClick={() => { loadSaved(s.id); setTimeout(() => window.print(), 250); }} />
+                        <RowAction icon={<Trash2 className="h-3.5 w-3.5" />} label="Delete" danger onClick={() => deleteSaved(s.id, s.name)} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -431,7 +467,7 @@ export function Builder() {
             onKeyDown={e => { if (e.key === "Enter") renameCurrent(nameDraft); }}
           />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setRenameOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => { setRenameOpen(false); setRenameTargetId(null); }}>Cancel</Button>
             <Button onClick={() => renameCurrent(nameDraft)}>Save name</Button>
           </DialogFooter>
         </DialogContent>
@@ -460,7 +496,11 @@ export function Builder() {
         </DialogContent>
       </Dialog>
 
-      <div className="mx-auto max-w-[1600px] grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)_minmax(0,360px)] gap-6 px-6 py-6">
+      <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-6 py-6",
+        atsOpen
+          ? "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)_minmax(0,360px)]"
+          : "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]"
+      )}>
         {/* Editor */}
         <div className="no-print space-y-6">
           <Card title="Design">
@@ -604,6 +644,7 @@ export function Builder() {
             </div>
           </Card>
 
+          <div id="edit-personal" className="rounded-xl">
           <Card title="Personal">
             <Grid>
               <Field label="Full name"><Input value={data.name} onChange={e => update("name", e.target.value)} /></Field>
@@ -614,7 +655,9 @@ export function Builder() {
               <Field label="Links"><Input value={data.links} onChange={e => update("links", e.target.value)} /></Field>
             </Grid>
           </Card>
+          </div>
 
+          <div id="edit-summary" className="rounded-xl">
           <Card
             title="Summary"
             action={
@@ -627,7 +670,9 @@ export function Builder() {
             <FormattableTextarea rows={4} value={data.summary} onChange={v => update("summary", v)} placeholder="2-3 sentences on who you are and what you do." />
             <p className="mt-2 text-xs text-muted-foreground">Select text and click <b>B</b> to bold it. Tip: paste a job description below for a tailored rewrite.</p>
           </Card>
+          </div>
 
+          <div id="edit-experience" className="rounded-xl">
           <Card title="Experience" action={<Button size="sm" variant="outline" onClick={addExp}><Plus /> Add</Button>}>
             <div className="space-y-4">
               {data.experience.map(e => (
@@ -660,7 +705,9 @@ export function Builder() {
               ))}
             </div>
           </Card>
+          </div>
 
+          <div id="edit-education" className="rounded-xl">
           <Card title="Education" action={<Button size="sm" variant="outline" onClick={addEdu}><Plus /> Add</Button>}>
             <div className="space-y-3">
               {data.education.map(ed => (
@@ -677,7 +724,9 @@ export function Builder() {
               ))}
             </div>
           </Card>
+          </div>
 
+          <div id="edit-skills" className="rounded-xl">
           <Card
             title="Skills"
             action={
@@ -693,8 +742,10 @@ export function Builder() {
             <Textarea rows={3} value={data.skills} onChange={e => update("skills", e.target.value)} placeholder="Comma or pipe separated: React | TypeScript, Figma | Design Systems" />
             <p className="mt-2 text-xs text-muted-foreground">Separate with <code>,</code> or <code>|</code>. {parseSkills(data.skills).length} skills detected.</p>
           </Card>
+          </div>
 
           {data.sectionOrder.includes("projects") && (
+            <div id="edit-projects" className="rounded-xl">
             <Card title="Projects" action={<Button size="sm" variant="outline" onClick={addProject}><Plus /> Add</Button>}>
               <div className="space-y-4">
                 {data.projects.map(p => (
@@ -724,9 +775,11 @@ export function Builder() {
                 ))}
               </div>
             </Card>
+            </div>
           )}
 
           {data.sectionOrder.includes("certifications") && (
+            <div id="edit-certifications" className="rounded-xl">
             <Card title="Certifications" action={<Button size="sm" variant="outline" onClick={addCert}><Plus /> Add</Button>}>
               <div className="space-y-3">
                 {data.certifications.map(c => (
@@ -743,9 +796,11 @@ export function Builder() {
                 ))}
               </div>
             </Card>
+            </div>
           )}
 
           {data.sectionOrder.includes("awards") && (
+            <div id="edit-awards" className="rounded-xl">
             <Card title="Awards" action={<Button size="sm" variant="outline" onClick={addAward}><Plus /> Add</Button>}>
               <div className="space-y-3">
                 {data.awards.map(a => (
@@ -762,9 +817,11 @@ export function Builder() {
                 ))}
               </div>
             </Card>
+            </div>
           )}
 
           {data.sectionOrder.includes("languages") && (
+            <div id="edit-languages" className="rounded-xl">
             <Card title="Languages" action={<Button size="sm" variant="outline" onClick={addLang}><Plus /> Add</Button>}>
               <div className="space-y-3">
                 {data.languages.map(l => (
@@ -780,6 +837,7 @@ export function Builder() {
                 ))}
               </div>
             </Card>
+            </div>
           )}
 
           <Card
@@ -824,7 +882,7 @@ export function Builder() {
             </button>
           )}
           <div className="overflow-auto rounded-xl">
-            <ResumeDocument data={data} />
+            <ResumeDocument data={data} onSectionClick={scrollToEditor} />
           </div>
         </div>
 
@@ -915,13 +973,28 @@ export function Builder() {
 
 function Card({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 transition-shadow">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display font-semibold">{title}</h3>
         {action}
       </div>
       {children}
     </div>
+  );
+}
+
+function RowAction({ icon, label, onClick, danger }: { icon: React.ReactNode; label: string; onClick: () => void; danger?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-sm px-1.5 py-1 text-[11px] text-muted-foreground hover:bg-secondary",
+        danger && "hover:text-destructive hover:bg-destructive/10"
+      )}
+    >
+      {icon}<span className="hidden md:inline">{label}</span>
+    </button>
   );
 }
 
