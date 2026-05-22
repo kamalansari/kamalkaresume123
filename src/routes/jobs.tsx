@@ -110,8 +110,9 @@ function JobsPage() {
       if (res.status === 402) { toast.error("AI credits exhausted."); return; }
       if (!res.ok) { toast.error("Search failed."); return; }
       const out = (await res.json()) as { jobs?: Job[] };
-      setJobs(out.jobs ?? []);
-      toast.success(`${out.jobs?.length ?? 0} jobs matched`);
+      const nextJobs = normalizeJobs(out.jobs ?? []);
+      setJobs(nextJobs);
+      toast.success(`${nextJobs.length} jobs matched`);
     } catch { toast.error("Network error."); }
     finally { setLoading(false); }
   };
@@ -289,7 +290,7 @@ function JobsPage() {
       <Dialog open={!!scoreJob} onOpenChange={o => { if (!o) { setScoreJob(null); setScoreResume(null); } }}>
         <DialogContent className="max-w-xl">
           <DialogHeader><DialogTitle>ATS Score · {scoreJob?.title}</DialogTitle></DialogHeader>
-          {scoreJob && <ScoreView jd={scoreJob.jd} resume={scoreResume ?? activeResume} />}
+          {scoreJob && <ScoreView jd={getJobScoringText(scoreJob)} resume={scoreResume ?? activeResume} />}
         </DialogContent>
       </Dialog>
 
@@ -327,6 +328,33 @@ function getLatestResume(activeResumeId: string, fallback: ResumeData): ResumeDa
   return selected ?? resumeStore.getDraft() ?? fallback;
 }
 
+function text(value: unknown, fallback = ""): string {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function getJobScoringText(job: Job): string {
+  return [job.jd, job.title, job.company, job.experience, job.tags?.join(" ")].filter(Boolean).join(". ");
+}
+
+function normalizeJobs(items: Job[]): Job[] {
+  return items.map((job, index) => {
+    const title = text(job.title, "Recommended Role");
+    const tags = Array.isArray(job.tags) ? job.tags.filter(Boolean).map(String) : [];
+    const normalized = {
+      id: text(job.id, `job_${index + 1}`),
+      title,
+      company: text(job.company, "Hiring company"),
+      location: text(job.location, "India"),
+      experience: text(job.experience, "Experience not specified"),
+      salary: text(job.salary, "Not disclosed"),
+      postedAgo: text(job.postedAgo, "Recently posted"),
+      tags,
+      jd: text(job.jd),
+    };
+    return { ...normalized, jd: normalized.jd || getJobScoringText(normalized) };
+  });
+}
+
 function FieldCell({ label, icon, children, className }: { label: string; icon: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("bg-card px-4 py-2", className)}>
@@ -346,7 +374,8 @@ function SelectInline({ value, onChange, options }: { value: string; onChange: (
 }
 
 function JobCard({ job, resume, onScore, onNova, naukriUrl }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; naukriUrl: (t: string) => string }) {
-  const score = useMemo(() => computeScore({ ...resume, jobDescription: job.jd }).score, [resume, job.jd]);
+  const scoringText = getJobScoringText(job);
+  const score = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
   const tone = score >= 80 ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
     : score >= 60 ? "bg-[var(--navy-light)]/10 text-[var(--navy-light)] border-[var(--navy-light)]/20"
     : score >= 40 ? "bg-amber-500/10 text-amber-700 border-amber-500/30"
