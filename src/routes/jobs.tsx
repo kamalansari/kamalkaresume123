@@ -374,7 +374,8 @@ function SelectInline({ value, onChange, options }: { value: string; onChange: (
 }
 
 function JobCard({ job, resume, onScore, onNova, naukriUrl }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; naukriUrl: (t: string) => string }) {
-  const score = useMemo(() => computeScore({ ...resume, jobDescription: job.jd }).score, [resume, job.jd]);
+  const scoringText = getJobScoringText(job);
+  const score = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
   const tone = score >= 80 ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
     : score >= 60 ? "bg-[var(--navy-light)]/10 text-[var(--navy-light)] border-[var(--navy-light)]/20"
     : score >= 40 ? "bg-amber-500/10 text-amber-700 border-amber-500/30"
