@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CoverLetterRouteImport } from './routes/cover-letter'
 import { Route as BuilderRouteImport } from './routes/builder'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
@@ -29,6 +30,11 @@ const JobsRoute = JobsRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoverLetterRoute = CoverLetterRouteImport.update({
+  id: '/cover-letter',
+  path: '/cover-letter',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuilderRoute = BuilderRouteImport.update({
@@ -80,6 +86,7 @@ const ApiGenerateFromJdRoute = ApiGenerateFromJdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
+  '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
   '/jobs': typeof JobsRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/builder'
+    | '/cover-letter'
     | '/dashboard'
     | '/jobs'
     | '/api/generate-from-jd'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/builder'
+    | '/cover-letter'
     | '/dashboard'
     | '/jobs'
     | '/api/generate-from-jd'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/builder'
+    | '/cover-letter'
     | '/dashboard'
     | '/jobs'
     | '/api/generate-from-jd'
@@ -162,6 +174,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BuilderRoute: typeof BuilderRoute
+  CoverLetterRoute: typeof CoverLetterRoute
   DashboardRoute: typeof DashboardRoute
   JobsRoute: typeof JobsRoute
   ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cover-letter': {
+      id: '/cover-letter'
+      path: '/cover-letter'
+      fullPath: '/cover-letter'
+      preLoaderRoute: typeof CoverLetterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/builder': {
@@ -258,6 +278,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BuilderRoute: BuilderRoute,
+  CoverLetterRoute: CoverLetterRoute,
   DashboardRoute: DashboardRoute,
   JobsRoute: JobsRoute,
   ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
