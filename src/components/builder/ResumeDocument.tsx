@@ -397,3 +397,21 @@ function LanguagesSection({ data, accent, headingFont, template }: { data: Resum
     </Section>
   );
 }
+
+function RewriteButton({ onClick, busy }: { onClick: () => void; busy?: boolean }) {
+  return (
+    <button
+      onClick={e => { e.stopPropagation(); onClick(); }}
+      title="AI rewrite this section"
+      className="no-print"
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 3, fontSize: "8pt",
+        padding: "2px 6px", borderRadius: 4, border: "1px solid currentColor",
+        opacity: 0.75, cursor: "pointer", background: "transparent", color: "inherit",
+        letterSpacing: 0, textTransform: "none", fontWeight: 500,
+      }}
+    >
+      {busy ? <Loader2 size={9} className="animate-spin" /> : <Sparkles size={9} />} AI
+    </button>
+  );
+}
