@@ -897,7 +897,7 @@ export function Builder() {
                         <RowAction icon={<Pencil className="h-3.5 w-3.5" />} label="Rename" onClick={() => openRenameFor(s.id, s.name)} />
                         <RowAction icon={<Copy className="h-3.5 w-3.5" />} label="Duplicate" onClick={() => duplicateSaved(s.id)} />
                         <RowAction icon={<Download className="h-3.5 w-3.5" />} label="DOCX" onClick={() => downloadSavedDocx(s.id)} />
-                        <RowAction icon={<FileText className="h-3.5 w-3.5" />} label="PDF" onClick={() => { loadSaved(s.id); setTimeout(() => window.print(), 250); }} />
+                        <RowAction icon={<FileText className="h-3.5 w-3.5" />} label="PDF" onClick={() => printSavedPdf(s.id)} />
                         <RowAction icon={<Trash2 className="h-3.5 w-3.5" />} label="Delete" danger onClick={() => deleteSaved(s.id, s.name)} />
                       </div>
                     </div>
@@ -917,7 +917,7 @@ export function Builder() {
             <Button variant="outline" onClick={handleDocx} disabled={exporting}>
               {exporting ? <Loader2 className="animate-spin" /> : <FileType />} DOCX
             </Button>
-            <Button variant="hero" style={{ background: "var(--gradient-hero)" }} onClick={() => window.print()}>
+            <Button variant="hero" style={{ background: "var(--gradient-hero)" }} onClick={printCurrentResume}>
               <FileText /> PDF
             </Button>
           </div>
@@ -1464,7 +1464,7 @@ export function Builder() {
             zoom={zoom}
             setZoom={setZoom}
             data={data}
-            onPdf={() => window.print()}
+            onPdf={printCurrentResume}
             onDocx={handleDocx}
             docxBusy={exporting}
             extras={
