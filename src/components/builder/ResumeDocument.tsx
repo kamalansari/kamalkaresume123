@@ -241,20 +241,39 @@ function SidebarBlock({ title, headingFont, children, dark }: { title: string; h
   );
 }
 
-function Section({ title, accent, headingFont, children }: { title: string; accent: string; headingFont: string; children: React.ReactNode }) {
+function Section({ title, accent, headingFont, children, ed, kind }: { title: string; accent: string; headingFont: string; children: React.ReactNode; ed?: EditableHandlers; kind?: EditableRewriteKind }) {
   return (
     <section style={{ marginTop: 16 }}>
-      <h2 style={{ fontFamily: headingFont, fontSize: "10.5pt", fontWeight: 700, letterSpacing: "0.18em", color: accent, textTransform: "uppercase", borderBottom: `1px solid ${accent}33`, paddingBottom: 4, marginBottom: 8 }}>{title}</h2>
+      <h2 style={{ fontFamily: headingFont, fontSize: "10.5pt", fontWeight: 700, letterSpacing: "0.18em", color: accent, textTransform: "uppercase", borderBottom: `1px solid ${accent}33`, paddingBottom: 4, marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span>{title}</span>
+        {ed && kind && kind !== "experience-bullets" && (
+          <RewriteButton busy={ed.rewritingKey === kind} onClick={() => ed.onRewrite(kind)} />
+        )}
+      </h2>
       {children}
     </section>
   );
 }
 
-function SummarySection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
-  return <Section title="Summary" accent={accent} headingFont={headingFont}><p><InlineText text={data.summary} /></p></Section>;
+function SummarySection({ data, accent, headingFont, ed }: { data: ResumeData; accent: string; headingFont: string; ed?: EditableHandlers }) {
+  return (
+    <Section title="Summary" accent={accent} headingFont={headingFont} ed={ed} kind="summary">
+      {ed ? (
+        <p
+          contentEditable
+          suppressContentEditableWarning
+          className="preview-editable"
+          onClick={e => e.stopPropagation()}
+          onBlur={e => ed.onUpdate({ summary: e.currentTarget.innerText })}
+        >{data.summary}</p>
+      ) : (
+        <p><InlineText text={data.summary} /></p>
+      )}
+    </Section>
+  );
 }
 
-function ExperienceSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData; accent: string; headingFont: string; ed?: EditableHandlers }) {
   return (
     <Section title="Experience" accent={accent} headingFont={headingFont}>
       {data.experience.map(e => (
@@ -263,11 +282,29 @@ function ExperienceSection({ data, accent, headingFont }: { data: ResumeData; ac
             <div style={{ fontWeight: 600 }}>
               {e.title || "Role"} <span style={{ fontWeight: 400, color: "#4a4a4a" }}>· {e.company}</span>
             </div>
-            <div style={{ color: "#666", whiteSpace: "nowrap" }}>{e.date}</div>
+            <div style={{ color: "#666", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}>
+              <span>{e.date}</span>
+              {ed && <RewriteButton busy={ed.rewritingKey === `exp-${e.id}`} onClick={() => ed.onRewrite("experience-bullets", e.id)} />}
+            </div>
           </div>
-          <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
-            {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
-          </ul>
+          {ed ? (
+            <div
+              contentEditable
+              suppressContentEditableWarning
+              className="preview-editable"
+              style={{ marginTop: 4, marginLeft: 18, whiteSpace: "pre-wrap" }}
+              onClick={ev => ev.stopPropagation()}
+              onBlur={ev => ed.onUpdateExperienceBullets(e.id, ev.currentTarget.innerText.replace(/^•\s*/gm, ""))}
+            >
+              {e.bullets.split("\n").filter(Boolean).map((b, i) => (
+                <div key={i}>• {b}</div>
+              ))}
+            </div>
+          ) : (
+            <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
+              {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
+            </ul>
+          )}
         </div>
       ))}
     </Section>
@@ -287,11 +324,21 @@ function EducationSection({ data, accent, headingFont }: { data: ResumeData; acc
   );
 }
 
-function SkillsSection({ data, accent, headingFont, template }: { data: ResumeData; accent: string; headingFont: string; template: string }) {
+function SkillsSection({ data, accent, headingFont, template, ed }: { data: ResumeData; accent: string; headingFont: string; template: string; ed?: EditableHandlers }) {
   if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
   return (
-    <Section title="Skills" accent={accent} headingFont={headingFont}>
-      <p>{parseSkills(data.skills).join(" · ")}</p>
+    <Section title="Skills" accent={accent} headingFont={headingFont} ed={ed} kind="skills">
+      {ed ? (
+        <p
+          contentEditable
+          suppressContentEditableWarning
+          className="preview-editable"
+          onClick={e => e.stopPropagation()}
+          onBlur={e => ed.onUpdate({ skills: e.currentTarget.innerText })}
+        >{parseSkills(data.skills).join(" | ")}</p>
+      ) : (
+        <p>{parseSkills(data.skills).join(" | ")}</p>
+      )}
     </Section>
   );
 }
