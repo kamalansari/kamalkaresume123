@@ -222,6 +222,17 @@ export function Builder() {
     catch { toast.error("DOCX export failed"); }
   };
 
+  const printSavedPdf = (id: string) => {
+    const entry = resumeStore.get(id);
+    if (!entry) { toast.error("Resume not found"); return; }
+    flushSync(() => {
+      setData({ ...defaultResume, ...entry.data });
+      setCurrentId(entry.id);
+      setCurrentName(entry.name);
+    });
+    requestAnimationFrame(() => window.print());
+  };
+
   const openRenameFor = (id: string, name: string) => {
     setRenameTargetId(id);
     setNameDraft(name);
@@ -535,7 +546,7 @@ export function Builder() {
 
   const handleDocx = async () => {
     setExporting(true);
-    try { await exportDocx(data); toast.success("DOCX downloaded"); }
+    try { await exportDocx(commitPreviewEdits()); toast.success("DOCX downloaded"); }
     catch { toast.error("Could not export DOCX"); }
     finally { setExporting(false); }
   };
