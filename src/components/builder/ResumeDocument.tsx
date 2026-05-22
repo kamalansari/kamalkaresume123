@@ -169,7 +169,7 @@ export function ResumeDocument({
   }
 
   if (variant === "modern") {
-    const exec = data.template === "executive";
+    const exec = data.template === "executive" || data.template === "bold";
     return (
       <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
         <header {...headerClickProps} style={{ padding: "0.5in 0.6in", background: accent, color: "#fff", cursor: onSectionClick ? "pointer" : undefined, borderBottom: exec ? "4px solid rgba(0,0,0,0.35)" : undefined }}>
