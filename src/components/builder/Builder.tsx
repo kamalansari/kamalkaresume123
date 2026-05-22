@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
@@ -75,13 +75,16 @@ export function Builder() {
   const [generating, setGenerating] = useState(false);
   const [jdDialogOpen, setJdDialogOpen] = useState(false);
   const [jdDialogText, setJdDialogText] = useState("");
+  const [jdSaveAsNew, setJdSaveAsNew] = useState(true);
+  const [jdTailoredName, setJdTailoredName] = useState("");
+  const [primaryId, setPrimaryId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
-  useEffect(() => { setSaved(resumeStore.list()); }, []);
+  useEffect(() => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); }, []);
   useEffect(() => { setMounted(true); }, []);
 
   // Load shared resume from URL hash (#r=...) once on mount
@@ -103,7 +106,22 @@ export function Builder() {
     }
   }, []);
 
-  const refreshList = () => setSaved(resumeStore.list());
+  const refreshList = () => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); };
+
+  const setAsPrimary = (id: string, name: string) => {
+    resumeStore.setPrimary(id);
+    refreshList();
+    toast.success(`"${name}" is now your Primary Resume`);
+  };
+
+  const loadPrimary = () => {
+    const p = resumeStore.getPrimary();
+    if (!p) { toast.error("No Primary Resume set. Save one and mark it as Primary."); return; }
+    setData({ ...defaultResume, ...p.data });
+    setCurrentId(p.id);
+    setCurrentName(p.name);
+    toast.success(`Loaded Primary: "${p.name}"`);
+  };
 
   const saveCurrent = () => {
     if (!currentId) { setNameDraft(data.name ? `${data.name}'s resume` : "Untitled resume"); setSaveAsOpen(true); return; }
@@ -359,17 +377,20 @@ export function Builder() {
     if (!jd) { toast.error("Paste a job description first."); return; }
     setGenerating(true);
     try {
+      // Always tailor from Primary Resume if set (keeps career data secure & editable)
+      const primary = resumeStore.getPrimary();
+      const source: ResumeData = primary ? { ...defaultResume, ...primary.data } : data;
       const res = await fetch("/api/generate-from-jd", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           jobDescription: jd,
           current: {
-            name: data.name,
-            headline: data.headline,
-            summary: data.summary,
-            skills: data.skills,
-            experience: data.experience.map(e => ({ id: e.id, title: e.title, company: e.company, bullets: e.bullets })),
+            name: source.name,
+            headline: source.headline,
+            summary: source.summary,
+            skills: source.skills,
+            experience: source.experience.map(e => ({ id: e.id, title: e.title, company: e.company, bullets: e.bullets })),
           },
         }),
       });
@@ -377,20 +398,34 @@ export function Builder() {
       if (res.status === 402) { toast.error("AI credits exhausted."); return; }
       if (!res.ok) { toast.error("AI generation failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
-      setData(d => ({
-        ...d,
+      const tailored: ResumeData = {
+        ...source,
         jobDescription: jd,
-        headline: out.headline || d.headline,
-        summary: out.summary || d.summary,
-        skills: out.skills || d.skills,
-        experience: d.experience.map(e => {
+        headline: out.headline || source.headline,
+        summary: out.summary || source.summary,
+        skills: out.skills || source.skills,
+        experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
           return match ? { ...e, bullets: match.bullets } : e;
         }),
-      }));
+      };
+      if (jdSaveAsNew) {
+        // Save tailored version as a NEW resume — Primary stays untouched
+        const id = newId();
+        const name = (jdTailoredName.trim() || `Tailored — ${new Date().toLocaleDateString()}`);
+        resumeStore.upsert({ id, name, updatedAt: Date.now(), data: tailored });
+        setData(tailored);
+        setCurrentId(id);
+        setCurrentName(name);
+        refreshList();
+        toast.success(primary ? `Tailored from Primary, saved as "${name}"` : `Tailored resume saved as "${name}"`);
+      } else {
+        setData(tailored);
+        toast.success("ATS-tailored resume generated");
+      }
       setJdDialogOpen(false);
       setJdDialogText("");
-      toast.success("ATS-tailored resume generated");
+      setJdTailoredName("");
     } catch {
       toast.error("Network error.");
     } finally {
@@ -433,6 +468,24 @@ export function Builder() {
                   <Plus className="h-4 w-4" /> New blank resume
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground inline-flex items-center gap-1.5">
+                  <Shield className="h-3 w-3" /> Primary Resume
+                </DropdownMenuLabel>
+                <DropdownMenuItem onClick={loadPrimary} disabled={!primaryId}>
+                  <OpenIcon className="h-4 w-4" /> Open Primary
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={!currentId}
+                  onClick={() => currentId && setAsPrimary(currentId, currentName)}
+                >
+                  <Star className="h-4 w-4" /> Mark current as Primary
+                </DropdownMenuItem>
+                {primaryId && (
+                  <DropdownMenuItem onClick={() => { resumeStore.setPrimary(null); refreshList(); toast.success("Primary cleared"); }}>
+                    <X className="h-4 w-4" /> Clear Primary
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">
                   Saved ({saved.length})
                 </DropdownMenuLabel>
@@ -449,7 +502,9 @@ export function Builder() {
                       >
                         <div className="flex items-center gap-2 text-sm font-medium truncate">
                           {currentId === s.id && <Check className="h-3.5 w-3.5 text-[var(--navy-light)]" />}
+                          {primaryId === s.id && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />}
                           <span className="truncate">{s.name}</span>
+                          {primaryId === s.id && <span className="text-[10px] uppercase tracking-widest text-amber-600">Primary</span>}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           {new Date(s.updatedAt).toLocaleString()}
@@ -457,6 +512,7 @@ export function Builder() {
                       </button>
                       <div className="mt-1 flex items-center gap-1 px-1">
                         <RowAction icon={<OpenIcon className="h-3.5 w-3.5" />} label="Open" onClick={() => loadSaved(s.id)} />
+                        <RowAction icon={<Star className={cn("h-3.5 w-3.5", primaryId === s.id && "fill-amber-400 text-amber-500")} />} label={primaryId === s.id ? "Primary" : "Set Primary"} onClick={() => setAsPrimary(s.id, s.name)} />
                         <RowAction icon={<Pencil className="h-3.5 w-3.5" />} label="Rename" onClick={() => openRenameFor(s.id, s.name)} />
                         <RowAction icon={<Copy className="h-3.5 w-3.5" />} label="Duplicate" onClick={() => duplicateSaved(s.id)} />
                         <RowAction icon={<Download className="h-3.5 w-3.5" />} label="DOCX" onClick={() => downloadSavedDocx(s.id)} />
@@ -527,8 +583,15 @@ export function Builder() {
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Generate ATS-ready resume from a job description</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Paste the full job posting below. AI will rewrite your headline, summary, skills and experience bullets to match — keeping your real employers and dates.
+            Paste the job posting below. AI will tailor your headline, summary, skills and bullets to match — keeping your real employers and dates.
           </p>
+          <div className={cn("rounded-md border px-3 py-2 text-xs flex items-center gap-2",
+            primaryId ? "border-amber-300/60 bg-amber-50 text-amber-900" : "border-border bg-muted text-muted-foreground")}>
+            <Shield className="h-3.5 w-3.5" />
+            {primaryId
+              ? <>Tailoring from your <strong>Primary Resume</strong> — your original career data stays untouched.</>
+              : <>No Primary Resume set. Tailoring will use the current editor data. Tip: mark one resume as Primary to keep a secure master copy.</>}
+          </div>
           <Textarea
             autoFocus
             rows={12}
@@ -536,6 +599,19 @@ export function Builder() {
             onChange={e => setJdDialogText(e.target.value)}
             placeholder="Paste the job description here…"
           />
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={jdSaveAsNew} onChange={e => setJdSaveAsNew(e.target.checked)} />
+              Save tailored result as a new resume (keeps Primary safe)
+            </label>
+            {jdSaveAsNew && (
+              <Input
+                value={jdTailoredName}
+                onChange={e => setJdTailoredName(e.target.value)}
+                placeholder="Name this tailored version (e.g. “Stripe — Senior PM”)"
+              />
+            )}
+          </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setJdDialogOpen(false)}>Cancel</Button>
             <Button onClick={generateAtsResumeFromDialog} disabled={generating || !jdDialogText.trim()}>

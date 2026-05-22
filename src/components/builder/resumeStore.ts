@@ -1,6 +1,7 @@
 import type { ResumeData } from "./types";
 
 const KEY = "resumeforge.saved.v1";
+const PRIMARY_KEY = "resumeforge.primary.v1";
 
 export type SavedResume = {
   id: string;
@@ -25,6 +26,15 @@ function write(list: SavedResume[]) {
   localStorage.setItem(KEY, JSON.stringify(list));
 }
 
+function readPrimary(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem(PRIMARY_KEY); } catch { return null; }
+}
+function writePrimary(id: string | null) {
+  if (id) localStorage.setItem(PRIMARY_KEY, id);
+  else localStorage.removeItem(PRIMARY_KEY);
+}
+
 export const resumeStore = {
   list(): SavedResume[] {
     return read().sort((a, b) => b.updatedAt - a.updatedAt);
@@ -40,6 +50,7 @@ export const resumeStore = {
   },
   remove(id: string) {
     write(read().filter(r => r.id !== id));
+    if (readPrimary() === id) writePrimary(null);
   },
   rename(id: string, name: string) {
     const list = read();
@@ -63,6 +74,12 @@ export const resumeStore = {
     write(list);
     return copy;
   },
+  getPrimaryId(): string | null { return readPrimary(); },
+  getPrimary(): SavedResume | undefined {
+    const id = readPrimary();
+    return id ? read().find(r => r.id === id) : undefined;
+  },
+  setPrimary(id: string | null) { writePrimary(id); },
 };
 
 export function newId() {
