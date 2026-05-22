@@ -955,13 +955,28 @@ export function Builder() {
 
 function Card({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 transition-shadow">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display font-semibold">{title}</h3>
         {action}
       </div>
       {children}
     </div>
+  );
+}
+
+function RowAction({ icon, label, onClick, danger }: { icon: React.ReactNode; label: string; onClick: () => void; danger?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-sm px-1.5 py-1 text-[11px] text-muted-foreground hover:bg-secondary",
+        danger && "hover:text-destructive hover:bg-destructive/10"
+      )}
+    >
+      {icon}<span className="hidden md:inline">{label}</span>
+    </button>
   );
 }
 
