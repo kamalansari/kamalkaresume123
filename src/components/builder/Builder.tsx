@@ -675,7 +675,7 @@ export function Builder() {
           </Link>
           <div className="font-display font-semibold">ResumeForge Builder</div>
           <div className="flex items-center gap-2">
-            {profileApplied && (
+            {mounted && profileApplied && (
               <span
                 className="hidden md:inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300"
                 title="Your saved profile (name, contact, education) is applied to this resume"
