@@ -4,12 +4,15 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 function NotFoundComponent() {
   return (
@@ -111,10 +114,28 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const showSidebar = pathname !== "/";
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      {showSidebar ? (
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full">
+            <AppSidebar />
+            <div className="flex-1 flex flex-col min-w-0">
+              <header className="h-12 flex items-center border-b bg-background/80 backdrop-blur sticky top-0 z-30 no-print">
+                <SidebarTrigger className="ml-2" />
+              </header>
+              <main className="flex-1 min-w-0">
+                <Outlet />
+              </main>
+            </div>
+          </div>
+        </SidebarProvider>
+      ) : (
+        <Outlet />
+      )}
       <Toaster />
     </QueryClientProvider>
   );
