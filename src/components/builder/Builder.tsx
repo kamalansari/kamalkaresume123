@@ -86,6 +86,19 @@ export function Builder() {
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
   const score = useMemo(() => computeScore(data), [data]);
 
+  const profileApplied = useMemo(() => {
+    const p = profileStore.get();
+    if (!p) return false;
+    const eq = (a: unknown, b: unknown) => JSON.stringify(a ?? "") === JSON.stringify(b ?? "");
+    const hasAny = !!(p.name || p.headline || p.email || p.phone || p.location || (p.links && (p.links as string).length) || (p.education && (p.education as unknown[]).length));
+    if (!hasAny) return false;
+    return (
+      eq(p.name, data.name) && eq(p.headline, data.headline) && eq(p.email, data.email) &&
+      eq(p.phone, data.phone) && eq(p.location, data.location) && eq(p.links, data.links) &&
+      eq(p.education, data.education)
+    );
+  }, [data.name, data.headline, data.email, data.phone, data.location, data.links, data.education]);
+
   useEffect(() => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); }, []);
   useEffect(() => { setMounted(true); }, []);
 
