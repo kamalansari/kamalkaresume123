@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ResumeDocument } from "./ResumeDocument";
 import type { SavedResume } from "./resumeStore";
@@ -22,6 +23,29 @@ export function SavedResumesGallery({
   onOpen, onRename, onDuplicate, onDelete, onNew, onSetPrimary,
 }: Props) {
   const [open, setOpen] = useState(true);
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return saved;
+    return saved.filter(s => {
+      const d = s.data;
+      const hay = [
+        s.name,
+        d.template,
+        d.personal?.fullName,
+        d.personal?.title,
+        d.personal?.email,
+        d.personal?.location,
+        d.summary,
+        d.skills?.join(" "),
+        d.experience?.map(e => `${e.company} ${e.role} ${e.description}`).join(" "),
+        d.education?.map(e => `${e.school} ${e.degree}`).join(" "),
+        d.projects?.map(p => `${p.name} ${p.description}`).join(" "),
+      ].filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }, [saved, query]);
 
   return (
     <section className="no-print mx-auto max-w-[1600px] px-6 pt-6">
@@ -40,6 +64,31 @@ export function SavedResumesGallery({
 
         {open && (
           <div className="px-4 pb-4">
+            <div className="mb-4 flex items-center gap-2">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search resumes by name, role, skill, company..."
+                  className="pl-8 pr-8 h-9"
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    title="Clear"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {query && (
+                <span className="text-xs text-muted-foreground">
+                  {filtered.length} of {saved.length}
+                </span>
+              )}
+            </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {/* Add new tile */}
               <button
@@ -53,7 +102,7 @@ export function SavedResumesGallery({
                 <div className="text-xs text-muted-foreground">Start from blank</div>
               </button>
 
-              {saved.map(s => {
+              {filtered.map(s => {
                 const isCurrent = currentId === s.id;
                 const isPrimary = primaryId === s.id;
                 return (
@@ -117,6 +166,11 @@ export function SavedResumesGallery({
                   </div>
                 );
               })}
+              {query && filtered.length === 0 && (
+                <div className="col-span-full text-center text-sm text-muted-foreground py-8">
+                  No resumes match "{query}".
+                </div>
+              )}
             </div>
           </div>
         )}
