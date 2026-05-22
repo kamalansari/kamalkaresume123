@@ -25,7 +25,8 @@ import { AtsPanel } from "./AtsPanel";
 import { PreviewToolbar } from "./PreviewToolbar";
 import { SavedResumesGallery } from "./SavedResumesGallery";
 import { TemplatesPopover, SectionsPopover, StylePopover } from "./BuilderTopToolbar";
-import { decompressFromEncodedURIComponent } from "lz-string";
+import lzString from "lz-string";
+const { decompressFromEncodedURIComponent } = lzString;
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
