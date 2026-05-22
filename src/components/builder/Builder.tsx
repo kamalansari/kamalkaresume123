@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
 import { computeScore } from "./atsScore";
 import { ResumeDocument } from "./ResumeDocument";
 import { exportDocx } from "./exportDocx";
 import { resumeStore, newId, type SavedResume } from "./resumeStore";
-import { profileStore } from "./profileStore";
+import { profileStore, type Profile } from "./profileStore";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
@@ -84,6 +84,11 @@ export function Builder() {
   const [inlineEdit, setInlineEdit] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [profileNameDraft, setProfileNameDraft] = useState("");
+  const [profileRenameId, setProfileRenameId] = useState<string | null>(null);
   const score = useMemo(() => computeScore(data), [data]);
 
   const profileApplied = useMemo(() => {
@@ -102,16 +107,20 @@ export function Builder() {
   useEffect(() => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); }, []);
   useEffect(() => { setMounted(true); }, []);
 
-  // Apply saved profile (name, contact, education) on first mount so it persists across refresh / new resumes
+  // Load profiles and apply active profile on first mount
   useEffect(() => {
+    setProfiles(profileStore.list());
+    setActiveProfileId(profileStore.getActiveId());
     const p = profileStore.get();
     if (p) setData(d => ({ ...d, ...p }));
   }, []);
 
-  // Auto-save profile fields whenever they change
+  // Auto-save profile fields to the active profile whenever they change
   useEffect(() => {
     if (!mounted) return;
     profileStore.save(data);
+    setProfiles(profileStore.list());
+    setActiveProfileId(profileStore.getActiveId());
   }, [mounted, data.name, data.headline, data.email, data.phone, data.location, data.links, data.education]);
 
   // Load shared resume from URL hash (#r=...) once on mount
@@ -233,6 +242,54 @@ export function Builder() {
     setCurrentId(null);
     setCurrentName("Untitled resume");
     toast.success("Started a new resume");
+  };
+
+  const refreshProfiles = () => {
+    setProfiles(profileStore.list());
+    setActiveProfileId(profileStore.getActiveId());
+  };
+
+  const applyProfileFields = (p: Profile) => {
+    setData(d => ({ ...d, ...p.fields }));
+  };
+
+  const switchProfile = (id: string) => {
+    const p = profileStore.list().find(x => x.id === id);
+    if (!p) return;
+    profileStore.setActive(id);
+    applyProfileFields(p);
+    refreshProfiles();
+    toast.success(`Switched to "${p.name}"`);
+  };
+
+  const createProfile = (name: string, fromCurrent: boolean) => {
+    const trimmed = name.trim() || "Untitled profile";
+    const p = profileStore.create(trimmed, fromCurrent ? {
+      name: data.name, headline: data.headline, email: data.email,
+      phone: data.phone, location: data.location, links: data.links, education: data.education,
+    } : {});
+    if (!fromCurrent) applyProfileFields(p);
+    refreshProfiles();
+    setProfileDialogOpen(false);
+    setProfileNameDraft("");
+    toast.success(`Profile "${p.name}" created`);
+  };
+
+  const renameProfile = (id: string, name: string) => {
+    profileStore.rename(id, name);
+    refreshProfiles();
+    setProfileRenameId(null);
+    setProfileNameDraft("");
+    toast.success("Profile renamed");
+  };
+
+  const deleteProfile = (id: string, name: string) => {
+    if (typeof window !== "undefined" && !window.confirm(`Delete profile "${name}"? Saved resumes are not affected.`)) return;
+    profileStore.remove(id);
+    refreshProfiles();
+    const next = profileStore.get();
+    if (next) setData(d => ({ ...d, ...next }));
+    toast.success(`Deleted "${name}"`);
   };
 
   const resetProfile = () => {
@@ -499,6 +556,69 @@ export function Builder() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
+                <Button variant="outline" title="Manage profile templates">
+                  <IdCard /> <span className="hidden sm:inline">Profile</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground inline-flex items-center gap-1.5">
+                  <User className="h-3 w-3" /> Profiles ({profiles.length})
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {profiles.length === 0 && (
+                  <div className="px-2 py-2 text-xs text-muted-foreground">
+                    No profiles yet. Edit your personal info and a default profile is created automatically.
+                  </div>
+                )}
+                <div className="max-h-64 overflow-auto">
+                  {profiles.map(p => (
+                    <div key={p.id} className="group rounded-sm px-1 py-1 hover:bg-accent/40">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => switchProfile(p.id)}
+                          className="flex-1 text-left rounded-sm px-2 py-1"
+                          title={`Apply ${p.name}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {p.id === activeProfileId
+                              ? <Check className="h-3.5 w-3.5 text-emerald-600" />
+                              : <span className="inline-block w-3.5" />
+                            }
+                            <span className="truncate text-sm font-medium">{p.name}</span>
+                          </div>
+                          <div className="ml-5 truncate text-[11px] text-muted-foreground">
+                            {p.fields.name || "—"}{p.fields.email ? ` · ${p.fields.email}` : ""}
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => { setProfileRenameId(p.id); setProfileNameDraft(p.name); }}
+                          className="rounded p-1 opacity-60 hover:opacity-100 hover:bg-accent"
+                          title="Rename profile"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deleteProfile(p.id, p.name)}
+                          className="rounded p-1 opacity-60 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                          title="Delete profile"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { setProfileNameDraft(""); setProfileDialogOpen(true); }}>
+                  <UserPlus className="h-4 w-4" /> Save current as new profile…
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={resetProfile}>
+                  <RotateCcw className="h-4 w-4" /> Reset active profile
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="outline">
                   <FolderOpen /> <span className="hidden sm:inline">Resumes</span>
                 </Button>
@@ -633,6 +753,42 @@ export function Builder() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => { setRenameOpen(false); setRenameTargetId(null); }}>Cancel</Button>
             <Button onClick={() => renameCurrent(nameDraft)}>Save name</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Save current personal info as profile</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Saves the current name, contact, links, and education as a reusable profile template you can switch between per resume.
+          </p>
+          <Input
+            autoFocus
+            placeholder="e.g. Personal, Freelance, Consulting"
+            value={profileNameDraft}
+            onChange={e => setProfileNameDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") createProfile(profileNameDraft, true); }}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setProfileDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => createProfile(profileNameDraft, true)}>Create profile</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!profileRenameId} onOpenChange={(o) => { if (!o) { setProfileRenameId(null); setProfileNameDraft(""); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Rename profile</DialogTitle></DialogHeader>
+          <Input
+            autoFocus
+            value={profileNameDraft}
+            onChange={e => setProfileNameDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && profileRenameId) renameProfile(profileRenameId, profileNameDraft); }}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setProfileRenameId(null); setProfileNameDraft(""); }}>Cancel</Button>
+            <Button onClick={() => profileRenameId && renameProfile(profileRenameId, profileNameDraft)}>Save name</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
