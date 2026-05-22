@@ -241,7 +241,12 @@ function JobsPage() {
                 <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">Score against resume</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {resumes.length === 0 && (
-                  <DropdownMenuItem disabled>No saved resumes. Save one in the builder.</DropdownMenuItem>
+                  <DropdownMenuItem disabled>{draftResume ? "Using latest builder draft." : "No saved resumes. Save one in the builder."}</DropdownMenuItem>
+                )}
+                {draftResume && (
+                  <DropdownMenuItem onClick={() => setActiveResumeId(DRAFT_RESUME_ID)}>
+                    {activeResumeId === DRAFT_RESUME_ID ? "✓ " : "  "}Current draft
+                  </DropdownMenuItem>
                 )}
                 {resumes.map(r => (
                   <DropdownMenuItem key={r.id} onClick={() => setActiveResumeId(r.id)}>
