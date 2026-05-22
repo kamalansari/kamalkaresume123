@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -219,6 +220,17 @@ export function Builder() {
     if (!entry) return;
     try { await exportDocx(entry.data); toast.success(`Downloaded "${entry.name}"`); }
     catch { toast.error("DOCX export failed"); }
+  };
+
+  const printSavedPdf = (id: string) => {
+    const entry = resumeStore.get(id);
+    if (!entry) { toast.error("Resume not found"); return; }
+    flushSync(() => {
+      setData({ ...defaultResume, ...entry.data });
+      setCurrentId(entry.id);
+      setCurrentName(entry.name);
+    });
+    requestAnimationFrame(() => window.print());
   };
 
   const openRenameFor = (id: string, name: string) => {
@@ -444,6 +456,45 @@ export function Builder() {
 
   const updatePatch = (patch: Partial<ResumeData>) => setData(d => ({ ...d, ...patch }));
 
+  const commitPreviewEdits = (source: ResumeData = data): ResumeData => {
+    if (typeof document === "undefined") return source;
+    const root = document.getElementById("resume-preview");
+    if (!root) return source;
+
+    let next = source;
+    let dirty = false;
+    root.querySelectorAll<HTMLElement>("[data-preview-edit]").forEach(el => {
+      const kind = el.dataset.previewEdit;
+      if (kind === "summary") {
+        const value = el.innerText;
+        if (value !== source.summary) { next = { ...next, summary: value }; dirty = true; }
+      }
+      if (kind === "skills") {
+        const value = el.innerText;
+        const displayed = parseSkills(source.skills).join(" | ");
+        if (value !== displayed && value !== source.skills) { next = { ...next, skills: value }; dirty = true; }
+      }
+      if (kind === "experience-bullets") {
+        const id = el.dataset.previewExpId;
+        const current = source.experience.find(e => e.id === id);
+        if (!id || !current) return;
+        const bullets = el.innerText.split("\n").map(line => line.replace(/^\s*[•-]\s*/, "").trim()).filter(Boolean).join("\n");
+        if (bullets !== current.bullets) {
+          next = { ...next, experience: next.experience.map(e => e.id === id ? { ...e, bullets } : e) };
+          dirty = true;
+        }
+      }
+    });
+
+    if (dirty) flushSync(() => setData(next));
+    return next;
+  };
+
+  const printCurrentResume = () => {
+    commitPreviewEdits();
+    requestAnimationFrame(() => window.print());
+  };
+
   const updateExp = (id: string, patch: Partial<Experience>) =>
     setData(d => ({ ...d, experience: d.experience.map(e => e.id === id ? { ...e, ...patch } : e) }));
   const addExp = () => setData(d => ({ ...d, experience: [...d.experience, { id: uid(), title: "", company: "", date: "", bullets: "" }] }));
@@ -495,7 +546,7 @@ export function Builder() {
 
   const handleDocx = async () => {
     setExporting(true);
-    try { await exportDocx(data); toast.success("DOCX downloaded"); }
+    try { await exportDocx(commitPreviewEdits()); toast.success("DOCX downloaded"); }
     catch { toast.error("Could not export DOCX"); }
     finally { setExporting(false); }
   };
@@ -846,7 +897,7 @@ export function Builder() {
                         <RowAction icon={<Pencil className="h-3.5 w-3.5" />} label="Rename" onClick={() => openRenameFor(s.id, s.name)} />
                         <RowAction icon={<Copy className="h-3.5 w-3.5" />} label="Duplicate" onClick={() => duplicateSaved(s.id)} />
                         <RowAction icon={<Download className="h-3.5 w-3.5" />} label="DOCX" onClick={() => downloadSavedDocx(s.id)} />
-                        <RowAction icon={<FileText className="h-3.5 w-3.5" />} label="PDF" onClick={() => { loadSaved(s.id); setTimeout(() => window.print(), 250); }} />
+                        <RowAction icon={<FileText className="h-3.5 w-3.5" />} label="PDF" onClick={() => printSavedPdf(s.id)} />
                         <RowAction icon={<Trash2 className="h-3.5 w-3.5" />} label="Delete" danger onClick={() => deleteSaved(s.id, s.name)} />
                       </div>
                     </div>
@@ -866,7 +917,7 @@ export function Builder() {
             <Button variant="outline" onClick={handleDocx} disabled={exporting}>
               {exporting ? <Loader2 className="animate-spin" /> : <FileType />} DOCX
             </Button>
-            <Button variant="hero" style={{ background: "var(--gradient-hero)" }} onClick={() => window.print()}>
+            <Button variant="hero" style={{ background: "var(--gradient-hero)" }} onClick={printCurrentResume}>
               <FileText /> PDF
             </Button>
           </div>
@@ -1413,7 +1464,8 @@ export function Builder() {
             zoom={zoom}
             setZoom={setZoom}
             data={data}
-            onPdf={() => window.print()}
+            getData={() => commitPreviewEdits()}
+            onPdf={printCurrentResume}
             onDocx={handleDocx}
             docxBusy={exporting}
             extras={
@@ -1467,6 +1519,7 @@ export function Builder() {
           </div>
           <div className="overflow-auto rounded-xl">
             <div
+              className="resume-preview-scale"
               style={{
                 transform: `scale(${zoom})`,
                 transformOrigin: "top center",

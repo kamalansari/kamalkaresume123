@@ -15,16 +15,17 @@ type Props = {
   zoom: number;
   setZoom: (z: number) => void;
   data: ResumeData;
+  getData?: () => ResumeData;
   onPdf: () => void;
   onDocx: () => void;
   docxBusy?: boolean;
   extras?: React.ReactNode;
 };
 
-export function PreviewToolbar({ zoom, setZoom, data, onPdf, onDocx, docxBusy, extras }: Props) {
+export function PreviewToolbar({ zoom, setZoom, data, getData, onPdf, onDocx, docxBusy, extras }: Props) {
   const share = async () => {
     try {
-      const payload = compressToEncodedURIComponent(JSON.stringify(data));
+      const payload = compressToEncodedURIComponent(JSON.stringify(getData?.() ?? data));
       const url = `${window.location.origin}/builder#r=${payload}`;
       await navigator.clipboard.writeText(url);
       toast.success("Share link copied to clipboard");
@@ -52,7 +53,7 @@ export function PreviewToolbar({ zoom, setZoom, data, onPdf, onDocx, docxBusy, e
         <Button size="sm" variant="outline" onClick={share} title="Copy shareable link">
           <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share</span>
         </Button>
-        <Button size="sm" variant="outline" onClick={() => window.print()} title="Print">
+        <Button size="sm" variant="outline" onClick={onPdf} title="Print">
           <Printer className="h-4 w-4" /> <span className="hidden sm:inline">Print</span>
         </Button>
         <DropdownMenu>
