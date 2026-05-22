@@ -385,6 +385,30 @@ function Chip({ children, className }: { children: React.ReactNode; className?: 
 
 function ScoreView({ jd, resume }: { jd: string; resume: ResumeData }) {
   const score = useMemo(() => computeScore({ ...resume, jobDescription: jd }), [jd, resume]);
+  const isEmpty = !resume.name?.trim() && !resume.skills?.trim() && !resume.summary?.trim();
+  if (isEmpty) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          No saved resume found. Build and save a resume in the builder to get a real ATS match score against this job.
+        </p>
+        <Link
+          to="/builder"
+          className="inline-flex items-center gap-1 rounded-md bg-[var(--navy-light)] text-white h-9 px-3 text-sm font-medium hover:opacity-95"
+        >
+          Open builder
+        </Link>
+        <div className="pt-2">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Top keywords in this job</div>
+          <div className="flex flex-wrap gap-1.5">
+            {score.missing.slice(0, 24).map(k => (
+              <span key={k} className="text-xs px-2 py-1 rounded-md bg-secondary border border-border">{k}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       <div className="flex items-baseline gap-2">
