@@ -15,6 +15,7 @@ export type ScoreResult = {
   matched: string[];
   missing: string[];
   coverage: number;
+  keywordStats: { keyword: string; resume: number; jd: number; matched: boolean }[];
 };
 
 export function computeScore(r: ResumeData): ScoreResult {
@@ -53,5 +54,17 @@ export function computeScore(r: ResumeData): ScoreResult {
   ];
 
   const score = Math.min(100, Math.round(checks.reduce((s, c) => s + (c.pass ? c.weight : 0), 0)));
-  return { score, checks, matched, missing, coverage };
+
+  // Per-keyword counts in resume vs JD
+  const resumeTokensList = tokens(resumeText);
+  const jdTokensList = tokens(r.jobDescription);
+  const countIn = (arr: string[], k: string) => arr.filter(t => t === k).length;
+  const keywordStats = jdTokens.map(k => ({
+    keyword: k,
+    resume: countIn(resumeTokensList, k),
+    jd: countIn(jdTokensList, k),
+    matched: resumeTokens.has(k),
+  })).sort((a, b) => Number(a.matched) - Number(b.matched) || b.jd - a.jd);
+
+  return { score, checks, matched, missing, coverage, keywordStats };
 }
