@@ -2,6 +2,7 @@ import type { ResumeData } from "./types";
 
 const KEY = "resumeforge.saved.v1";
 const PRIMARY_KEY = "resumeforge.primary.v1";
+const DRAFT_KEY = "resumeforge.draft.v1";
 
 export type SavedResume = {
   id: string;
@@ -24,6 +25,21 @@ function read(): SavedResume[] {
 
 function write(list: SavedResume[]) {
   localStorage.setItem(KEY, JSON.stringify(list));
+}
+
+function readDraft(): ResumeData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) as ResumeData : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(data: ResumeData) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
 }
 
 function readPrimary(): string | null {
@@ -80,6 +96,8 @@ export const resumeStore = {
     return id ? read().find(r => r.id === id) : undefined;
   },
   setPrimary(id: string | null) { writePrimary(id); },
+  getDraft(): ResumeData | null { return readDraft(); },
+  saveDraft(data: ResumeData) { writeDraft(data); },
 };
 
 export function newId() {

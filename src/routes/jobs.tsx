@@ -38,9 +38,11 @@ const INDUSTRIES = ["All industries", "IT Services", "Banking & Finance", "Healt
 const ROLES = ["All roles", "Software Engineering", "Data & Analytics", "Product", "Design", "Marketing", "Sales", "Operations", "HR"];
 const DATES = ["1 Day", "3 Days", "1 Week", "15 Days", "1 Month", "All time"];
 const EXPERIENCES = ["Fresher", "0-1 years", "1-2 years", "2 years", "2-5 years", "5-8 years", "8-12 years", "12+ years"];
+const DRAFT_RESUME_ID = "__current_draft";
 
 function JobsPage() {
   const [resumes, setResumes] = useState<SavedResume[]>([]);
+  const [draftResume, setDraftResume] = useState<ResumeData | null>(null);
   const [activeResumeId, setActiveResumeId] = useState<string>("");
   const [jobTitle, setJobTitle] = useState("Data Analyst");
   const [experience, setExperience] = useState("2 years");
@@ -55,22 +57,36 @@ function JobsPage() {
   const [loading, setLoading] = useState(false);
   const [activeRoleTab, setActiveRoleTab] = useState("Data Analyst");
   const [scoreJob, setScoreJob] = useState<Job | null>(null);
+  const [scoreResume, setScoreResume] = useState<ResumeData | null>(null);
   const [novaJob, setNovaJob] = useState<Job | null>(null);
   const [novaLoading, setNovaLoading] = useState(false);
   const [novaResp, setNovaResp] = useState<{ tips: string[]; keywords: string[] } | null>(null);
 
-  useEffect(() => {
+  const refreshResumes = () => {
     const list = resumeStore.list();
+    const primaryId = resumeStore.getPrimaryId();
     setResumes(list);
-    if (list[0]) setActiveResumeId(list[0].id);
+    setDraftResume(resumeStore.getDraft());
+    setActiveResumeId(current => {
+      if (current === DRAFT_RESUME_ID && resumeStore.getDraft()) return current;
+      if (current && list.some(r => r.id === current)) return current;
+      if (resumeStore.getDraft()) return DRAFT_RESUME_ID;
+      if (primaryId && list.some(r => r.id === primaryId)) return primaryId;
+      return list[0]?.id ?? "";
+    });
+  };
+
+  useEffect(() => {
+    refreshResumes();
   }, []);
 
   const activeResume: ResumeData = useMemo(() => {
+    if (activeResumeId === DRAFT_RESUME_ID) return draftResume ?? defaultResume;
     const r = resumes.find(x => x.id === activeResumeId);
-    return r?.data ?? defaultResume;
-  }, [resumes, activeResumeId]);
+    return r?.data ?? draftResume ?? defaultResume;
+  }, [resumes, activeResumeId, draftResume]);
 
-  const activeResumeName = resumes.find(r => r.id === activeResumeId)?.name ?? "Default sample";
+  const activeResumeName = activeResumeId === DRAFT_RESUME_ID ? "Current draft" : resumes.find(r => r.id === activeResumeId)?.name ?? (draftResume ? "Current draft" : "Default sample");
 
   const filterCount = [industry !== INDUSTRIES[0], role !== ROLES[0], datePosted !== "All time", alias, keywords].filter(Boolean).length;
 
@@ -225,7 +241,12 @@ function JobsPage() {
                 <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">Score against resume</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {resumes.length === 0 && (
-                  <DropdownMenuItem disabled>No saved resumes. Save one in the builder.</DropdownMenuItem>
+                  <DropdownMenuItem disabled>{draftResume ? "Using latest builder draft." : "No saved resumes. Save one in the builder."}</DropdownMenuItem>
+                )}
+                {draftResume && (
+                  <DropdownMenuItem onClick={() => setActiveResumeId(DRAFT_RESUME_ID)}>
+                    {activeResumeId === DRAFT_RESUME_ID ? "✓ " : "  "}Current draft
+                  </DropdownMenuItem>
                 )}
                 {resumes.map(r => (
                   <DropdownMenuItem key={r.id} onClick={() => setActiveResumeId(r.id)}>
@@ -259,16 +280,16 @@ function JobsPage() {
 
         {!loading && jobs.length > 0 && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {jobs.map(job => <JobCard key={job.id} job={job} resume={activeResume} onScore={() => setScoreJob(job)} onNova={() => askNova(job)} naukriUrl={naukriUrl} />)}
+            {jobs.map(job => <JobCard key={job.id} job={job} resume={activeResume} onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }} onNova={() => askNova(job)} naukriUrl={naukriUrl} />)}
           </div>
         )}
       </div>
 
       {/* Score Dialog */}
-      <Dialog open={!!scoreJob} onOpenChange={o => !o && setScoreJob(null)}>
+      <Dialog open={!!scoreJob} onOpenChange={o => { if (!o) { setScoreJob(null); setScoreResume(null); } }}>
         <DialogContent className="max-w-xl">
           <DialogHeader><DialogTitle>ATS Score · {scoreJob?.title}</DialogTitle></DialogHeader>
-          {scoreJob && <ScoreView jd={scoreJob.jd} resume={activeResume} />}
+          {scoreJob && <ScoreView jd={scoreJob.jd} resume={scoreResume ?? activeResume} />}
         </DialogContent>
       </Dialog>
 
@@ -298,6 +319,12 @@ function JobsPage() {
       </Dialog>
     </div>
   );
+}
+
+function getLatestResume(activeResumeId: string, fallback: ResumeData): ResumeData {
+  if (activeResumeId === DRAFT_RESUME_ID) return resumeStore.getDraft() ?? fallback;
+  const selected = activeResumeId ? resumeStore.get(activeResumeId)?.data : null;
+  return selected ?? resumeStore.getDraft() ?? fallback;
 }
 
 function FieldCell({ label, icon, children, className }: { label: string; icon: React.ReactNode; children: React.ReactNode; className?: string }) {
@@ -337,9 +364,9 @@ function JobCard({ job, resume, onScore, onNova, naukriUrl }: { job: Job; resume
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold", tone)} title="Live ATS match against selected resume">
+          <button type="button" onClick={onScore} className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold", tone)} title="Open live ATS match against selected resume">
             <Gauge className="h-3 w-3" /> {score}
-          </span>
+          </button>
           <button className="text-muted-foreground hover:text-foreground" title="Save">
             <Bookmark className="h-4 w-4" />
           </button>
@@ -354,7 +381,7 @@ function JobCard({ job, resume, onScore, onNova, naukriUrl }: { job: Job; resume
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>Source: Naukri</span>
-        <button onClick={onScore} className="inline-flex items-center gap-1 rounded-full bg-[var(--navy-light)]/10 text-[var(--navy-light)] px-2.5 py-1 hover:bg-[var(--navy-light)]/20">
+        <button type="button" onClick={onScore} className="inline-flex items-center gap-1 rounded-full bg-[var(--navy-light)]/10 text-[var(--navy-light)] px-2.5 py-1 hover:bg-[var(--navy-light)]/20">
           <Gauge className="h-3 w-3" /> Check Score
         </button>
       </div>
