@@ -7,7 +7,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { compressToEncodedURIComponent } from "lz-string";
+import lzString from "lz-string";
+const { compressToEncodedURIComponent } = lzString;
 import type { ResumeData } from "./types";
 
 type Props = {
