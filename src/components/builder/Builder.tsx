@@ -456,7 +456,7 @@ export function Builder() {
 
   const updatePatch = (patch: Partial<ResumeData>) => setData(d => ({ ...d, ...patch }));
 
-  const commitPreviewEdits = (source: ResumeData = data): ResumeData => {
+  const commitPreviewEdits = (source: ResumeData = data, opts: { sync?: boolean } = { sync: true }): ResumeData => {
     if (typeof document === "undefined") return source;
     const root = document.getElementById("resume-preview");
     if (!root) return source;
@@ -486,7 +486,7 @@ export function Builder() {
       }
     });
 
-    if (dirty) flushSync(() => setData(next));
+    if (dirty && opts.sync !== false) flushSync(() => setData(next));
     return next;
   };
 
@@ -495,36 +495,42 @@ export function Builder() {
     requestAnimationFrame(() => window.print());
   };
 
-  // Autosave: continuously sync contentEditable edits in the preview into state
-  // so that downloads, share links, and saved resumes always reflect the latest
-  // text — without requiring the user to blur the field first.
+  // Autosave: continuously sync contentEditable edits in the preview to the
+  // saved-resume store (and React state on idle) so that downloads, share
+  // links, and the saved-resumes gallery always reflect the latest text —
+  // without requiring the user to blur the field first. We avoid calling
+  // setData synchronously while the user is typing because the editable
+  // sections use content-based React keys that would remount and lose caret.
   useEffect(() => {
     if (!mounted) return;
     const root = document.getElementById("resume-preview");
     if (!root) return;
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    let storeTimer: ReturnType<typeof setTimeout> | null = null;
+    let stateTimer: ReturnType<typeof setTimeout> | null = null;
     const onInput = (e: Event) => {
       const target = e.target as HTMLElement | null;
       if (!target || !target.closest?.("[data-preview-edit]")) return;
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => { commitPreviewEdits(); }, 250);
+      // Persist to the saved-resume store quickly (no re-render).
+      if (storeTimer) clearTimeout(storeTimer);
+      storeTimer = setTimeout(() => {
+        const next = commitPreviewEdits(data, { sync: false });
+        if (currentId) {
+          resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data: next });
+          setSaved(resumeStore.list());
+        }
+      }, 300);
+      // Sync to React state after the user pauses, so downloads via getData()
+      // and share links pick up the latest text even before blur.
+      if (stateTimer) clearTimeout(stateTimer);
+      stateTimer = setTimeout(() => { commitPreviewEdits(); }, 900);
     };
     root.addEventListener("input", onInput);
     return () => {
       root.removeEventListener("input", onInput);
-      if (timer) clearTimeout(timer);
+      if (storeTimer) clearTimeout(storeTimer);
+      if (stateTimer) clearTimeout(stateTimer);
     };
-  }, [mounted, data]);
-
-  // Autosave currently-loaded saved resume to localStorage as edits happen.
-  useEffect(() => {
-    if (!mounted || !currentId) return;
-    const t = setTimeout(() => {
-      resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data });
-      setSaved(resumeStore.list());
-    }, 400);
-    return () => clearTimeout(t);
-  }, [mounted, currentId, currentName, data]);
+  }, [mounted, data, currentId, currentName]);
 
   const updateExp = (id: string, patch: Partial<Experience>) =>
     setData(d => ({ ...d, experience: d.experience.map(e => e.id === id ? { ...e, ...patch } : e) }));
