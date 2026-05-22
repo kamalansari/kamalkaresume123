@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { FormattableTextarea } from "./FormattableTextarea";
 import { AtsPanel } from "./AtsPanel";
 import { PreviewToolbar } from "./PreviewToolbar";
+import { SavedResumesGallery } from "./SavedResumesGallery";
 import { decompressFromEncodedURIComponent } from "lz-string";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -621,6 +622,18 @@ export function Builder() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SavedResumesGallery
+        saved={saved}
+        currentId={currentId}
+        primaryId={primaryId}
+        onOpen={loadSaved}
+        onRename={(id, name) => { resumeStore.rename(id, name); if (id === currentId) setCurrentName(name); refreshList(); toast.success("Renamed"); }}
+        onDuplicate={duplicateSaved}
+        onDelete={deleteSaved}
+        onNew={newResume}
+        onSetPrimary={setAsPrimary}
+      />
 
       <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-6 py-6",
         atsOpen
