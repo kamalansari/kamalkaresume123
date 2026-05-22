@@ -495,6 +495,37 @@ export function Builder() {
     requestAnimationFrame(() => window.print());
   };
 
+  // Autosave: continuously sync contentEditable edits in the preview into state
+  // so that downloads, share links, and saved resumes always reflect the latest
+  // text — without requiring the user to blur the field first.
+  useEffect(() => {
+    if (!mounted) return;
+    const root = document.getElementById("resume-preview");
+    if (!root) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onInput = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      if (!target || !target.closest?.("[data-preview-edit]")) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { commitPreviewEdits(); }, 250);
+    };
+    root.addEventListener("input", onInput);
+    return () => {
+      root.removeEventListener("input", onInput);
+      if (timer) clearTimeout(timer);
+    };
+  }, [mounted, data]);
+
+  // Autosave currently-loaded saved resume to localStorage as edits happen.
+  useEffect(() => {
+    if (!mounted || !currentId) return;
+    const t = setTimeout(() => {
+      resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data });
+      setSaved(resumeStore.list());
+    }, 400);
+    return () => clearTimeout(t);
+  }, [mounted, currentId, currentName, data]);
+
   const updateExp = (id: string, patch: Partial<Experience>) =>
     setData(d => ({ ...d, experience: d.experience.map(e => e.id === id ? { ...e, ...patch } : e) }));
   const addExp = () => setData(d => ({ ...d, experience: [...d.experience, { id: uid(), title: "", company: "", date: "", bullets: "" }] }));
