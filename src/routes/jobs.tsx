@@ -38,6 +38,7 @@ const INDUSTRIES = ["All industries", "IT Services", "Banking & Finance", "Healt
 const ROLES = ["All roles", "Software Engineering", "Data & Analytics", "Product", "Design", "Marketing", "Sales", "Operations", "HR"];
 const DATES = ["1 Day", "3 Days", "1 Week", "15 Days", "1 Month", "All time"];
 const EXPERIENCES = ["Fresher", "0-1 years", "1-2 years", "2 years", "2-5 years", "5-8 years", "8-12 years", "12+ years"];
+const DRAFT_RESUME_ID = "__current_draft";
 
 function JobsPage() {
   const [resumes, setResumes] = useState<SavedResume[]>([]);
@@ -67,7 +68,9 @@ function JobsPage() {
     setResumes(list);
     setDraftResume(resumeStore.getDraft());
     setActiveResumeId(current => {
+      if (current === DRAFT_RESUME_ID && resumeStore.getDraft()) return current;
       if (current && list.some(r => r.id === current)) return current;
+      if (resumeStore.getDraft()) return DRAFT_RESUME_ID;
       if (primaryId && list.some(r => r.id === primaryId)) return primaryId;
       return list[0]?.id ?? "";
     });
@@ -78,11 +81,12 @@ function JobsPage() {
   }, []);
 
   const activeResume: ResumeData = useMemo(() => {
+    if (activeResumeId === DRAFT_RESUME_ID) return draftResume ?? defaultResume;
     const r = resumes.find(x => x.id === activeResumeId);
     return r?.data ?? draftResume ?? defaultResume;
   }, [resumes, activeResumeId, draftResume]);
 
-  const activeResumeName = resumes.find(r => r.id === activeResumeId)?.name ?? (draftResume ? "Current draft" : "Default sample");
+  const activeResumeName = activeResumeId === DRAFT_RESUME_ID ? "Current draft" : resumes.find(r => r.id === activeResumeId)?.name ?? (draftResume ? "Current draft" : "Default sample");
 
   const filterCount = [industry !== INDUSTRIES[0], role !== ROLES[0], datePosted !== "All time", alias, keywords].filter(Boolean).length;
 
