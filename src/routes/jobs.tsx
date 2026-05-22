@@ -312,6 +312,11 @@ function JobsPage() {
   );
 }
 
+function getLatestResume(activeResumeId: string, fallback: ResumeData): ResumeData {
+  const selected = activeResumeId ? resumeStore.get(activeResumeId)?.data : null;
+  return selected ?? resumeStore.getDraft() ?? fallback;
+}
+
 function FieldCell({ label, icon, children, className }: { label: string; icon: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("bg-card px-4 py-2", className)}>
