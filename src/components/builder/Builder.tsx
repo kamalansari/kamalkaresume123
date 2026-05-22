@@ -24,6 +24,7 @@ import { FormattableTextarea } from "./FormattableTextarea";
 import { AtsPanel } from "./AtsPanel";
 import { PreviewToolbar } from "./PreviewToolbar";
 import { SavedResumesGallery } from "./SavedResumesGallery";
+import { TemplatesPopover, SectionsPopover, StylePopover } from "./BuilderTopToolbar";
 import { decompressFromEncodedURIComponent } from "lz-string";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -1414,6 +1415,18 @@ export function Builder() {
             onPdf={() => window.print()}
             onDocx={handleDocx}
             docxBusy={exporting}
+            extras={
+              <>
+                <TemplatesPopover data={data} onPick={(id) => update("template", id)} />
+                <SectionsPopover
+                  data={data}
+                  onUpdate={(order) => update("sectionOrder", order)}
+                  onAdd={(id) => addSectionIfMissing(id)}
+                  onRemove={(id) => removeSectionFromOrder(id)}
+                />
+                <StylePopover data={data} onPatch={(p) => setData(d => ({ ...d, ...p }))} />
+              </>
+            }
           />
           {/* Mobile ATS trigger */}
           <div className="no-print lg:hidden mb-3">
