@@ -1125,8 +1125,8 @@ export function Builder() {
 
       <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-4 sm:px-6 py-6 grid-cols-1",
         atsOpen
-          ? "lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)_minmax(0,320px)]"
-          : "lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]"
+          ? "lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)_minmax(0,320px)]"
+          : "lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]"
       )}>
         {/* Editor */}
         <div className="no-print">
@@ -1444,7 +1444,7 @@ export function Builder() {
           {!atsOpen && (
             <button
               onClick={() => setAtsOpen(true)}
-              className="no-print hidden xl:inline-flex absolute right-2 top-2 z-10 items-center gap-1.5 rounded-md border border-border bg-background h-8 px-2.5 text-xs font-medium hover:border-[var(--navy-light)]"
+              className="no-print hidden 2xl:inline-flex absolute right-2 top-2 z-10 items-center gap-1.5 rounded-md border border-border bg-background h-8 px-2.5 text-xs font-medium hover:border-[var(--navy-light)]"
               title="Open ATS panel"
             >
               <PanelRightOpen className="h-3.5 w-3.5" /> ATS · {score.score}
@@ -1469,8 +1469,8 @@ export function Builder() {
               </>
             }
           />
-          {/* Mobile/tablet ATS trigger — collapses to a sheet below xl */}
-          <div className="no-print xl:hidden mb-3 sticky top-16 z-10">
+          {/* Mobile/tablet ATS trigger — collapses to a sheet below 2xl */}
+          <div className="no-print 2xl:hidden mb-3 sticky top-16 z-10">
             <Sheet open={atsSheetOpen} onOpenChange={setAtsSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" className="w-full">
@@ -1524,7 +1524,7 @@ export function Builder() {
 
         {/* ATS panel */}
         {atsOpen && (
-        <div className="no-print hidden xl:block xl:sticky xl:top-20 xl:self-start xl:h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-1 xl:scrollbar-thin">
+        <div className="no-print hidden 2xl:block 2xl:sticky 2xl:top-20 2xl:self-start 2xl:h-[calc(100dvh-6rem)] 2xl:overflow-y-auto 2xl:overscroll-contain 2xl:pr-1 2xl:scrollbar-thin">
         <AtsPanel
           data={data}
           onClose={() => setAtsOpen(false)}
