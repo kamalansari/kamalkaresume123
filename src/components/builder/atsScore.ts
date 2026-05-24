@@ -8,8 +8,105 @@ const STOP = new Set([
 const toText = (value: unknown) => typeof value === "string" ? value : value == null ? "" : String(value);
 const toList = <T,>(value: T[] | undefined | null): T[] => Array.isArray(value) ? value : [];
 
+// --- Lightweight stemming (Porter-ish: strip common suffixes) ---
+function stem(word: string): string {
+  let w = word.toLowerCase();
+  if (w.length <= 3) return w;
+  // Preserve tech tokens with symbols (c++, c#, node.js, ci/cd-ish)
+  if (/[+#./]/.test(w)) return w;
+  const suffixes = ["ization", "izations", "ational", "ization", "fulness", "ousness", "iveness",
+    "tional", "ement", "ments", "ement", "ness", "able", "ible", "ings", "ing", "edly", "ed",
+    "ies", "ied", "ier", "iest", "ly", "es", "s"];
+  for (const suf of suffixes) {
+    if (w.length - suf.length >= 3 && w.endsWith(suf)) {
+      w = w.slice(0, -suf.length);
+      break;
+    }
+  }
+  // Normalize common endings: develope -> develop, manag -> manag (ok)
+  if (w.endsWith("e") && w.length > 4) w = w.slice(0, -1);
+  // Collapse double consonant: running -> runn -> run
+  if (w.length > 3 && w[w.length - 1] === w[w.length - 2] && !/[aeiou]/.test(w[w.length - 1])) {
+    w = w.slice(0, -1);
+  }
+  return w;
+}
+
+// --- Synonym groups: any term in a group counts as a match for the others ---
+const SYNONYM_GROUPS: string[][] = [
+  ["js", "javascript", "ecmascript"],
+  ["ts", "typescript"],
+  ["py", "python"],
+  ["node", "nodejs", "node.js"],
+  ["react", "reactjs", "react.js"],
+  ["next", "nextjs", "next.js"],
+  ["vue", "vuejs", "vue.js"],
+  ["angular", "angularjs"],
+  ["postgres", "postgresql", "psql"],
+  ["mongo", "mongodb"],
+  ["k8s", "kubernetes"],
+  ["aws", "amazon-web-services", "amazon"],
+  ["gcp", "google-cloud"],
+  ["ci", "cd", "ci/cd", "continuous-integration", "continuous-delivery", "continuous-deployment"],
+  ["ml", "machine-learning"],
+  ["ai", "artificial-intelligence"],
+  ["nlp", "natural-language-processing"],
+  ["db", "database", "databases"],
+  ["ui", "user-interface", "frontend", "front-end"],
+  ["ux", "user-experience"],
+  ["backend", "back-end", "server-side"],
+  ["fullstack", "full-stack"],
+  ["rest", "restful", "rest-api"],
+  ["api", "apis"],
+  ["devops", "sre", "site-reliability"],
+  ["agile", "scrum", "kanban"],
+  ["lead", "led", "leading", "leadership"],
+  ["manage", "managed", "managing", "management"],
+  ["develop", "developed", "developing", "developer", "development"],
+  ["build", "built", "building", "builder"],
+  ["design", "designed", "designing", "designer"],
+  ["test", "tested", "testing", "qa", "quality-assurance"],
+  ["deploy", "deployed", "deployment", "deployments"],
+  ["optimize", "optimise", "optimized", "optimization", "optimisation"],
+  ["analyze", "analyse", "analyzed", "analysis", "analytics", "analytical"],
+  ["communicate", "communication", "communicator"],
+  ["collaborate", "collaboration", "collaborative", "teamwork"],
+  ["customer", "client", "stakeholder"],
+  ["docker", "containers", "containerization", "containerisation"],
+  ["git", "github", "gitlab", "version-control"],
+  ["sql", "queries", "querying"],
+  ["nosql", "non-relational"],
+  ["html", "html5", "markup"],
+  ["css", "css3", "styling"],
+  ["tailwind", "tailwindcss"],
+  ["graphql", "gql"],
+  ["microservice", "microservices"],
+  ["scale", "scaled", "scaling", "scalable", "scalability"],
+];
+
+// Map every term (and its stem) -> canonical synonym key
+const SYNONYM_INDEX = new Map<string, string>();
+for (const group of SYNONYM_GROUPS) {
+  const canon = group[0];
+  for (const term of group) {
+    SYNONYM_INDEX.set(term, canon);
+    SYNONYM_INDEX.set(stem(term), canon);
+  }
+}
+
+/** Normalize a single token to a canonical form for matching. */
+function canonical(token: string): string {
+  const lower = token.toLowerCase();
+  return SYNONYM_INDEX.get(lower) ?? SYNONYM_INDEX.get(stem(lower)) ?? stem(lower);
+}
+
 function tokens(text: unknown): string[] {
   return (toText(text).toLowerCase().match(/[a-z][a-z0-9+.#-]{1,}/g) || []).filter(t => !STOP.has(t) && t.length > 2);
+}
+
+/** Tokenize + canonicalize for stemming/synonym-aware matching. */
+function canonTokens(text: unknown): string[] {
+  return tokens(text).map(canonical);
 }
 
 export type ScoreResult = {
@@ -35,12 +132,24 @@ export function computeScore(r: Partial<ResumeData>): ScoreResult {
     ...toList(r.languages).map(l => l.name),
     r.extraKeywords ?? "",
   ].join(" \n ");
-  const resumeTokens = new Set(tokens(resumeText));
+  const resumeTokensRaw = tokens(resumeText);
+  const resumeCanonSet = new Set(resumeTokensRaw.map(canonical));
 
   const jobDescription = toText(r.jobDescription);
-  const jdTokens = Array.from(new Set(tokens(jobDescription))).slice(0, 60);
-  const matched = jdTokens.filter(t => resumeTokens.has(t));
-  const missing = jdTokens.filter(t => !resumeTokens.has(t));
+  // Deduplicate JD keywords by canonical form, but keep the original display token.
+  const jdRaw = tokens(jobDescription);
+  const seenCanon = new Set<string>();
+  const jdTokens: string[] = [];
+  for (const t of jdRaw) {
+    const c = canonical(t);
+    if (seenCanon.has(c)) continue;
+    seenCanon.add(c);
+    jdTokens.push(t);
+    if (jdTokens.length >= 60) break;
+  }
+  const isMatch = (t: string) => resumeCanonSet.has(canonical(t));
+  const matched = jdTokens.filter(isMatch);
+  const missing = jdTokens.filter(t => !isMatch(t));
   const coverage = jdTokens.length ? matched.length / jdTokens.length : 0;
 
   const experienceBullets = experience.map(e => toText(e.bullets)).join(" ");
@@ -63,16 +172,20 @@ export function computeScore(r: Partial<ResumeData>): ScoreResult {
 
   const score = Math.min(100, Math.round(checks.reduce((s, c) => s + (c.pass ? c.weight : 0), 0)));
 
-  // Per-keyword counts in resume vs JD
-  const resumeTokensList = tokens(resumeText);
-  const jdTokensList = tokens(jobDescription);
+  // Per-keyword counts in resume vs JD (compared by canonical form so
+  // "managing" in the JD counts hits from "managed" in the resume).
+  const resumeCanonList = resumeTokensRaw.map(canonical);
+  const jdCanonList = canonTokens(jobDescription);
   const countIn = (arr: string[], k: string) => arr.filter(t => t === k).length;
-  const keywordStats = jdTokens.map(k => ({
-    keyword: k,
-    resume: countIn(resumeTokensList, k),
-    jd: countIn(jdTokensList, k),
-    matched: resumeTokens.has(k),
-  })).sort((a, b) => Number(a.matched) - Number(b.matched) || b.jd - a.jd);
+  const keywordStats = jdTokens.map(k => {
+    const c = canonical(k);
+    return {
+      keyword: k,
+      resume: countIn(resumeCanonList, c),
+      jd: countIn(jdCanonList, c),
+      matched: resumeCanonSet.has(c),
+    };
+  }).sort((a, b) => Number(a.matched) - Number(b.matched) || b.jd - a.jd);
 
   return { score, checks, matched, missing, coverage, keywordStats };
 }
