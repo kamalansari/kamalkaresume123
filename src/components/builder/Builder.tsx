@@ -1759,6 +1759,7 @@ export function Builder() {
                 data={data}
                 onSectionClick={inlineEdit ? undefined : scrollToEditor}
                 editable={inlineEdit}
+                flashSection={flashSection}
                 handlers={{
                   onUpdate: updatePatch,
                   onUpdateExperienceBullets: (id, bullets) => updateExp(id, { bullets }),
