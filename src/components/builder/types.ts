@@ -23,6 +23,8 @@ export type Certification = {
 export type Award = { id: string; name: string; issuer: string; date: string };
 export type Language = { id: string; name: string; level: string };
 
+export type CustomSection = { id: string; title: string; content: string };
+
 export type TemplateId =
   | "classic"
   | "two-column"
@@ -107,6 +109,7 @@ export type ResumeData = {
   sectionOrder: SectionId[];
   justifyText: boolean;
   boldBody: boolean;
+  customSections: CustomSection[];
 };
 
 export const defaultResume: ResumeData = {
@@ -155,4 +158,5 @@ export const defaultResume: ResumeData = {
   sectionOrder: ["summary", "experience", "education", "skills"],
   justifyText: false,
   boldBody: false,
+  customSections: [],
 };

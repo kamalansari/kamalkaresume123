@@ -7,9 +7,9 @@ import { Slider } from "@/components/ui/slider";
 import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, arrayMove, verticalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
+import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { COLOR_PRESETS, FONT_PRESETS, type ResumeData, type SectionId, type TemplateId } from "./types";
+import { COLOR_PRESETS, FONT_PRESETS, type CustomSection, type ResumeData, type SectionId, type TemplateId } from "./types";
 
 export type TemplateMeta = {
   id: TemplateId;
@@ -237,11 +237,15 @@ function SortableRow({ id, onRemove, onUp, onDown, canUp, canDown }: {
   );
 }
 
-export function SectionsPopover({ data, onUpdate, onAdd, onRemove }: {
+export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, onUpdateCustom, onRemoveCustom, onReorderCustom }: {
   data: ResumeData;
   onUpdate: (order: SectionId[]) => void;
   onAdd: (id: SectionId) => void;
   onRemove: (id: SectionId) => void;
+  onAddCustom: () => void;
+  onUpdateCustom: (id: string, patch: Partial<CustomSection>) => void;
+  onRemoveCustom: (id: string) => void;
+  onReorderCustom: (next: CustomSection[]) => void;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const onEnd = (e: DragEndEvent) => {
@@ -258,6 +262,19 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove }: {
     if (to < 0 || to >= data.sectionOrder.length) return;
     onUpdate(arrayMove(data.sectionOrder, from, to));
   };
+  const customs = data.customSections ?? [];
+  const onCustomEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const a = customs.findIndex(c => c.id === active.id);
+    const b = customs.findIndex(c => c.id === over.id);
+    if (a < 0 || b < 0) return;
+    onReorderCustom(arrayMove(customs, a, b));
+  };
+  const moveCustom = (from: number, to: number) => {
+    if (to < 0 || to >= customs.length) return;
+    onReorderCustom(arrayMove(customs, from, to));
+  };
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -265,13 +282,13 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove }: {
           <ListOrdered className="h-4 w-4" /> <span className="hidden sm:inline">Sections</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[420px] p-4">
+      <PopoverContent align="end" className="w-[440px] max-h-[75vh] overflow-y-auto p-4">
         <div className="flex items-center justify-between mb-2.5">
           <div className="text-[11px] font-semibold tracking-wider text-foreground/80 uppercase">Active sections</div>
-          <div className="text-[11px] text-muted-foreground">{data.sectionOrder.length} of {available.length} · drag to reorder</div>
+          <div className="text-[11px] text-muted-foreground">{data.sectionOrder.length} of {available.length} · drag any direction</div>
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onEnd}>
-          <SortableContext items={data.sectionOrder} strategy={verticalListSortingStrategy}>
+          <SortableContext items={data.sectionOrder} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-2 gap-2">
               {data.sectionOrder.map((id, i) => (
                 <SortableRow
@@ -287,6 +304,36 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove }: {
             </div>
           </SortableContext>
         </DndContext>
+        <div className="mt-5 mb-2.5 flex items-center justify-between">
+          <div className="text-[11px] font-semibold tracking-wider text-foreground/80 uppercase">Custom sections</div>
+          <button onClick={onAddCustom} className="text-[11px] font-medium text-primary hover:underline inline-flex items-center gap-1">
+            <Plus className="h-3 w-3" /> Add custom
+          </button>
+        </div>
+        {customs.length === 0 ? (
+          <div className="text-[11px] text-muted-foreground border border-dashed border-border rounded-md px-3 py-3 text-center">
+            Create your own sections — e.g. Volunteering, Publications, Hobbies.
+          </div>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onCustomEnd}>
+            <SortableContext items={customs.map(c => c.id)} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-1 gap-2">
+                {customs.map((c, i) => (
+                  <CustomSortableCard
+                    key={c.id}
+                    section={c}
+                    onChange={(patch) => onUpdateCustom(c.id, patch)}
+                    onRemove={() => onRemoveCustom(c.id)}
+                    onUp={() => moveCustom(i, i - 1)}
+                    onDown={() => moveCustom(i, i + 1)}
+                    canUp={i > 0}
+                    canDown={i < customs.length - 1}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
         {missing.length > 0 && (
           <>
             <div className="mt-5 mb-2.5 text-[11px] font-semibold tracking-wider text-foreground/80 uppercase">Add to resume</div>
@@ -305,6 +352,50 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove }: {
         )}
       </PopoverContent>
     </Popover>
+  );
+}
+
+function CustomSortableCard({ section, onChange, onRemove, onUp, onDown, canUp, canDown }: {
+  section: CustomSection;
+  onChange: (patch: Partial<CustomSection>) => void;
+  onRemove: () => void;
+  onUp: () => void;
+  onDown: () => void;
+  canUp: boolean;
+  canDown: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
+  const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="rounded-md border border-border bg-background p-2 space-y-2">
+      <div className="flex items-center gap-1.5">
+        <button {...attributes} {...listeners} className="cursor-grab touch-none text-muted-foreground hover:text-foreground" aria-label="Drag">
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <input
+          value={section.title}
+          onChange={(e) => onChange({ title: e.target.value })}
+          placeholder="Section title"
+          className="flex-1 h-7 rounded border border-input bg-background px-2 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <button onClick={onUp} disabled={!canUp} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30" aria-label="Move up">
+          <ChevronUp className="h-3.5 w-3.5" />
+        </button>
+        <button onClick={onDown} disabled={!canDown} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30" aria-label="Move down">
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+        <button onClick={onRemove} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-muted" aria-label="Remove">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <textarea
+        value={section.content}
+        onChange={(e) => onChange({ content: e.target.value })}
+        placeholder="Add details. Press Enter for new lines. Use **bold** for emphasis."
+        rows={3}
+        className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs leading-relaxed focus:outline-none focus:ring-1 focus:ring-ring resize-y"
+      />
+    </div>
   );
 }
 
