@@ -4,12 +4,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold } from "lucide-react";
+import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { COLOR_PRESETS, FONT_PRESETS, type ResumeData, type SectionId, type TemplateId } from "./types";
 
 export type TemplateMeta = {
@@ -209,16 +208,29 @@ export function TemplatesPopover({ data, onPick }: { data: ResumeData; onPick: (
   );
 }
 
-function SortableRow({ id, onRemove }: { id: SectionId; onRemove: () => void }) {
+function SortableRow({ id, onRemove, onUp, onDown, canUp, canDown }: {
+  id: SectionId;
+  onRemove: () => void;
+  onUp: () => void;
+  onDown: () => void;
+  canUp: boolean;
+  canDown: boolean;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-sm">
+    <div ref={setNodeRef} style={style} className="group flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-2 text-sm">
       <button {...attributes} {...listeners} className="cursor-grab touch-none text-muted-foreground hover:text-foreground" aria-label="Drag">
         <GripVertical className="h-4 w-4" />
       </button>
-      <span className="flex-1 font-medium">{SECTION_LABELS[id]}</span>
-      <button onClick={onRemove} className="text-muted-foreground hover:text-destructive" aria-label="Remove section">
+      <span className="flex-1 font-medium truncate">{SECTION_LABELS[id]}</span>
+      <button onClick={onUp} disabled={!canUp} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Move up">
+        <ChevronUp className="h-3.5 w-3.5" />
+      </button>
+      <button onClick={onDown} disabled={!canDown} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Move down">
+        <ChevronDown className="h-3.5 w-3.5" />
+      </button>
+      <button onClick={onRemove} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-muted" aria-label="Remove section">
         <X className="h-3.5 w-3.5" />
       </button>
     </div>
@@ -242,6 +254,10 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove }: {
   };
   const available: SectionId[] = ["summary","experience","education","skills","projects","certifications","awards","languages"];
   const missing = available.filter(id => !data.sectionOrder.includes(id));
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= data.sectionOrder.length) return;
+    onUpdate(arrayMove(data.sectionOrder, from, to));
+  };
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -249,29 +265,43 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove }: {
           <ListOrdered className="h-4 w-4" /> <span className="hidden sm:inline">Sections</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-3">
-        <div className="text-xs font-medium mb-2">Section order</div>
-        <p className="text-[11px] text-muted-foreground mb-2">Drag to reorder. Click × to hide a section.</p>
+      <PopoverContent align="end" className="w-[420px] p-4">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="text-[11px] font-semibold tracking-wider text-foreground/80 uppercase">Active sections</div>
+          <div className="text-[11px] text-muted-foreground">{data.sectionOrder.length} of {available.length} · drag to reorder</div>
+        </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onEnd}>
           <SortableContext items={data.sectionOrder} strategy={verticalListSortingStrategy}>
-            <div className="space-y-1.5">
-              {data.sectionOrder.map(id => <SortableRow key={id} id={id} onRemove={() => onRemove(id)} />)}
+            <div className="grid grid-cols-2 gap-2">
+              {data.sectionOrder.map((id, i) => (
+                <SortableRow
+                  key={id}
+                  id={id}
+                  onRemove={() => onRemove(id)}
+                  onUp={() => move(i, i - 1)}
+                  onDown={() => move(i, i + 1)}
+                  canUp={i > 0}
+                  canDown={i < data.sectionOrder.length - 1}
+                />
+              ))}
             </div>
           </SortableContext>
         </DndContext>
         {missing.length > 0 && (
-          <div className="mt-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" className="w-full"><Plus className="h-4 w-4" /> Add section</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {missing.map(id => (
-                  <DropdownMenuItem key={id} onClick={() => onAdd(id)}>{SECTION_LABELS[id]}</DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <>
+            <div className="mt-5 mb-2.5 text-[11px] font-semibold tracking-wider text-foreground/80 uppercase">Add to resume</div>
+            <div className="grid grid-cols-2 gap-2">
+              {missing.map(id => (
+                <button
+                  key={id}
+                  onClick={() => onAdd(id)}
+                  className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2.5 text-sm font-medium text-foreground/90 hover:border-foreground/40 hover:bg-muted/50 transition"
+                >
+                  <Plus className="h-4 w-4 text-muted-foreground" /> {SECTION_LABELS[id]}
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </PopoverContent>
     </Popover>
