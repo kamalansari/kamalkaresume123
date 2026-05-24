@@ -1283,6 +1283,35 @@ export function Builder() {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={tailorConfirmOpen} onOpenChange={setTailorConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tailor resume to this job description?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {primaryId
+                ? "Your Primary Resume will not be modified. AI will create a new tailored copy you can review and edit."
+                : "AI will create a new tailored copy of your resume. Your current resume stays untouched."}
+              {" "}ATS-friendly formatting (plain text, standard sections, real employers and dates) is preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Name this tailored version</Label>
+            <Input
+              value={tailorConfirmName}
+              onChange={e => setTailorConfirmName(e.target.value)}
+              placeholder="e.g. Stripe — Senior PM"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={generating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={generateFromJD} disabled={generating}>
+              {generating ? "Tailoring…" : "Create tailored copy"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <SavedResumesGallery
         saved={saved}
         currentId={currentId}
