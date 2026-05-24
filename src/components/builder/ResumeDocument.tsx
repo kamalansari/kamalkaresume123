@@ -99,6 +99,7 @@ export function ResumeDocument({
             : data.template;
 
   const ed = editable && handlers ? handlers : undefined;
+  const kwSet = useMemo(() => jdKeywordSet(data.jobDescription || ""), [data.jobDescription]);
 
   const wrap = (id: SectionId, node: React.ReactNode) => (
     <ClickableSection key={id} id={id} onClick={onSectionClick} flash={flashSection === id}>{node}</ClickableSection>
@@ -219,18 +220,21 @@ export function ResumeDocument({
       </main>
     );
     return (
+      <KeywordContext.Provider value={kwSet}>
       <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
         <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.6in" : "2.6in 1fr", minHeight: "11in" }}>
           {sidebarRight ? main : sidebar}
           {sidebarRight ? sidebar : main}
         </div>
       </div>
+      </KeywordContext.Provider>
     );
   }
 
   if (variant === "modern") {
     const exec = data.template === "executive" || data.template === "bold";
     return (
+      <KeywordContext.Provider value={kwSet}>
       <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
         <header {...headerClickProps} style={{ padding: "0.5in 0.6in", background: accent, color: "#fff", cursor: onSectionClick ? "pointer" : undefined, borderBottom: exec ? "4px solid rgba(0,0,0,0.35)" : undefined }}>
           <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.6}pt`, fontWeight: 800, letterSpacing: exec ? "0.08em" : "-0.01em", textTransform: exec ? "uppercase" : undefined }}>{data.name || "Your Name"}</h1>
@@ -240,6 +244,7 @@ export function ResumeDocument({
         <div style={{ padding: "0.35in 0.6in 0.6in" }}>{ordered}</div>
         <div style={{ padding: "0 0.6in 0.6in" }}>{customBlocks}</div>
       </div>
+      </KeywordContext.Provider>
     );
   }
 
@@ -247,6 +252,7 @@ export function ResumeDocument({
   const isProfessional = data.template === "professional";
   const isMinimal = data.template === "minimal";
   return (
+    <KeywordContext.Provider value={kwSet}>
     <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: "0.6in" }}>
       <header {...headerClickProps} style={{ textAlign: isMinimal ? "left" : "center", borderBottom: isMinimal ? `1px solid #d4d4d4` : `2px solid ${accent}`, paddingBottom: 10, cursor: onSectionClick ? "pointer" : undefined }}>
         <h1 style={{ fontFamily: headingFont, fontSize: `${fs * (isMinimal ? 2.1 : 2.45)}pt`, fontWeight: isMinimal ? 600 : 700, letterSpacing: isProfessional ? "0.12em" : "-0.01em", textTransform: isProfessional ? "uppercase" : undefined, color: isMinimal ? "#1a1a1a" : accent }}>{data.name || "Your Name"}</h1>
@@ -256,6 +262,7 @@ export function ResumeDocument({
       {ordered}
       {customBlocks}
     </div>
+    </KeywordContext.Provider>
   );
 }
 
