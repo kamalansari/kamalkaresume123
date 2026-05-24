@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RoadmapRouteImport } from './routes/roadmap'
+import { Route as ResumeLabRouteImport } from './routes/resume-lab'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -27,6 +29,16 @@ import { Route as ApiInterviewQuestionRouteImport } from './routes/api/interview
 import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-from-jd'
 import { Route as ApiAlignResumeRouteImport } from './routes/api/align-resume'
 
+const RoadmapRoute = RoadmapRouteImport.update({
+  id: '/roadmap',
+  path: '/roadmap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResumeLabRoute = ResumeLabRouteImport.update({
+  id: '/resume-lab',
+  path: '/resume-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JobsRoute = JobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
@@ -120,6 +132,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
+  '/resume-lab': typeof ResumeLabRoute
+  '/roadmap': typeof RoadmapRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/interview-question': typeof ApiInterviewQuestionRoute
@@ -139,6 +153,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
+  '/resume-lab': typeof ResumeLabRoute
+  '/roadmap': typeof RoadmapRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/interview-question': typeof ApiInterviewQuestionRoute
@@ -159,6 +175,8 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
+  '/resume-lab': typeof ResumeLabRoute
+  '/roadmap': typeof RoadmapRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/interview-question': typeof ApiInterviewQuestionRoute
@@ -180,6 +198,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interview'
     | '/jobs'
+    | '/resume-lab'
+    | '/roadmap'
     | '/api/align-resume'
     | '/api/generate-from-jd'
     | '/api/interview-question'
@@ -199,6 +219,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interview'
     | '/jobs'
+    | '/resume-lab'
+    | '/roadmap'
     | '/api/align-resume'
     | '/api/generate-from-jd'
     | '/api/interview-question'
@@ -218,6 +240,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interview'
     | '/jobs'
+    | '/resume-lab'
+    | '/roadmap'
     | '/api/align-resume'
     | '/api/generate-from-jd'
     | '/api/interview-question'
@@ -238,6 +262,8 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   InterviewRoute: typeof InterviewRoute
   JobsRoute: typeof JobsRoute
+  ResumeLabRoute: typeof ResumeLabRoute
+  RoadmapRoute: typeof RoadmapRoute
   ApiAlignResumeRoute: typeof ApiAlignResumeRoute
   ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
   ApiInterviewQuestionRoute: typeof ApiInterviewQuestionRoute
@@ -253,6 +279,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/roadmap': {
+      id: '/roadmap'
+      path: '/roadmap'
+      fullPath: '/roadmap'
+      preLoaderRoute: typeof RoadmapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resume-lab': {
+      id: '/resume-lab'
+      path: '/resume-lab'
+      fullPath: '/resume-lab'
+      preLoaderRoute: typeof ResumeLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jobs': {
       id: '/jobs'
       path: '/jobs'
@@ -382,6 +422,8 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   InterviewRoute: InterviewRoute,
   JobsRoute: JobsRoute,
+  ResumeLabRoute: ResumeLabRoute,
+  RoadmapRoute: RoadmapRoute,
   ApiAlignResumeRoute: ApiAlignResumeRoute,
   ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
   ApiInterviewQuestionRoute: ApiInterviewQuestionRoute,
@@ -397,3 +439,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
