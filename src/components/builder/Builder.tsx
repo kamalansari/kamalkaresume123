@@ -97,6 +97,77 @@ export function Builder() {
   const [profileRenameId, setProfileRenameId] = useState<string | null>(null);
   const score = useMemo(() => computeScore(data), [data]);
 
+  // ---- Undo/Redo for section ordering & custom section edits ----
+  type SectionsSnapshot = { sectionOrder: SectionId[]; customSections: CustomSection[] };
+  const [sectionsPast, setSectionsPast] = useState<SectionsSnapshot[]>([]);
+  const [sectionsFuture, setSectionsFuture] = useState<SectionsSnapshot[]>([]);
+  const lastPushRef = useRef<{ at: number; key: string } | null>(null);
+  const dataRef = useRef(data);
+  useEffect(() => { dataRef.current = data; }, [data]);
+
+  const snapshotNow = (): SectionsSnapshot => ({
+    sectionOrder: [...dataRef.current.sectionOrder],
+    customSections: (dataRef.current.customSections ?? []).map(c => ({ ...c })),
+  });
+
+  const pushSectionsHistory = (coalesceKey = "") => {
+    const now = Date.now();
+    const last = lastPushRef.current;
+    if (coalesceKey && last && last.key === coalesceKey && now - last.at < 800) {
+      lastPushRef.current = { at: now, key: coalesceKey };
+      return;
+    }
+    lastPushRef.current = { at: now, key: coalesceKey };
+    setSectionsPast(p => [...p.slice(-49), snapshotNow()]);
+    setSectionsFuture([]);
+  };
+
+  const applySectionsSnapshot = (s: SectionsSnapshot) => {
+    setData(d => ({ ...d, sectionOrder: s.sectionOrder, customSections: s.customSections }));
+  };
+
+  const undoSections = () => {
+    if (sectionsPast.length === 0) return;
+    const prev = sectionsPast[sectionsPast.length - 1];
+    const current = snapshotNow();
+    setSectionsPast(p => p.slice(0, -1));
+    setSectionsFuture(f => [current, ...f]);
+    applySectionsSnapshot(prev);
+    lastPushRef.current = null;
+  };
+
+  const redoSections = () => {
+    if (sectionsFuture.length === 0) return;
+    const next = sectionsFuture[0];
+    const current = snapshotNow();
+    setSectionsFuture(f => f.slice(1));
+    setSectionsPast(p => [...p, current]);
+    applySectionsSnapshot(next);
+    lastPushRef.current = null;
+  };
+
+  // Keyboard shortcuts: Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      // Don't hijack undo inside text inputs / contentEditable — let native edit history handle it.
+      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      if (e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redoSections();
+        else undoSections();
+      } else if (e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        redoSections();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sectionsPast, sectionsFuture]);
+
   // Opening-from-URL UX: skeleton + retry when ?open=ID arrives but the
   // resume isn't in local store yet (e.g. cloud sync hasn't pulled).
   const [openingState, setOpeningState] = useState<
