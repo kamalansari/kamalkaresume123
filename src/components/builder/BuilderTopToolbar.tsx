@@ -422,14 +422,14 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onToggleSideb
                   key={id}
                   id={id}
                   onRemove={() => onRemove(id)}
-                  onLeft={() => move(i, i - 1)}
-                  onRight={() => move(i, i + 1)}
-                  onUp={() => move(i, i - 1)}
-                  onDown={() => move(i, i + 1)}
-                  canLeft={i > 0}
-                  canRight={i < data.sectionOrder.length - 1}
-                  canUp={i > 0}
-                  canDown={i < data.sectionOrder.length - 1}
+                  onLeft={() => handleLeft(i)}
+                  onRight={() => handleRight(i)}
+                  onUp={() => { const j = findSameColPrev(i); if (j >= 0) move(i, j); }}
+                  onDown={() => { const j = findSameColNext(i); if (j >= 0) move(i, j); }}
+                  canLeft={canMoveLeft(id)}
+                  canRight={canMoveRight(id)}
+                  canUp={findSameColPrev(i) >= 0}
+                  canDown={findSameColNext(i) >= 0}
                   sidebarMode={sidebarModeFor(id)}
                   onToggleSidebar={() => onToggleSidebar(id)}
                 />
