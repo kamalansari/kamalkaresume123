@@ -10,6 +10,17 @@ import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, us
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { COLOR_PRESETS, FONT_PRESETS, type CustomSection, type ResumeData, type SectionId, type TemplateId } from "./types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export type TemplateMeta = {
   id: TemplateId;
@@ -410,9 +421,33 @@ function CustomSortableCard({ section, onChange, onRemove, onUp, onDown, canUp, 
         <button onClick={onDown} disabled={!canDown} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30" aria-label="Move down">
           <ChevronDown className="h-3.5 w-3.5" />
         </button>
-        <button onClick={onRemove} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-muted" aria-label="Remove">
-          <X className="h-3.5 w-3.5" />
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-muted"
+              aria-label="Remove custom section"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete custom section?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {section.title?.trim()
+                  ? <>This will permanently remove <span className="font-medium text-foreground">"{section.title.trim()}"</span> and its content from your resume.</>
+                  : "This will permanently remove this custom section and its content from your resume."}
+                {" "}You can undo this from the Sections panel.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onRemove} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete section
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       <textarea
         value={section.content}
