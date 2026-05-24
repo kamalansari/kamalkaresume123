@@ -1,14 +1,39 @@
-import { useEffect } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
 import { Mail, Phone, MapPin, Link as LinkIcon, Sparkles, Loader2 } from "lucide-react";
 import { FONT_PRESETS, getSidebarSectionIds, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
+import { jdKeywordSet, isJdKeyword } from "./atsScore";
+
+const KeywordContext = createContext<Set<string> | null>(null);
+
+const WORD_RE = /[A-Za-z][A-Za-z0-9+.#-]{2,}/g;
+
+function renderWithKeywords(text: string, set: Set<string>): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  WORD_RE.lastIndex = 0;
+  while ((m = WORD_RE.exec(text)) !== null) {
+    if (isJdKeyword(m[0], set)) {
+      if (m.index > last) parts.push(text.slice(last, m.index));
+      parts.push(<strong key={m.index} style={{ fontWeight: 700 }}>{m[0]}</strong>);
+      last = m.index + m[0].length;
+    }
+  }
+  if (last === 0) return text;
+  if (last < text.length) parts.push(text.slice(last));
+  return <>{parts}</>;
+}
 
 function InlineText({ text }: { text: string }) {
+  const set = useContext(KeywordContext);
   return (
     <>
       {parseInline(text).map((r, i) =>
-        r.bold ? <strong key={i} style={{ fontWeight: 700 }}>{r.text}</strong> : <span key={i}>{r.text}</span>
+        r.bold
+          ? <strong key={i} style={{ fontWeight: 700 }}>{r.text}</strong>
+          : <span key={i}>{set && set.size ? renderWithKeywords(r.text, set) : r.text}</span>
       )}
     </>
   );
