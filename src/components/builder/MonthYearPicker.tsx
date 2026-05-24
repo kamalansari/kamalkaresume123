@@ -62,7 +62,7 @@ export function MonthYearPicker({
           mode="single"
           selected={date}
           onSelect={(d) => onChange(formatMY(d ?? undefined))}
-          captionLayout="dropdown-buttons"
+          captionLayout="dropdown"
           fromYear={1960}
           toYear={new Date().getFullYear() + 8}
           initialFocus
