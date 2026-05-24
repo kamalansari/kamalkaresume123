@@ -32,6 +32,7 @@ import lzString from "lz-string";
 const { decompressFromEncodedURIComponent } = lzString;
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -857,6 +858,13 @@ export function Builder() {
 
   return (
     <div className="min-h-screen bg-secondary/40">
+      {openingState && (
+        <OpeningResumeOverlay
+          state={openingState}
+          onRetry={retryOpen}
+          onCancel={cancelOpen}
+        />
+      )}
       <header className="no-print sticky top-0 z-30 backdrop-blur-md bg-background/80 border-b border-border">
         <div className="mx-auto max-w-[1600px] px-6 h-14 flex items-center justify-between">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
