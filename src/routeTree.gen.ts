@@ -9,20 +9,36 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RoadmapRouteImport } from './routes/roadmap'
+import { Route as ResumeLabRouteImport } from './routes/resume-lab'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CoverLetterRouteImport } from './routes/cover-letter'
 import { Route as BuilderRouteImport } from './routes/builder'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiRoadmapRouteImport } from './routes/api/roadmap'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
 import { Route as ApiRewriteSectionRouteImport } from './routes/api/rewrite-section'
 import { Route as ApiRecommendJobsRouteImport } from './routes/api/recommend-jobs'
 import { Route as ApiNovaChatRouteImport } from './routes/api/nova-chat'
 import { Route as ApiKeywordBulletsRouteImport } from './routes/api/keyword-bullets'
 import { Route as ApiJobTipRouteImport } from './routes/api/job-tip'
+import { Route as ApiInterviewScoreRouteImport } from './routes/api/interview-score'
+import { Route as ApiInterviewQuestionRouteImport } from './routes/api/interview-question'
 import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-from-jd'
+import { Route as ApiAlignResumeRouteImport } from './routes/api/align-resume'
 
+const RoadmapRoute = RoadmapRouteImport.update({
+  id: '/roadmap',
+  path: '/roadmap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResumeLabRoute = ResumeLabRouteImport.update({
+  id: '/resume-lab',
+  path: '/resume-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JobsRoute = JobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
@@ -51,6 +67,11 @@ const BuilderRoute = BuilderRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRoadmapRoute = ApiRoadmapRouteImport.update({
+  id: '/api/roadmap',
+  path: '/api/roadmap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRewriteSummaryRoute = ApiRewriteSummaryRouteImport.update({
@@ -83,9 +104,24 @@ const ApiJobTipRoute = ApiJobTipRouteImport.update({
   path: '/api/job-tip',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInterviewScoreRoute = ApiInterviewScoreRouteImport.update({
+  id: '/api/interview-score',
+  path: '/api/interview-score',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInterviewQuestionRoute = ApiInterviewQuestionRouteImport.update({
+  id: '/api/interview-question',
+  path: '/api/interview-question',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGenerateFromJdRoute = ApiGenerateFromJdRouteImport.update({
   id: '/api/generate-from-jd',
   path: '/api/generate-from-jd',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAlignResumeRoute = ApiAlignResumeRouteImport.update({
+  id: '/api/align-resume',
+  path: '/api/align-resume',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -96,13 +132,19 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
+  '/resume-lab': typeof ResumeLabRoute
+  '/roadmap': typeof RoadmapRoute
+  '/api/align-resume': typeof ApiAlignResumeRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
+  '/api/interview-question': typeof ApiInterviewQuestionRoute
+  '/api/interview-score': typeof ApiInterviewScoreRoute
   '/api/job-tip': typeof ApiJobTipRoute
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
+  '/api/roadmap': typeof ApiRoadmapRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -111,13 +153,19 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
+  '/resume-lab': typeof ResumeLabRoute
+  '/roadmap': typeof RoadmapRoute
+  '/api/align-resume': typeof ApiAlignResumeRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
+  '/api/interview-question': typeof ApiInterviewQuestionRoute
+  '/api/interview-score': typeof ApiInterviewScoreRoute
   '/api/job-tip': typeof ApiJobTipRoute
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
+  '/api/roadmap': typeof ApiRoadmapRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -127,13 +175,19 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
+  '/resume-lab': typeof ResumeLabRoute
+  '/roadmap': typeof RoadmapRoute
+  '/api/align-resume': typeof ApiAlignResumeRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
+  '/api/interview-question': typeof ApiInterviewQuestionRoute
+  '/api/interview-score': typeof ApiInterviewScoreRoute
   '/api/job-tip': typeof ApiJobTipRoute
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
+  '/api/roadmap': typeof ApiRoadmapRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -144,13 +198,19 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interview'
     | '/jobs'
+    | '/resume-lab'
+    | '/roadmap'
+    | '/api/align-resume'
     | '/api/generate-from-jd'
+    | '/api/interview-question'
+    | '/api/interview-score'
     | '/api/job-tip'
     | '/api/keyword-bullets'
     | '/api/nova-chat'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
+    | '/api/roadmap'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -159,13 +219,19 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interview'
     | '/jobs'
+    | '/resume-lab'
+    | '/roadmap'
+    | '/api/align-resume'
     | '/api/generate-from-jd'
+    | '/api/interview-question'
+    | '/api/interview-score'
     | '/api/job-tip'
     | '/api/keyword-bullets'
     | '/api/nova-chat'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
+    | '/api/roadmap'
   id:
     | '__root__'
     | '/'
@@ -174,13 +240,19 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interview'
     | '/jobs'
+    | '/resume-lab'
+    | '/roadmap'
+    | '/api/align-resume'
     | '/api/generate-from-jd'
+    | '/api/interview-question'
+    | '/api/interview-score'
     | '/api/job-tip'
     | '/api/keyword-bullets'
     | '/api/nova-chat'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
+    | '/api/roadmap'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -190,17 +262,37 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   InterviewRoute: typeof InterviewRoute
   JobsRoute: typeof JobsRoute
+  ResumeLabRoute: typeof ResumeLabRoute
+  RoadmapRoute: typeof RoadmapRoute
+  ApiAlignResumeRoute: typeof ApiAlignResumeRoute
   ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
+  ApiInterviewQuestionRoute: typeof ApiInterviewQuestionRoute
+  ApiInterviewScoreRoute: typeof ApiInterviewScoreRoute
   ApiJobTipRoute: typeof ApiJobTipRoute
   ApiKeywordBulletsRoute: typeof ApiKeywordBulletsRoute
   ApiNovaChatRoute: typeof ApiNovaChatRoute
   ApiRecommendJobsRoute: typeof ApiRecommendJobsRoute
   ApiRewriteSectionRoute: typeof ApiRewriteSectionRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
+  ApiRoadmapRoute: typeof ApiRoadmapRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/roadmap': {
+      id: '/roadmap'
+      path: '/roadmap'
+      fullPath: '/roadmap'
+      preLoaderRoute: typeof RoadmapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resume-lab': {
+      id: '/resume-lab'
+      path: '/resume-lab'
+      fullPath: '/resume-lab'
+      preLoaderRoute: typeof ResumeLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jobs': {
       id: '/jobs'
       path: '/jobs'
@@ -241,6 +333,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/roadmap': {
+      id: '/api/roadmap'
+      path: '/api/roadmap'
+      fullPath: '/api/roadmap'
+      preLoaderRoute: typeof ApiRoadmapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rewrite-summary': {
@@ -285,11 +384,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiJobTipRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/interview-score': {
+      id: '/api/interview-score'
+      path: '/api/interview-score'
+      fullPath: '/api/interview-score'
+      preLoaderRoute: typeof ApiInterviewScoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/interview-question': {
+      id: '/api/interview-question'
+      path: '/api/interview-question'
+      fullPath: '/api/interview-question'
+      preLoaderRoute: typeof ApiInterviewQuestionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/generate-from-jd': {
       id: '/api/generate-from-jd'
       path: '/api/generate-from-jd'
       fullPath: '/api/generate-from-jd'
       preLoaderRoute: typeof ApiGenerateFromJdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/align-resume': {
+      id: '/api/align-resume'
+      path: '/api/align-resume'
+      fullPath: '/api/align-resume'
+      preLoaderRoute: typeof ApiAlignResumeRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -302,24 +422,20 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   InterviewRoute: InterviewRoute,
   JobsRoute: JobsRoute,
+  ResumeLabRoute: ResumeLabRoute,
+  RoadmapRoute: RoadmapRoute,
+  ApiAlignResumeRoute: ApiAlignResumeRoute,
   ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
+  ApiInterviewQuestionRoute: ApiInterviewQuestionRoute,
+  ApiInterviewScoreRoute: ApiInterviewScoreRoute,
   ApiJobTipRoute: ApiJobTipRoute,
   ApiKeywordBulletsRoute: ApiKeywordBulletsRoute,
   ApiNovaChatRoute: ApiNovaChatRoute,
   ApiRecommendJobsRoute: ApiRecommendJobsRoute,
   ApiRewriteSectionRoute: ApiRewriteSectionRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
+  ApiRoadmapRoute: ApiRoadmapRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
