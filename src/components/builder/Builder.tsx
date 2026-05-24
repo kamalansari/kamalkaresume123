@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
+import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId, type CustomSection } from "./types";
 import { computeScore } from "./atsScore";
 import { ResumeDocument } from "./ResumeDocument";
 import { exportDocx } from "./exportDocx";
@@ -96,6 +96,77 @@ export function Builder() {
   const [profileNameDraft, setProfileNameDraft] = useState("");
   const [profileRenameId, setProfileRenameId] = useState<string | null>(null);
   const score = useMemo(() => computeScore(data), [data]);
+
+  // ---- Undo/Redo for section ordering & custom section edits ----
+  type SectionsSnapshot = { sectionOrder: SectionId[]; customSections: CustomSection[] };
+  const [sectionsPast, setSectionsPast] = useState<SectionsSnapshot[]>([]);
+  const [sectionsFuture, setSectionsFuture] = useState<SectionsSnapshot[]>([]);
+  const lastPushRef = useRef<{ at: number; key: string } | null>(null);
+  const dataRef = useRef(data);
+  useEffect(() => { dataRef.current = data; }, [data]);
+
+  const snapshotNow = (): SectionsSnapshot => ({
+    sectionOrder: [...dataRef.current.sectionOrder],
+    customSections: (dataRef.current.customSections ?? []).map(c => ({ ...c })),
+  });
+
+  const pushSectionsHistory = (coalesceKey = "") => {
+    const now = Date.now();
+    const last = lastPushRef.current;
+    if (coalesceKey && last && last.key === coalesceKey && now - last.at < 800) {
+      lastPushRef.current = { at: now, key: coalesceKey };
+      return;
+    }
+    lastPushRef.current = { at: now, key: coalesceKey };
+    setSectionsPast(p => [...p.slice(-49), snapshotNow()]);
+    setSectionsFuture([]);
+  };
+
+  const applySectionsSnapshot = (s: SectionsSnapshot) => {
+    setData(d => ({ ...d, sectionOrder: s.sectionOrder, customSections: s.customSections }));
+  };
+
+  const undoSections = () => {
+    if (sectionsPast.length === 0) return;
+    const prev = sectionsPast[sectionsPast.length - 1];
+    const current = snapshotNow();
+    setSectionsPast(p => p.slice(0, -1));
+    setSectionsFuture(f => [current, ...f]);
+    applySectionsSnapshot(prev);
+    lastPushRef.current = null;
+  };
+
+  const redoSections = () => {
+    if (sectionsFuture.length === 0) return;
+    const next = sectionsFuture[0];
+    const current = snapshotNow();
+    setSectionsFuture(f => f.slice(1));
+    setSectionsPast(p => [...p, current]);
+    applySectionsSnapshot(next);
+    lastPushRef.current = null;
+  };
+
+  // Keyboard shortcuts: Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      // Don't hijack undo inside text inputs / contentEditable — let native edit history handle it.
+      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      if (e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redoSections();
+        else undoSections();
+      } else if (e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        redoSections();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sectionsPast, sectionsFuture]);
 
   // Opening-from-URL UX: skeleton + retry when ?open=ID arrives but the
   // resume isn't in local store yet (e.g. cloud sync hasn't pulled).
@@ -1536,13 +1607,21 @@ export function Builder() {
                 <TemplatesPopover data={data} onPick={(id) => update("template", id)} />
                 <SectionsPopover
                   data={data}
-                  onUpdate={(order) => update("sectionOrder", order)}
-                  onAdd={(id) => addSectionIfMissing(id)}
-                  onRemove={(id) => removeSectionFromOrder(id)}
-                  onAddCustom={() => setData(d => ({ ...d, customSections: [...(d.customSections ?? []), { id: uid(), title: "", content: "" }] }))}
-                  onUpdateCustom={(id, patch) => setData(d => ({ ...d, customSections: (d.customSections ?? []).map(c => c.id === id ? { ...c, ...patch } : c) }))}
-                  onRemoveCustom={(id) => setData(d => ({ ...d, customSections: (d.customSections ?? []).filter(c => c.id !== id) }))}
-                  onReorderCustom={(next) => setData(d => ({ ...d, customSections: next }))}
+                  onUpdate={(order) => { pushSectionsHistory("reorder"); update("sectionOrder", order); }}
+                  onAdd={(id) => { pushSectionsHistory(); addSectionIfMissing(id); }}
+                  onRemove={(id) => { pushSectionsHistory(); removeSectionFromOrder(id); }}
+                  onAddCustom={() => { pushSectionsHistory(); setData(d => ({ ...d, customSections: [...(d.customSections ?? []), { id: uid(), title: "", content: "" }] })); }}
+                  onUpdateCustom={(id, patch) => {
+                    const field = Object.keys(patch)[0] ?? "field";
+                    pushSectionsHistory(`custom:${id}:${field}`);
+                    setData(d => ({ ...d, customSections: (d.customSections ?? []).map(c => c.id === id ? { ...c, ...patch } : c) }));
+                  }}
+                  onRemoveCustom={(id) => { pushSectionsHistory(); setData(d => ({ ...d, customSections: (d.customSections ?? []).filter(c => c.id !== id) })); }}
+                  onReorderCustom={(next) => { pushSectionsHistory("reorder-custom"); setData(d => ({ ...d, customSections: next })); }}
+                  onUndo={undoSections}
+                  onRedo={redoSections}
+                  canUndo={sectionsPast.length > 0}
+                  canRedo={sectionsFuture.length > 0}
                 />
                 <StylePopover data={data} onPatch={(p) => setData(d => ({ ...d, ...p }))} />
               </>
