@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId } from "./types";
+import { defaultResume, FONT_PRESETS, COLOR_PRESETS, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId, type CustomSection } from "./types";
 import { computeScore } from "./atsScore";
 import { ResumeDocument } from "./ResumeDocument";
 import { exportDocx } from "./exportDocx";
