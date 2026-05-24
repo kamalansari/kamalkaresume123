@@ -519,6 +519,33 @@ function JobsPage() {
         <DialogContent className="max-w-xl">
           <DialogHeader><DialogTitle>ATS Score · {scoreJob?.title}</DialogTitle></DialogHeader>
           {scoreJob && <ScoreView jd={getJobScoringText(scoreJob)} resume={scoreResume ?? activeResume} />}
+          {scoreJob && (
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  try {
+                    downloadAtsReportPdf(
+                      {
+                        title: scoreJob.title,
+                        company: scoreJob.company,
+                        location: scoreJob.location,
+                        experience: scoreJob.experience,
+                        salary: scoreJob.salary,
+                        jd: getJobScoringText(scoreJob),
+                      },
+                      scoreResume ?? activeResume,
+                    );
+                    toast.success("ATS report downloaded");
+                  } catch {
+                    toast.error("Could not generate PDF.");
+                  }
+                }}
+              >
+                <Download className="h-4 w-4" /> Download PDF report
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
 
