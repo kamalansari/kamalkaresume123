@@ -85,7 +85,6 @@ export function Builder() {
   const [primaryId, setPrimaryId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(true);
-  const [zoom, setZoom] = useState(1);
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
@@ -1348,8 +1347,6 @@ export function Builder() {
             </button>
           )}
           <PreviewToolbar
-            zoom={zoom}
-            setZoom={setZoom}
             data={data}
             getData={() => commitPreviewEdits()}
             onPdf={printCurrentResume}
@@ -1405,14 +1402,7 @@ export function Builder() {
             </Sheet>
           </div>
           <div className="overflow-auto rounded-xl">
-            <div
-              className="resume-preview-scale"
-              style={{
-                transform: `scale(${zoom})`,
-                transformOrigin: "top center",
-                width: zoom < 1 ? "100%" : undefined,
-              }}
-            >
+            <div className="resume-preview-scale">
               <ResumeDocument
                 data={data}
                 onSectionClick={inlineEdit ? undefined : scrollToEditor}
