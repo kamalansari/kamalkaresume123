@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner";
 import { resumeStore, type SavedResume } from "@/components/builder/resumeStore";
 import { defaultResume, type ResumeData } from "@/components/builder/types";
-import { computeScore } from "@/components/builder/atsScore";
+import { computeScore, canonical } from "@/components/builder/atsScore";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/jobs")({
@@ -573,8 +573,10 @@ function buildSectionMap(resume: ResumeData): Map<string, string[]> {
     if (!lower) continue;
     const found = new Set(lower.match(/[a-z][a-z0-9+.#-]{1,}/g) || []);
     for (const tok of found) {
-      if (!map.has(tok)) map.set(tok, []);
-      map.get(tok)!.push(name);
+      const c = canonical(tok);
+      if (!map.has(c)) map.set(c, []);
+      const arr = map.get(c)!;
+      if (!arr.includes(name)) arr.push(name);
     }
   }
   return map;
