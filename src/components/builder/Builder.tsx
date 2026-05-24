@@ -1314,18 +1314,53 @@ export function Builder() {
 
           {data.sectionOrder.includes("certifications") && (
             <div id="edit-certifications" className="rounded-xl">
-            <Card title="Certifications" action={<Button size="sm" variant="outline" onClick={addCert}><Plus /> Add</Button>}>
+            <Card title="Certifications" action={<Button size="sm" variant="outline" onClick={addCert}><Plus /> Add certification</Button>}>
               <div className="space-y-3">
-                {data.certifications.map(c => (
+                {data.certifications.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-border bg-background p-6 text-center text-sm text-muted-foreground">
+                    No certifications yet. Add credentials like AWS, PMP, Google Analytics to boost recruiter signal.
+                  </div>
+                )}
+                {data.certifications.map((c, idx) => (
                   <div key={c.id} className="rounded-lg border border-border p-4 bg-background">
-                    <Grid>
-                      <Field label="Name" full><Input value={c.name} onChange={ev => updateCert(c.id, { name: ev.target.value })} /></Field>
-                      <Field label="Issuer"><Input value={c.issuer} onChange={ev => updateCert(c.id, { issuer: ev.target.value })} /></Field>
-                      <Field label="Date"><Input value={c.date} onChange={ev => updateCert(c.id, { date: ev.target.value })} /></Field>
-                    </Grid>
-                    <div className="mt-2 flex justify-end">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Certification #{idx + 1}</div>
                       <Button size="sm" variant="ghost" onClick={() => removeCert(c.id)}><Trash2 /> Remove</Button>
                     </div>
+                    <Grid>
+                      <Field label="Certification name" full>
+                        <Input value={c.name} onChange={ev => updateCert(c.id, { name: ev.target.value })} placeholder="AWS Certified Solutions Architect" />
+                      </Field>
+                      <Field label="Issuing organization">
+                        <Input value={c.issuer} onChange={ev => updateCert(c.id, { issuer: ev.target.value })} placeholder="Amazon Web Services" />
+                      </Field>
+                      <Field label="Credential ID (optional)">
+                        <Input value={c.credentialId ?? ""} onChange={ev => updateCert(c.id, { credentialId: ev.target.value })} placeholder="ABCD-1234" />
+                      </Field>
+                      <Field label="Issue date">
+                        <MonthYearPicker value={c.date} onChange={v => updateCert(c.id, { date: v })} placeholder="Pick issue date" />
+                      </Field>
+                      <Field label="Expiration">
+                        <MonthYearPicker
+                          value={c.noExpiry ? "No expiration" : (c.expires ?? "")}
+                          onChange={v => updateCert(c.id, { expires: v, noExpiry: false })}
+                          placeholder={c.noExpiry ? "No expiration" : "Pick expiration"}
+                          disabled={!!c.noExpiry}
+                        />
+                      </Field>
+                      <Field label="Credential URL (optional)" full>
+                        <Input value={c.url ?? ""} onChange={ev => updateCert(c.id, { url: ev.target.value })} placeholder="https://credly.com/…" />
+                      </Field>
+                    </Grid>
+                    <label className="mt-2 inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="h-3.5 w-3.5 accent-[var(--navy-light)]"
+                        checked={!!c.noExpiry}
+                        onChange={e => updateCert(c.id, { noExpiry: e.target.checked, expires: e.target.checked ? "" : (c.expires ?? "") })}
+                      />
+                      This credential does not expire
+                    </label>
                   </div>
                 ))}
               </div>
