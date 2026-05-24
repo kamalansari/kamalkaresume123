@@ -3,7 +3,7 @@ import { Mail, Phone, MapPin, Link as LinkIcon, Sparkles, Loader2 } from "lucide
 import { FONT_PRESETS, getSidebarSectionIds, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
-import { jdKeywordSet, isJdKeyword } from "./atsScore";
+import { jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
 
 const KeywordContext = createContext<Set<string> | null>(null);
 
@@ -99,7 +99,11 @@ export function ResumeDocument({
             : data.template;
 
   const ed = editable && handlers ? handlers : undefined;
-  const kwSet = useMemo(() => jdKeywordSet(data.jobDescription || ""), [data.jobDescription]);
+  const kwSet = useMemo(() => {
+    const set = new Set<string>(COMMON_ATS_KEYWORD_SET);
+    for (const k of jdKeywordSet(data.jobDescription || "")) set.add(k);
+    return set;
+  }, [data.jobDescription]);
 
   const wrap = (id: SectionId, node: React.ReactNode) => (
     <ClickableSection key={id} id={id} onClick={onSectionClick} flash={flashSection === id}>{node}</ClickableSection>
