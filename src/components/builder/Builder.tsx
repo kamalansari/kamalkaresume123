@@ -152,7 +152,11 @@ export function Builder() {
     }
   }, []);
 
-  // Load a specific saved resume when navigated from the dashboard via ?open=ID
+  // Load a specific saved resume when navigated from the dashboard via ?open=ID.
+  // Reacts to search-param changes so navigating /builder?open=X while already on
+  // /builder still loads the requested resume.
+  const search = useRouterState({ select: s => s.location.search });
+  const navigate = useNavigate();
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -164,11 +168,12 @@ export function Builder() {
       setCurrentId(entry.id);
       setCurrentName(entry.name);
       toast.success(`Opened "${entry.name}"`);
+    } else {
+      toast.error("Resume not found");
     }
-    const url = new URL(window.location.href);
-    url.searchParams.delete("open");
-    window.history.replaceState(null, "", url.pathname + (url.search ? `?${url.searchParams}` : ""));
-  }, []);
+    // Clear the search param without reloading
+    navigate({ to: "/builder", search: {} as never, replace: true });
+  }, [search, navigate]);
 
   const refreshList = () => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); };
 
