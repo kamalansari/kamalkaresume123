@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp, Search, X, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,6 +89,35 @@ export function SavedResumesGallery({
       return hay.includes(q);
     });
   }, [saved, query]);
+
+  // Lazy-render the heavy ResumeDocument preview only when the tile scrolls into view.
+  function LazyPreview({ resume }: { resume: SavedResume }) {
+    const ref = useRef<HTMLDivElement | null>(null);
+    const [visible, setVisible] = useState(false);
+    useEffect(() => {
+      if (visible || typeof IntersectionObserver === "undefined") return;
+      const el = ref.current;
+      if (!el) return;
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) if (e.isIntersecting) { setVisible(true); io.disconnect(); }
+        },
+        { rootMargin: "200px" },
+      );
+      io.observe(el);
+      return () => io.disconnect();
+    }, [visible]);
+    return (
+      <div ref={ref} className="absolute inset-0 origin-top-left pointer-events-none"
+           style={{ transform: "scale(0.28)", width: "357%", height: "357%" }}>
+        {visible ? (
+          <ResumeDocument data={resume.data} />
+        ) : (
+          <div className="h-full w-full bg-neutral-100" aria-hidden />
+        )}
+      </div>
+    );
+  }
 
   return (
     <section className="no-print mx-auto max-w-[1600px] px-6 pt-6">
@@ -181,12 +210,7 @@ export function SavedResumesGallery({
                       className="relative flex-1 overflow-hidden bg-neutral-100"
                       title="Open resume"
                     >
-                      <div
-                        className="absolute inset-0 origin-top-left pointer-events-none"
-                        style={{ transform: "scale(0.28)", width: "357%", height: "357%" }}
-                      >
-                        <ResumeDocument data={s.data} />
-                      </div>
+                      <LazyPreview resume={s} />
                       {isPrimary && (
                         <div className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-amber-500/95 text-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest shadow-sm">
                           <Star className="h-3 w-3 fill-white" /> Primary
