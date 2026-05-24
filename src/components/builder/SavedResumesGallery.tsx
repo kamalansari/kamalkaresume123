@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp, Search, X, Download, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp, Search, X, Download, Upload, ExternalLink, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ResumeDocument } from "./ResumeDocument";
 import { resumeStore, newId, type SavedResume } from "./resumeStore";
+import { computeScore } from "./atsScore";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 type Props = {
@@ -26,6 +34,38 @@ export function SavedResumesGallery({
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const relativeTime = (ts: number) => {
+    const diff = Date.now() - ts;
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return "just now";
+    if (m < 60) return `${m} minute${m === 1 ? "" : "s"} ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} hour${h === 1 ? "" : "s"} ago`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `Updated ${d} day${d === 1 ? "" : "s"} ago`;
+    const mo = Math.floor(d / 30);
+    if (mo < 12) return `Updated ${mo} month${mo === 1 ? "" : "s"} ago`;
+    const y = Math.floor(mo / 12);
+    return `Updated ${y} year${y === 1 ? "" : "s"} ago`;
+  };
+
+  const downloadOne = (r: SavedResume) => {
+    const payload = { version: 1, exportedAt: Date.now(), resumes: [r] };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${r.name.replace(/[^a-z0-9-_]+/gi, "_") || "resume"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Downloaded "${r.name}"`);
+  };
+
+  const openInNewTab = (id: string) => {
+    onOpen(id);
+    window.open("/builder", "_blank", "noopener,noreferrer");
+  };
 
   const exportAll = () => {
     const payload = { version: 1, exportedAt: Date.now(), resumes: saved };
@@ -196,6 +236,11 @@ export function SavedResumesGallery({
               {filtered.map(s => {
                 const isCurrent = currentId === s.id;
                 const isPrimary = primaryId === s.id;
+                const score = computeScore(s.data);
+                const resumeScore = score.score;
+                const atsScore = Math.round((score.coverage || 0) * 100);
+                const scoreColor = (n: number) =>
+                  n >= 70 ? "text-emerald-600" : n >= 40 ? "text-amber-600" : "text-rose-600";
                 return (
                   <div
                     key={s.id}
@@ -211,41 +256,81 @@ export function SavedResumesGallery({
                       title="Open resume"
                     >
                       <LazyPreview resume={s} />
-                      {isPrimary && (
-                        <div className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-amber-500/95 text-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest shadow-sm">
-                          <Star className="h-3 w-3 fill-white" /> Primary
-                        </div>
-                      )}
                     </button>
 
                     {/* Footer */}
-                    <div className="border-t border-border bg-card px-3 py-2">
+                    <div className="border-t border-border bg-card px-3 py-2 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-[11px] text-muted-foreground">
+                          {relativeTime(s.updatedAt)}
+                        </div>
+                        {isPrimary && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--navy-light)] text-white px-2 py-0.5 text-[10px] font-semibold">
+                            <Star className="h-3 w-3 fill-white" /> Primary Resume
+                          </span>
+                        )}
+                      </div>
+
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-semibold truncate" title={s.name}>{s.name}</div>
-                          <div className="text-[11px] text-muted-foreground truncate">
-                            {new Date(s.updatedAt).toLocaleDateString()}
-                          </div>
                         </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="More">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem onClick={() => onOpen(s.id)}>
+                              <Pencil className="h-3.5 w-3.5" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              const next = window.prompt("Rename resume", s.name);
+                              if (next && next.trim()) onRename(s.id, next.trim());
+                            }}>
+                              <Pencil className="h-3.5 w-3.5" /> Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onSetPrimary(s.id, s.name)}>
+                              <Star className={cn("h-3.5 w-3.5", isPrimary && "fill-amber-400 text-amber-500")} />
+                              {isPrimary ? "Unset Primary" : "Set as Primary"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onDuplicate(s.id)}>
+                              <Copy className="h-3.5 w-3.5" /> Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => downloadOne(s)}>
+                              <Download className="h-3.5 w-3.5" /> Download JSON
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onDelete(s.id, s.name)}>
+                              <Trash2 className="h-3.5 w-3.5" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <div className="mt-2 flex items-center gap-1">
-                        <Button size="sm" variant="outline" className="h-7 flex-1 text-xs" onClick={() => onOpen(s.id)}>
-                          <Pencil className="h-3 w-3" /> Edit
+
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="text-muted-foreground">
+                          Resume Score: <span className={cn("font-semibold", scoreColor(resumeScore))}>{resumeScore}%</span>
+                        </span>
+                        <span className="text-border">|</span>
+                        <span className="text-muted-foreground">
+                          ATS Score: <span className={cn("font-semibold", scoreColor(atsScore))}>{atsScore}%</span>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-border/60">
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Open in new tab" onClick={() => openInNewTab(s.id)}>
+                          <ExternalLink className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-7 px-2" title="Set as Primary" onClick={() => onSetPrimary(s.id, s.name)}>
-                          <Star className={cn("h-3.5 w-3.5", isPrimary && "fill-amber-400 text-amber-500")} />
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Edit" onClick={() => onOpen(s.id)}>
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-7 px-2" title="Rename" onClick={() => {
-                          const next = window.prompt("Rename resume", s.name);
-                          if (next && next.trim()) onRename(s.id, next.trim());
-                        }}>
-                          <Pencil className="h-3.5 w-3.5" />
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Duplicate" onClick={() => onDuplicate(s.id)}>
+                          <Copy className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-7 px-2" title="Duplicate" onClick={() => onDuplicate(s.id)}>
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive" title="Delete" onClick={() => onDelete(s.id, s.name)}>
-                          <Trash2 className="h-3.5 w-3.5" />
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Download" onClick={() => downloadOne(s)}>
+                          <Download className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
