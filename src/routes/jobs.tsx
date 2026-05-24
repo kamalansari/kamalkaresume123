@@ -591,18 +591,19 @@ function FieldCell({ label, icon, children, className }: { label: string; icon: 
   );
 }
 
-function SelectInline({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+function SelectInline({ value, onChange, options, labels }: { value: string; onChange: (v: string) => void; options: string[]; labels?: string[] }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
       className="w-full h-9 bg-transparent border-0 text-base focus:outline-none cursor-pointer">
-      {options.map(o => <option key={o} value={o}>{o}</option>)}
+      {options.map((o, i) => <option key={o} value={o}>{labels?.[i] ?? o}</option>)}
     </select>
   );
 }
 
-function JobCard({ job, resume, onScore, onNova, naukriUrl }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; naukriUrl: (t: string) => string }) {
+function JobCard({ job, resume, onScore, onNova, naukriUrl, liveScore }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; naukriUrl: (t: string) => string; liveScore?: number }) {
   const scoringText = getJobScoringText(job);
-  const score = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
+  const computedScore = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
+  const score = liveScore ?? computedScore;
   const tone = score >= 80 ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
     : score >= 60 ? "bg-[var(--navy-light)]/10 text-[var(--navy-light)] border-[var(--navy-light)]/20"
     : score >= 40 ? "bg-amber-500/10 text-amber-700 border-amber-500/30"
