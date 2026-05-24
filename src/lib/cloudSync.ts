@@ -4,6 +4,7 @@ import { resumeStore, type SavedResume } from "@/components/builder/resumeStore"
 let currentUserId: string | null = null;
 let initialized = false;
 let suppressPush = false;
+let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
 export function isSyncSuppressed() { return suppressPush; }
 
@@ -23,28 +24,50 @@ async function pullAll(userId: string) {
     data: r.data as SavedResume["data"],
   }));
 
-  // Merge cloud into local (cloud wins on conflict by updated_at)
+  // Merge by id, last-write-wins on updatedAt. Push back whichever side is newer.
   const local = resumeStore.list();
-  const byId = new Map<string, SavedResume>();
-  for (const r of local) byId.set(r.id, r);
-  for (const r of cloud) {
-    const existing = byId.get(r.id);
-    if (!existing || existing.updatedAt < r.updatedAt) byId.set(r.id, r);
-  }
-  // Push local-only items to the cloud
-  const cloudIds = new Set(cloud.map(r => r.id));
-  for (const r of local) {
-    if (!cloudIds.has(r.id)) {
-      await pushOne(userId, r, false);
+  const localById = new Map(local.map(r => [r.id, r]));
+  const cloudById = new Map(cloud.map(r => [r.id, r]));
+  const allIds = new Set<string>([...localById.keys(), ...cloudById.keys()]);
+
+  const merged = new Map<string, SavedResume>();
+  const pushBack: SavedResume[] = [];
+  const primaryCloudId = (data ?? []).find(r => r.is_primary)?.id ?? null;
+
+  for (const id of allIds) {
+    const l = localById.get(id);
+    const c = cloudById.get(id);
+    if (l && c) {
+      // Conflict — newest updatedAt wins; if local is newer, push it.
+      if (l.updatedAt > c.updatedAt) {
+        merged.set(id, l);
+        pushBack.push(l);
+      } else if (c.updatedAt > l.updatedAt) {
+        merged.set(id, c);
+      } else {
+        merged.set(id, c); // identical timestamps — prefer cloud (canonical)
+      }
+    } else if (c) {
+      merged.set(id, c); // cloud-only → adopt locally
+    } else if (l) {
+      merged.set(id, l); // local-only → push to cloud
+      pushBack.push(l);
     }
   }
-  // Persist merged
-  suppressPush = true;
-  try { for (const r of byId.values()) resumeStore.upsert(r); } finally { suppressPush = false; }
 
-  // Sync primary
-  const primaryRow = (data ?? []).find(r => r.is_primary);
-  if (primaryRow) resumeStore.setPrimary(primaryRow.id);
+  // Persist merged locally without re-triggering syncUpsert
+  suppressPush = true;
+  try {
+    for (const r of merged.values()) resumeStore.upsert(r);
+    if (primaryCloudId && merged.has(primaryCloudId)) {
+      resumeStore.setPrimary(primaryCloudId);
+    }
+  } finally { suppressPush = false; }
+
+  // Push the locally-newer (or local-only) entries back to the cloud
+  for (const r of pushBack) {
+    await pushOne(userId, r, primaryCloudId === r.id);
+  }
 
   window.dispatchEvent(new Event("resumeforge:refresh"));
 }
@@ -80,6 +103,55 @@ export async function syncSetPrimary(id: string | null) {
   if (id) await supabase.from("resumes").update({ is_primary: true }).eq("user_id", currentUserId).eq("id", id);
 }
 
+function subscribeRealtime(userId: string) {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+  realtimeChannel = supabase
+    .channel(`resumes:${userId}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "resumes", filter: `user_id=eq.${userId}` },
+      (payload) => {
+        // A change came in from another device — reconcile.
+        suppressPush = true;
+        try {
+          if (payload.eventType === "DELETE") {
+            const id = (payload.old as { id?: string })?.id;
+            if (id) resumeStore.remove(id);
+          } else {
+            const row = payload.new as {
+              id: string; name: string; data: SavedResume["data"];
+              updated_at: string; is_primary: boolean;
+            };
+            const incoming: SavedResume = {
+              id: row.id,
+              name: row.name,
+              data: row.data,
+              updatedAt: new Date(row.updated_at).getTime(),
+            };
+            const existing = resumeStore.get(incoming.id);
+            // Last-write-wins: only adopt if remote is newer (or new)
+            if (!existing || existing.updatedAt < incoming.updatedAt) {
+              resumeStore.upsert(incoming);
+            }
+            if (row.is_primary) resumeStore.setPrimary(row.id);
+          }
+        } finally { suppressPush = false; }
+        window.dispatchEvent(new Event("resumeforge:refresh"));
+      },
+    )
+    .subscribe();
+}
+
+function unsubscribeRealtime() {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+}
+
 export function initCloudSync() {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
@@ -87,14 +159,29 @@ export function initCloudSync() {
   supabase.auth.getSession().then(({ data }) => {
     const uid = data.session?.user.id ?? null;
     currentUserId = uid;
-    if (uid) pullAll(uid);
+    if (uid) {
+      pullAll(uid).then(() => subscribeRealtime(uid));
+    }
   });
 
   supabase.auth.onAuthStateChange((_event, session) => {
     const uid = session?.user.id ?? null;
     const changed = uid !== currentUserId;
     currentUserId = uid;
-    if (uid && changed) pullAll(uid);
-    if (!uid) window.dispatchEvent(new Event("resumeforge:refresh"));
+    if (uid && changed) {
+      pullAll(uid).then(() => subscribeRealtime(uid));
+    }
+    if (!uid) {
+      unsubscribeRealtime();
+      window.dispatchEvent(new Event("resumeforge:refresh"));
+    }
+  });
+
+  // Re-pull when the tab becomes visible again so device A picks up edits
+  // made on device B while it was in the background.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && currentUserId) {
+      pullAll(currentUserId);
+    }
   });
 }
