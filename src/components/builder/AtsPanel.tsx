@@ -126,7 +126,7 @@ function buildSectionGroups(data: ResumeData, score: ReturnType<typeof computeSc
     { label: "At least one role listed", pass: exp.length > 0 },
     { label: "Job titles filled", pass: exp.length > 0 && exp.every(e => !!text(e.title).trim()) },
     { label: "Company names filled", pass: exp.length > 0 && exp.every(e => !!text(e.company).trim()) },
-    { label: "Dates on every role", pass: exp.length > 0 && exp.every(e => !!text(e.start ?? "").trim()) },
+    { label: "Dates on every role", pass: exp.length > 0 && exp.every(e => !!text(e.date).trim()) },
     { label: "3+ accomplishment bullets", pass: totalBullets >= 3, hint: `Current: ${totalBullets} bullets.` },
     { label: "Strong action verbs", pass: actionVerbs.test(expText), hint: "Start bullets with verbs like Led, Built, Shipped." },
     { label: "Quantified impact (numbers)", pass: hasNum(expText), hint: "Add %, $, or counts to your bullets." },
