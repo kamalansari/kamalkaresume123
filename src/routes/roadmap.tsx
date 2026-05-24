@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Map, Loader2, Sparkles, Target } from "lucide-react";
+import { Map as MapIcon, Loader2, Sparkles, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { defaultBrief, targetBriefStore } from "@/lib/targetBriefStore";
