@@ -30,11 +30,21 @@ function InlineText({ text }: { text: string }) {
   const set = useContext(KeywordContext);
   return (
     <>
-      {parseInline(text).map((r, i) =>
-        r.bold
-          ? <strong key={i} style={{ fontWeight: 700 }}>{r.text}</strong>
-          : <span key={i}>{set && set.size ? renderWithKeywords(r.text, set) : r.text}</span>
-      )}
+      {parseInline(text).map((r, i) => {
+        const inner = r.bold
+          ? r.text
+          : set && set.size
+            ? renderWithKeywords(r.text, set)
+            : r.text;
+        const style: React.CSSProperties = {};
+        if (r.bold) style.fontWeight = 700;
+        if (r.italic) style.fontStyle = "italic";
+        if (r.underline) style.textDecoration = "underline";
+        if (r.bold || r.italic || r.underline) {
+          return <span key={i} style={style}>{inner}</span>;
+        }
+        return <span key={i}>{inner}</span>;
+      })}
     </>
   );
 }
