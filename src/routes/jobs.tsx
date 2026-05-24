@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Filter, MapPin, Briefcase, Calendar, Building2, Tag, Bookmark, Sparkles, Loader2, ArrowLeft, ExternalLink, Gauge, ChevronDown } from "lucide-react";
+import { Search, Filter, MapPin, Briefcase, Calendar, Building2, Tag, Bookmark, Sparkles, Loader2, ArrowLeft, ExternalLink, Gauge, ChevronDown, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { resumeStore, type SavedResume } from "@/components/builder/resumeStore";
 import { defaultResume, type ResumeData } from "@/components/builder/types";
 import { computeScore, canonical } from "@/components/builder/atsScore";
+import { downloadAtsReportPdf } from "@/components/builder/atsReportPdf";
 import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 
@@ -518,6 +519,33 @@ function JobsPage() {
         <DialogContent className="max-w-xl">
           <DialogHeader><DialogTitle>ATS Score · {scoreJob?.title}</DialogTitle></DialogHeader>
           {scoreJob && <ScoreView jd={getJobScoringText(scoreJob)} resume={scoreResume ?? activeResume} />}
+          {scoreJob && (
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  try {
+                    downloadAtsReportPdf(
+                      {
+                        title: scoreJob.title,
+                        company: scoreJob.company,
+                        location: scoreJob.location,
+                        experience: scoreJob.experience,
+                        salary: scoreJob.salary,
+                        jd: getJobScoringText(scoreJob),
+                      },
+                      scoreResume ?? activeResume,
+                    );
+                    toast.success("ATS report downloaded");
+                  } catch {
+                    toast.error("Could not generate PDF.");
+                  }
+                }}
+              >
+                <Download className="h-4 w-4" /> Download PDF report
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
 
