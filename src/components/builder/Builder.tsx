@@ -97,6 +97,8 @@ export function Builder() {
   const [jdSaveAsNew, setJdSaveAsNew] = useState(true);
   const [jdTailoredName, setJdTailoredName] = useState("");
   const [primaryId, setPrimaryId] = useState<string | null>(null);
+  const [tailorConfirmOpen, setTailorConfirmOpen] = useState(false);
+  const [tailorConfirmName, setTailorConfirmName] = useState("");
   const [mounted, setMounted] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(true);
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
