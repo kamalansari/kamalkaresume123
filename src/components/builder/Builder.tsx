@@ -1667,6 +1667,17 @@ export function Builder() {
                   onUpdate={(order) => { pushSectionsHistory("reorder"); update("sectionOrder", order); }}
                   onAdd={(id) => { pushSectionsHistory(); addSectionIfMissing(id); }}
                   onRemove={(id) => { pushSectionsHistory(); removeSectionFromOrder(id); }}
+                  onToggleSidebar={(id) => {
+                    if (!SIDEBAR_ELIGIBLE.includes(id)) return;
+                    pushSectionsHistory();
+                    setData(d => {
+                      const current = d.sidebarSections ?? TEMPLATE_SIDEBAR_DEFAULTS[d.template] ?? [];
+                      const next = current.includes(id)
+                        ? current.filter(s => s !== id)
+                        : [...current, id];
+                      return { ...d, sidebarSections: next };
+                    });
+                  }}
                   onAddCustom={() => { pushSectionsHistory(); setData(d => ({ ...d, customSections: [...(d.customSections ?? []), { id: uid(), title: "", content: "" }] })); }}
                   onUpdateCustom={(id, patch) => {
                     const field = Object.keys(patch)[0] ?? "field";
