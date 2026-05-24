@@ -1162,9 +1162,10 @@ export function Builder() {
               <TabsList
                 className={cn(
                   "h-auto w-full p-1 gap-1 rounded-xl border border-border bg-card shadow-[var(--shadow-soft)]",
-                  // Mobile: horizontal scroll with snap; Desktop: even grid that never wraps awkwardly
+                  // Narrow viewports: horizontal scroll with snap so tabs never overlap.
+                  // Switch to a 6-col grid only when there is enough room (≥ lg).
                   "flex overflow-x-auto snap-x snap-mandatory scrollbar-thin",
-                  "sm:grid sm:grid-cols-6 sm:overflow-visible"
+                  "lg:grid lg:grid-cols-6 lg:overflow-visible"
                 )}
               >
                 {[
@@ -1178,7 +1179,7 @@ export function Builder() {
                   <TabsTrigger
                     key={v}
                     value={v}
-                    className="snap-start shrink-0 sm:shrink min-w-[96px] sm:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap"
+                    className="snap-start shrink-0 lg:shrink min-w-[104px] lg:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap"
                   >
                     <Icon className="h-3.5 w-3.5 opacity-80" />
                     <span>{label}</span>
