@@ -1256,10 +1256,16 @@ export function Builder() {
           />
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={jdSaveAsNew} onChange={e => setJdSaveAsNew(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={jdSaveAsNew || !!primaryId}
+                disabled={!!primaryId}
+                onChange={e => setJdSaveAsNew(e.target.checked)}
+              />
               Save tailored result as a new resume (keeps Primary safe)
+              {primaryId && <span className="text-[11px] text-amber-700">— required while a Primary is set</span>}
             </label>
-            {jdSaveAsNew && (
+            {(jdSaveAsNew || !!primaryId) && (
               <Input
                 value={jdTailoredName}
                 onChange={e => setJdTailoredName(e.target.value)}
