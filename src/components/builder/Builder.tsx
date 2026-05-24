@@ -15,6 +15,16 @@ import { resumeStore, newId, type SavedResume } from "./resumeStore";
 import { profileStore, type Profile } from "./profileStore";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -87,6 +97,8 @@ export function Builder() {
   const [jdSaveAsNew, setJdSaveAsNew] = useState(true);
   const [jdTailoredName, setJdTailoredName] = useState("");
   const [primaryId, setPrimaryId] = useState<string | null>(null);
+  const [tailorConfirmOpen, setTailorConfirmOpen] = useState(false);
+  const [tailorConfirmName, setTailorConfirmName] = useState("");
   const [mounted, setMounted] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(true);
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
@@ -803,8 +815,18 @@ export function Builder() {
     }
   };
 
+  const openTailorConfirm = () => {
+    if (!data.jobDescription.trim()) { toast.error("Paste a job description first."); return; }
+    const firstLine = data.jobDescription.split("\n").map(s => s.trim()).find(Boolean) ?? "";
+    const roleHint = firstLine.replace(/[^a-zA-Z0-9 +/&-]/g, "").slice(0, 40).trim();
+    const stamp = new Date().toLocaleDateString();
+    setTailorConfirmName(roleHint ? `Tailored — ${roleHint} (${stamp})` : `Tailored — ${stamp}`);
+    setTailorConfirmOpen(true);
+  };
+
   const generateFromJD = async () => {
     if (!data.jobDescription.trim()) { toast.error("Paste a job description first."); return; }
+    setTailorConfirmOpen(false);
     setGenerating(true);
     try {
       // Always tailor from Primary Resume if set, and save the result as a NEW resume
@@ -842,12 +864,9 @@ export function Builder() {
           return match ? { ...e, bullets: match.bullets } : e;
         }),
       };
-      // Derive a friendly new resume name from the JD (first meaningful line) + date.
-      const firstLine = data.jobDescription
-        .split("\n").map(s => s.trim()).find(Boolean) ?? "";
-      const roleHint = firstLine.replace(/[^a-zA-Z0-9 +/&-]/g, "").slice(0, 40).trim();
+      // Always create a NEW tailored copy — never overwrite the Primary or current resume.
       const stamp = new Date().toLocaleDateString();
-      const name = roleHint ? `Tailored — ${roleHint} (${stamp})` : `Tailored — ${stamp}`;
+      const name = (tailorConfirmName.trim() || `Tailored — ${stamp}`);
       const id = newId();
       resumeStore.upsert({ id, name, updatedAt: Date.now(), data: tailored });
       resumeStore.saveDraft(tailored);
@@ -902,7 +921,9 @@ export function Builder() {
           return match ? { ...e, bullets: match.bullets } : e;
         }),
       };
-      if (jdSaveAsNew) {
+      // Never overwrite the Primary Resume — when primary exists, force save-as-new.
+      const forceNew = jdSaveAsNew || !!primary;
+      if (forceNew) {
         // Save tailored version as a NEW resume — Primary stays untouched
         const id = newId();
         const name = (jdTailoredName.trim() || `Tailored — ${new Date().toLocaleDateString()}`);
@@ -1235,10 +1256,16 @@ export function Builder() {
           />
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={jdSaveAsNew} onChange={e => setJdSaveAsNew(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={jdSaveAsNew || !!primaryId}
+                disabled={!!primaryId}
+                onChange={e => setJdSaveAsNew(e.target.checked)}
+              />
               Save tailored result as a new resume (keeps Primary safe)
+              {primaryId && <span className="text-[11px] text-amber-700">— required while a Primary is set</span>}
             </label>
-            {jdSaveAsNew && (
+            {(jdSaveAsNew || !!primaryId) && (
               <Input
                 value={jdTailoredName}
                 onChange={e => setJdTailoredName(e.target.value)}
@@ -1255,6 +1282,35 @@ export function Builder() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={tailorConfirmOpen} onOpenChange={setTailorConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tailor resume to this job description?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {primaryId
+                ? "Your Primary Resume will not be modified. AI will create a new tailored copy you can review and edit."
+                : "AI will create a new tailored copy of your resume. Your current resume stays untouched."}
+              {" "}ATS-friendly formatting (plain text, standard sections, real employers and dates) is preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Name this tailored version</Label>
+            <Input
+              value={tailorConfirmName}
+              onChange={e => setTailorConfirmName(e.target.value)}
+              placeholder="e.g. Stripe — Senior PM"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={generating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={generateFromJD} disabled={generating}>
+              {generating ? "Tailoring…" : "Create tailored copy"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <SavedResumesGallery
         saved={saved}
@@ -1556,7 +1612,7 @@ export function Builder() {
           <Card
             title="Target job description"
             action={
-              <Button size="sm" variant="accent" onClick={generateFromJD} disabled={generating || !data.jobDescription.trim()}>
+              <Button size="sm" variant="accent" onClick={openTailorConfirm} disabled={generating || !data.jobDescription.trim()}>
                 {generating ? <Loader2 className="animate-spin" /> : <Wand2 />}
                 {generating ? "Tailoring…" : "AI tailor resume"}
               </Button>
