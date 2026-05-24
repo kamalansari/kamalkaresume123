@@ -1463,7 +1463,7 @@ export function Builder() {
 
         {/* ATS panel */}
         {atsOpen && (
-        <div className="no-print hidden lg:block lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+        <div className="no-print hidden xl:block xl:sticky xl:top-20 xl:self-start xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto">
         <AtsPanel
           data={data}
           onClose={() => setAtsOpen(false)}
