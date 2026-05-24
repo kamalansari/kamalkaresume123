@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold, ChevronUp, ChevronDown, Undo2, Redo2 } from "lucide-react";
+import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Undo2, Redo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
@@ -219,13 +219,17 @@ export function TemplatesPopover({ data, onPick }: { data: ResumeData; onPick: (
   );
 }
 
-function SortableRow({ id, onRemove, onUp, onDown, canUp, canDown }: {
+function SortableRow({ id, onRemove, onUp, onDown, onLeft, onRight, canUp, canDown, canLeft, canRight }: {
   id: SectionId;
   onRemove: () => void;
   onUp: () => void;
   onDown: () => void;
+  onLeft: () => void;
+  onRight: () => void;
   canUp: boolean;
   canDown: boolean;
+  canLeft: boolean;
+  canRight: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
@@ -235,6 +239,12 @@ function SortableRow({ id, onRemove, onUp, onDown, canUp, canDown }: {
         <GripVertical className="h-4 w-4" />
       </button>
       <span className="flex-1 font-medium truncate">{SECTION_LABELS[id]}</span>
+      <button onClick={onLeft} disabled={!canLeft} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Move left">
+        <ChevronLeft className="h-3.5 w-3.5" />
+      </button>
+      <button onClick={onRight} disabled={!canRight} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Move right">
+        <ChevronRight className="h-3.5 w-3.5" />
+      </button>
       <button onClick={onUp} disabled={!canUp} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Move up">
         <ChevronUp className="h-3.5 w-3.5" />
       </button>
@@ -332,10 +342,14 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, 
                   key={id}
                   id={id}
                   onRemove={() => onRemove(id)}
-                  onUp={() => move(i, i - 1)}
-                  onDown={() => move(i, i + 1)}
-                  canUp={i > 0}
-                  canDown={i < data.sectionOrder.length - 1}
+                  onLeft={() => move(i, i - 1)}
+                  onRight={() => move(i, i + 1)}
+                  onUp={() => move(i, i - 2)}
+                  onDown={() => move(i, i + 2)}
+                  canLeft={i > 0}
+                  canRight={i < data.sectionOrder.length - 1}
+                  canUp={i - 2 >= 0}
+                  canDown={i + 2 < data.sectionOrder.length}
                 />
               ))}
             </div>
