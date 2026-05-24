@@ -122,6 +122,36 @@ export function ResumeDocument({
     const compact = variant === "compact-two";
     const sidebarBg = compact ? "#f4f3ef" : accent;
     const sidebarText = compact ? "#1a1a1a" : "#ffffff";
+    const sidebarSectionIds: SectionId[] = ["skills", "languages", "education"];
+    const sidebarRenderers: Partial<Record<SectionId, React.ReactNode>> = {
+      skills: data.skills ? (
+        <SidebarBlock key="skills" title="Skills" headingFont={headingFont} dark={!compact}>
+          <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+            {parseSkills(data.skills).map((s, i) => (
+              <li key={i} style={{ marginBottom: 3 }}>• {s}</li>
+            ))}
+          </ul>
+        </SidebarBlock>
+      ) : null,
+      languages: data.languages?.length ? (
+        <SidebarBlock key="languages" title="Languages" headingFont={headingFont} dark={!compact}>
+          {data.languages.map(l => (
+            <div key={l.id} style={{ marginBottom: 3 }}>{l.name}{l.level ? ` — ${l.level}` : ""}</div>
+          ))}
+        </SidebarBlock>
+      ) : null,
+      education: data.education.length ? (
+        <SidebarBlock key="education" title="Education" headingFont={headingFont} dark={!compact}>
+          {data.education.map(ed => (
+            <div key={ed.id} style={{ marginBottom: 6 }}>
+              <div style={{ fontWeight: 600 }}>{ed.degree}</div>
+              <div style={{ opacity: 0.9 }}>{ed.school}</div>
+              <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{ed.date}</div>
+            </div>
+          ))}
+        </SidebarBlock>
+      ) : null,
+    };
     const sidebar = (
       <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.55in 0.4in", cursor: onSectionClick ? "pointer" : undefined }}>
         <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}>{data.name || "Your Name"}</h1>
@@ -130,39 +160,12 @@ export function ResumeDocument({
         <SidebarBlock title="Contact" headingFont={headingFont} dark={!compact}>
           <SidebarContact data={data} dark={!compact} />
         </SidebarBlock>
-        {data.skills && (
-          <SidebarBlock title="Skills" headingFont={headingFont} dark={!compact}>
-            <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-              {parseSkills(data.skills).map((s, i) => (
-                <li key={i} style={{ marginBottom: 3 }}>• {s}</li>
-              ))}
-            </ul>
-          </SidebarBlock>
-        )}
-        {data.languages?.length > 0 && (
-          <SidebarBlock title="Languages" headingFont={headingFont} dark={!compact}>
-            {data.languages.map(l => (
-              <div key={l.id} style={{ marginBottom: 3 }}>{l.name}{l.level ? ` — ${l.level}` : ""}</div>
-            ))}
-          </SidebarBlock>
-        )}
-        {data.education.length > 0 && (
-          <SidebarBlock title="Education" headingFont={headingFont} dark={!compact}>
-            {data.education.map(ed => (
-              <div key={ed.id} style={{ marginBottom: 6 }}>
-                <div style={{ fontWeight: 600 }}>{ed.degree}</div>
-                <div style={{ opacity: 0.9 }}>{ed.school}</div>
-                <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{ed.date}</div>
-              </div>
-            ))}
-          </SidebarBlock>
-        )}
+        {data.sectionOrder.filter(id => sidebarSectionIds.includes(id)).map(id => sidebarRenderers[id])}
       </aside>
     );
-    const mainSectionIds: SectionId[] = ["summary", "experience", "projects", "certifications", "awards"];
     const main = (
       <main style={{ padding: "0.55in 0.5in" }}>
-        {data.sectionOrder.filter(id => mainSectionIds.includes(id)).map(id => sections[id])}
+        {data.sectionOrder.filter(id => !sidebarSectionIds.includes(id)).map(id => sections[id])}
         {customBlocks}
       </main>
     );
