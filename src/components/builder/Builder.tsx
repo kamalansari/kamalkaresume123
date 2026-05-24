@@ -1607,13 +1607,21 @@ export function Builder() {
                 <TemplatesPopover data={data} onPick={(id) => update("template", id)} />
                 <SectionsPopover
                   data={data}
-                  onUpdate={(order) => update("sectionOrder", order)}
-                  onAdd={(id) => addSectionIfMissing(id)}
-                  onRemove={(id) => removeSectionFromOrder(id)}
-                  onAddCustom={() => setData(d => ({ ...d, customSections: [...(d.customSections ?? []), { id: uid(), title: "", content: "" }] }))}
-                  onUpdateCustom={(id, patch) => setData(d => ({ ...d, customSections: (d.customSections ?? []).map(c => c.id === id ? { ...c, ...patch } : c) }))}
-                  onRemoveCustom={(id) => setData(d => ({ ...d, customSections: (d.customSections ?? []).filter(c => c.id !== id) }))}
-                  onReorderCustom={(next) => setData(d => ({ ...d, customSections: next }))}
+                  onUpdate={(order) => { pushSectionsHistory("reorder"); update("sectionOrder", order); }}
+                  onAdd={(id) => { pushSectionsHistory(); addSectionIfMissing(id); }}
+                  onRemove={(id) => { pushSectionsHistory(); removeSectionFromOrder(id); }}
+                  onAddCustom={() => { pushSectionsHistory(); setData(d => ({ ...d, customSections: [...(d.customSections ?? []), { id: uid(), title: "", content: "" }] })); }}
+                  onUpdateCustom={(id, patch) => {
+                    const field = Object.keys(patch)[0] ?? "field";
+                    pushSectionsHistory(`custom:${id}:${field}`);
+                    setData(d => ({ ...d, customSections: (d.customSections ?? []).map(c => c.id === id ? { ...c, ...patch } : c) }));
+                  }}
+                  onRemoveCustom={(id) => { pushSectionsHistory(); setData(d => ({ ...d, customSections: (d.customSections ?? []).filter(c => c.id !== id) })); }}
+                  onReorderCustom={(next) => { pushSectionsHistory("reorder-custom"); setData(d => ({ ...d, customSections: next })); }}
+                  onUndo={undoSections}
+                  onRedo={redoSections}
+                  canUndo={sectionsPast.length > 0}
+                  canRedo={sectionsFuture.length > 0}
                 />
                 <StylePopover data={data} onPatch={(p) => setData(d => ({ ...d, ...p }))} />
               </>
