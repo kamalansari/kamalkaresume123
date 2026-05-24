@@ -206,3 +206,17 @@
 @media print {
   .preview-editable { outline: none !important; background: transparent !important; }
 }
+
+/* Nova chat markdown */
+.nova-md p { margin: 0.25rem 0; }
+.nova-md p:first-child { margin-top: 0; }
+.nova-md p:last-child { margin-bottom: 0; }
+.nova-md ul { list-style: disc; padding-left: 1.1rem; margin: 0.35rem 0; }
+.nova-md ol { list-style: decimal; padding-left: 1.3rem; margin: 0.35rem 0; }
+.nova-md li { margin: 0.15rem 0; }
+.nova-md strong { font-weight: 600; color: inherit; }
+.nova-md code { background: color-mix(in oklab, currentColor 10%, transparent); padding: 0 0.25rem; border-radius: 0.25rem; font-size: 0.85em; }
+.nova-md pre { background: color-mix(in oklab, currentColor 8%, transparent); padding: 0.5rem 0.65rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.4rem 0; }
+.nova-md h1, .nova-md h2, .nova-md h3 { font-weight: 600; margin: 0.4rem 0 0.25rem; }
+.nova-md h3 { font-size: 0.95rem; }
+.nova-md a { color: var(--navy-light); text-decoration: underline; }

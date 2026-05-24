@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import { Sparkles, Loader2, Pencil, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight, Trash2, Mic, ArrowUpRight, Briefcase, Lightbulb, Gauge, MessageSquareText, ChevronDown } from "lucide-react";
+import { Sparkles, Loader2, Pencil, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight, Trash2, Mic, ArrowUpRight, Briefcase, Lightbulb, Gauge, MessageSquareText, ChevronDown, SpellCheck, Target, UserCheck } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -444,7 +445,7 @@ const INITIAL_NOVA: NovaMessage[] = [
   {
     role: "assistant",
     content:
-      "Hi! I'm Nova — your AI career copilot. I can review your resume, surface matching jobs, and tailor your application in seconds.",
+      "Hi! I'm **Nova** — your AI Resume Assistant.\n\nI can:\n- Review your resume and flag weaknesses\n- Suggest concrete improvements\n- Fix grammar and tighten phrasing\n- Optimize ATS keywords against your target JD\n- Rewrite bullets as achievements with measurable impact\n- Share recruiter-focused recommendations\n\nWhat would you like to start with?",
   },
 ];
 
@@ -536,24 +537,39 @@ function NovaChatView({ data }: { data: ResumeData }) {
     setInput("");
     scrollToBottom();
 
-    // Lightweight intent routing — keeps key features working without an API round-trip.
+    // Lightweight intent routing for purely navigational / score-readout asks.
+    // Substantive asks (review, grammar, bullets, recruiter tips, keyword
+    // optimization) always go to the AI for a tailored answer.
     const t = text.toLowerCase();
-    if (/score/.test(t)) return replyWithCanned("score");
-    if (/feedback|review|improve|suggest/.test(t)) return replyWithCanned("feedback");
-    if (/tailor|customi[sz]e|optimi[sz]e/.test(t)) return replyWithCanned("tailor");
-    if (/job|match|hiring|role/.test(t)) return replyWithCanned("jobs");
-    if (/recommend/.test(t)) return replyWithCanned("recs");
-    if (/open|show.*resume|preview/.test(t)) return replyWithCanned("open");
+    if (/\b(my )?(ats |resume )?score\b/.test(t) && !/improve|why|how/.test(t)) return replyWithCanned("score");
+    if (/find.*jobs?|matching jobs?/.test(t)) return replyWithCanned("jobs");
+    if (/^(open|show)\b.*\b(resume|preview)/.test(t)) return replyWithCanned("open");
 
     setSending(true);
     try {
+      const s = computeScore(data);
       const res = await fetch("/api/nova-chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           messages: [...msgs, { role: "user", content: text }],
-          resume: { headline: data.headline, summary: data.summary, skills: data.skills },
+          resume: {
+            name: data.name,
+            headline: data.headline,
+            summary: data.summary,
+            skills: data.skills,
+            experience: (data.experience ?? []).map(e => ({
+              title: e.title, company: e.company, date: e.date, bullets: e.bullets,
+            })),
+            education: (data.education ?? []).map(e => ({
+              degree: e.degree, school: e.school, date: e.date,
+            })),
+          },
           jobDescription: data.jobDescription,
+          atsScore: s.score,
+          coverage: s.coverage,
+          matchedKeywords: s.matched,
+          missingKeywords: s.missing,
         }),
       });
       if (res.status === 429) { toast.error("Rate limit hit."); return; }
@@ -625,11 +641,17 @@ function NovaChatView({ data }: { data: ResumeData }) {
               <div className="h-6 w-6 mt-0.5 rounded-full bg-[var(--navy-light)] text-white flex items-center justify-center text-[10px] font-bold shrink-0">N</div>
             )}
             <div className={cn("max-w-[88%] space-y-2")}>
-              <div className={cn("rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap leading-relaxed",
+              <div className={cn("rounded-2xl px-3 py-2 text-sm leading-relaxed",
                 m.role === "user"
-                  ? "bg-[var(--navy-light)] text-white rounded-br-sm"
+                  ? "bg-[var(--navy-light)] text-white rounded-br-sm whitespace-pre-wrap"
                   : "bg-secondary text-foreground rounded-bl-sm")}>
-                {m.content}
+                {m.role === "assistant" ? (
+                  <div className="nova-md">
+                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  m.content
+                )}
               </div>
               {m.actions?.map(a => (
                 <button
@@ -653,9 +675,13 @@ function NovaChatView({ data }: { data: ResumeData }) {
 
       {/* Quick action chips */}
       <div className="flex gap-1.5 overflow-x-auto px-2 pb-2 scrollbar-thin">
-        <QuickChip icon={Gauge} label="Show my resume score" onClick={() => send("Show my resume score")} />
-        <QuickChip icon={MessageSquareText} label="Give me resume feedback" onClick={() => send("Give me resume feedback")} />
-        <QuickChip icon={Wand2} label="Tailor my resume" onClick={() => send("Tailor my resume")} />
+        <QuickChip icon={MessageSquareText} label="Review my resume" onClick={() => send("Review my resume end-to-end. Call out the top strengths and the top 3 weaknesses with concrete fixes.")} />
+        <QuickChip icon={Sparkles} label="Suggest improvements" onClick={() => send("Suggest specific improvements to my summary, headline, and weakest bullets to make them more impactful.")} />
+        <QuickChip icon={SpellCheck} label="Fix grammar" onClick={() => send("Proofread my resume. Find grammar, spelling, tense, and clarity issues and show Before / After corrections for each.")} />
+        <QuickChip icon={Target} label="Optimize ATS keywords" onClick={() => send("Optimize my resume for ATS against the target JD. Use the missing keywords list and tell me exactly where to weave each one in naturally.")} />
+        <QuickChip icon={Wand2} label="Achievement bullets" onClick={() => send("Rewrite my experience bullets as achievement-based bullets using strong action verbs and measurable outcomes. Use [add metric] when a number is unknown.")} />
+        <QuickChip icon={UserCheck} label="Recruiter tips" onClick={() => send("Give me recruiter-focused recommendations for the target role: what hiring managers look for, red flags in my current resume, and how to position me.")} />
+        <QuickChip icon={Gauge} label="My score" onClick={() => send("Show my resume score")} />
         <QuickChip icon={Briefcase} label="Find jobs" onClick={() => send("Find matching jobs for me")} />
         <QuickChip icon={Lightbulb} label="Recommendations" onClick={() => send("Go to recommendations")} />
       </div>
