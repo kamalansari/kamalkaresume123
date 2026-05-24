@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -152,7 +152,11 @@ export function Builder() {
     }
   }, []);
 
-  // Load a specific saved resume when navigated from the dashboard via ?open=ID
+  // Load a specific saved resume when navigated from the dashboard via ?open=ID.
+  // Reacts to search-param changes so navigating /builder?open=X while already on
+  // /builder still loads the requested resume.
+  const search = useRouterState({ select: s => s.location.search });
+  const navigate = useNavigate();
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -164,11 +168,12 @@ export function Builder() {
       setCurrentId(entry.id);
       setCurrentName(entry.name);
       toast.success(`Opened "${entry.name}"`);
+    } else {
+      toast.error("Resume not found");
     }
-    const url = new URL(window.location.href);
-    url.searchParams.delete("open");
-    window.history.replaceState(null, "", url.pathname + (url.search ? `?${url.searchParams}` : ""));
-  }, []);
+    // Clear the search param without reloading
+    navigate({ to: "/builder", search: {} as never, replace: true });
+  }, [search, navigate]);
 
   const refreshList = () => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); };
 
@@ -1157,9 +1162,10 @@ export function Builder() {
               <TabsList
                 className={cn(
                   "h-auto w-full p-1 gap-1 rounded-xl border border-border bg-card shadow-[var(--shadow-soft)]",
-                  // Mobile: horizontal scroll with snap; Desktop: even grid that never wraps awkwardly
+                  // Narrow viewports: horizontal scroll with snap so tabs never overlap.
+                  // Switch to a 6-col grid only when there is enough room (≥ lg).
                   "flex overflow-x-auto snap-x snap-mandatory scrollbar-thin",
-                  "sm:grid sm:grid-cols-6 sm:overflow-visible"
+                  "lg:grid lg:grid-cols-6 lg:overflow-visible"
                 )}
               >
                 {[
@@ -1173,7 +1179,7 @@ export function Builder() {
                   <TabsTrigger
                     key={v}
                     value={v}
-                    className="snap-start shrink-0 sm:shrink min-w-[96px] sm:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap"
+                    className="snap-start shrink-0 lg:shrink min-w-[104px] lg:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap"
                   >
                     <Icon className="h-3.5 w-3.5 opacity-80" />
                     <span>{label}</span>
