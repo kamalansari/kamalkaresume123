@@ -3,6 +3,9 @@ import { resumeStore, type SavedResume } from "@/components/builder/resumeStore"
 
 let currentUserId: string | null = null;
 let initialized = false;
+let suppressPush = false;
+
+export function isSyncSuppressed() { return suppressPush; }
 
 export function getCurrentUserId() { return currentUserId; }
 
@@ -36,7 +39,8 @@ async function pullAll(userId: string) {
     }
   }
   // Persist merged
-  for (const r of byId.values()) resumeStore.upsert(r);
+  suppressPush = true;
+  try { for (const r of byId.values()) resumeStore.upsert(r); } finally { suppressPush = false; }
 
   // Sync primary
   const primaryRow = (data ?? []).find(r => r.is_primary);
@@ -58,19 +62,19 @@ async function pushOne(userId: string, r: SavedResume, isPrimary: boolean) {
 }
 
 export async function syncUpsert(r: SavedResume) {
-  if (!currentUserId) return;
+  if (!currentUserId || suppressPush) return;
   const primaryId = resumeStore.getPrimaryId();
   await pushOne(currentUserId, r, primaryId === r.id);
 }
 
 export async function syncDelete(id: string) {
-  if (!currentUserId) return;
+  if (!currentUserId || suppressPush) return;
   const { error } = await supabase.from("resumes").delete().eq("id", id).eq("user_id", currentUserId);
   if (error) console.error("[cloudSync] delete failed", error);
 }
 
 export async function syncSetPrimary(id: string | null) {
-  if (!currentUserId) return;
+  if (!currentUserId || suppressPush) return;
   // Clear all then set one
   await supabase.from("resumes").update({ is_primary: false }).eq("user_id", currentUserId);
   if (id) await supabase.from("resumes").update({ is_primary: true }).eq("user_id", currentUserId).eq("id", id);
