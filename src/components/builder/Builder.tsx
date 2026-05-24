@@ -1209,18 +1209,47 @@ export function Builder() {
 
             <TabsContent value="education" className="space-y-6 mt-4">
           <div id="edit-education" className="rounded-xl">
-          <Card title="Education" action={<Button size="sm" variant="outline" onClick={addEdu}><Plus /> Add</Button>}>
+          <Card title="Education" action={<Button size="sm" variant="outline" onClick={addEdu}><Plus /> Add education</Button>}>
             <div className="space-y-3">
-              {data.education.map(ed => (
+              {data.education.length === 0 && (
+                <div className="rounded-lg border border-dashed border-border bg-background p-6 text-center text-sm text-muted-foreground">
+                  No education added yet. Click <span className="font-medium text-foreground">Add education</span> to list a degree.
+                </div>
+              )}
+              {data.education.map((ed, idx) => (
                 <div key={ed.id} className="rounded-lg border border-border p-4 bg-background">
-                  <Grid>
-                    <Field label="Degree" full><Input value={ed.degree} onChange={ev => updateEdu(ed.id, { degree: ev.target.value })} /></Field>
-                    <Field label="School"><Input value={ed.school} onChange={ev => updateEdu(ed.id, { school: ev.target.value })} /></Field>
-                    <Field label="Date"><Input value={ed.date} onChange={ev => updateEdu(ed.id, { date: ev.target.value })} /></Field>
-                  </Grid>
-                  <div className="mt-2 flex justify-end">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Education #{idx + 1}</div>
                     <Button size="sm" variant="ghost" onClick={() => removeEdu(ed.id)}><Trash2 /> Remove</Button>
                   </div>
+                  <Grid>
+                    <Field label="Degree" full>
+                      <Input value={ed.degree} onChange={ev => updateEdu(ed.id, { degree: ev.target.value })} placeholder="B.S. Computer Science" />
+                    </Field>
+                    <Field label="Field of study (optional)">
+                      <Input value={ed.field ?? ""} onChange={ev => updateEdu(ed.id, { field: ev.target.value })} placeholder="Human-Computer Interaction" />
+                    </Field>
+                    <Field label="School / University">
+                      <Input value={ed.school} onChange={ev => updateEdu(ed.id, { school: ev.target.value })} placeholder="Carnegie Mellon University" />
+                    </Field>
+                    <Field label="Location (optional)">
+                      <Input value={ed.location ?? ""} onChange={ev => updateEdu(ed.id, { location: ev.target.value })} placeholder="Pittsburgh, PA" />
+                    </Field>
+                    <Field label="Date range" full>
+                      <DateRangePicker
+                        value={ed.date}
+                        onChange={v => updateEdu(ed.id, { date: v })}
+                        startLabel="Start"
+                        endLabel="Graduation"
+                      />
+                    </Field>
+                    <Field label="GPA (optional)">
+                      <Input value={ed.gpa ?? ""} onChange={ev => updateEdu(ed.id, { gpa: ev.target.value })} placeholder="3.8 / 4.0" />
+                    </Field>
+                    <Field label="Honors / coursework (optional)">
+                      <Input value={ed.honors ?? ""} onChange={ev => updateEdu(ed.id, { honors: ev.target.value })} placeholder="Magna Cum Laude · Dean's List" />
+                    </Field>
+                  </Grid>
                 </div>
               ))}
             </div>
