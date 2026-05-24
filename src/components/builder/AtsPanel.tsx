@@ -1,9 +1,11 @@
 import { useMemo, useRef, useState } from "react";
-import { Sparkles, Loader2, Pencil, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight, Trash2, Mic, ArrowUpRight, Briefcase, Lightbulb, Gauge, MessageSquareText, ChevronDown, SpellCheck, Target, UserCheck } from "lucide-react";
+import { Sparkles, Loader2, Pencil, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight, Trash2, Mic, ArrowUpRight, Briefcase, Lightbulb, Gauge, MessageSquareText, ChevronDown, SpellCheck, Target, UserCheck, Copy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { computeScore } from "./atsScore";
 import type { ResumeData } from "./types";
@@ -20,7 +22,7 @@ export function AtsPanel({
 }: {
   data: ResumeData;
   onClose: () => void;
-  onAppendBulletsToFirstExperience: (bullets: string[]) => void;
+  onAppendBulletsToFirstExperience: (bullets: string[], targetExperienceId?: string) => void;
   onAddExtraKeywords: (kw: string[]) => void;
   onOneClickOptimize: () => void;
   optimizing: boolean;
@@ -292,16 +294,21 @@ function AtsScoreView({
   status: string;
   statusTone: string;
   atsPct: number;
-  onAppendBulletsToFirstExperience: (bullets: string[]) => void;
+  onAppendBulletsToFirstExperience: (bullets: string[], targetExperienceId?: string) => void;
   onAddExtraKeywords: (kw: string[]) => void;
   onOneClickOptimize: () => void;
   optimizing: boolean;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
+  const [targetExpId, setTargetExpId] = useState<string>("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editDraft, setEditDraft] = useState("");
   const stats = score.keywordStats;
   const matchedCount = stats.filter(s => s.matched).length;
   const missingCount = stats.length - matchedCount;
+  const experiences = data.experience ?? [];
+  const effectiveTargetId = targetExpId || experiences[0]?.id || "";
 
   const toggle = (k: string) => {
     setSelected(prev => {
@@ -316,14 +323,15 @@ function AtsScoreView({
     if (keywords.length === 0) return;
     setGenerating(true);
     try {
+      const target = experiences.find(e => e.id === effectiveTargetId) ?? experiences[0];
       const res = await fetch("/api/keyword-bullets", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({
           keywords,
           headline: data.headline,
-          jobTitle: data.headline,
+          jobTitle: target?.title || data.headline,
           jobDescription: data.jobDescription,
-          experience: data.experience.map(e => ({ title: e.title, company: e.company })),
+          experience: target ? [{ title: target.title, company: target.company }] : [],
         }),
       });
       if (res.status === 429) { toast.error("Rate limit hit."); return; }
@@ -331,9 +339,9 @@ function AtsScoreView({
       if (!res.ok) { toast.error("Could not generate bullets."); return; }
       const out = (await res.json()) as { bullets?: string[] };
       if (out.bullets?.length) {
-        onAppendBulletsToFirstExperience(out.bullets);
+        onAppendBulletsToFirstExperience(out.bullets, effectiveTargetId || undefined);
         onAddExtraKeywords(keywords);
-        toast.success(`Added ${out.bullets.length} bullets`);
+        toast.success(`Added ${out.bullets.length} bullets${target?.title ? ` to ${target.title}` : ""}`);
         setSelected(new Set());
       }
     } catch { toast.error("Network error."); }
@@ -395,7 +403,63 @@ function AtsScoreView({
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
           <span className="text-xs">Select keywords to generate bullet points:</span>
-          <Button size="sm" variant="outline" className="h-7 text-xs"><Pencil className="h-3 w-3" /> Edit</Button>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              title="Copy all keywords"
+              onClick={async () => {
+                const kws = stats.map(s => s.keyword).join(", ");
+                if (!kws) { toast.error("No keywords to copy"); return; }
+                try {
+                  await navigator.clipboard.writeText(kws);
+                  toast.success(`Copied ${stats.length} keywords`);
+                } catch { toast.error("Clipboard unavailable"); }
+              }}
+            >
+              <Copy className="h-3 w-3" /> Copy
+            </Button>
+            <Popover open={editOpen} onOpenChange={(o) => {
+              setEditOpen(o);
+              if (o) setEditDraft(stats.filter(s => !s.matched).map(s => s.keyword).join(", "));
+            }}>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="outline" className="h-7 text-xs">
+                  <Pencil className="h-3 w-3" /> Edit
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 p-3 space-y-2">
+                <div className="text-xs font-medium">Add custom keywords</div>
+                <p className="text-[11px] text-muted-foreground">
+                  Comma-separated. These are added to your resume's extra keyword list so ATS picks them up.
+                </p>
+                <Textarea
+                  rows={4}
+                  value={editDraft}
+                  onChange={e => setEditDraft(e.target.value)}
+                  placeholder="e.g. Kubernetes, GraphQL, A/B testing"
+                  className="text-xs"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditOpen(false)}>Cancel</Button>
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      const kw = editDraft.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+                      if (kw.length === 0) { toast.error("Add at least one keyword"); return; }
+                      onAddExtraKeywords(kw);
+                      toast.success(`Added ${kw.length} keyword${kw.length === 1 ? "" : "s"}`);
+                      setEditOpen(false);
+                    }}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
         <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold border-b border-border bg-secondary/40">
           <span>Keyword</span><span>Resume</span><span>JD</span><span></span>
@@ -420,6 +484,24 @@ function AtsScoreView({
             </label>
           ))}
         </div>
+        {experiences.length > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2 border-t border-border bg-secondary/30 text-xs">
+            <Target className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <label htmlFor="ats-target-exp" className="text-muted-foreground shrink-0">Add to:</label>
+            <select
+              id="ats-target-exp"
+              value={effectiveTargetId}
+              onChange={e => setTargetExpId(e.target.value)}
+              className="flex-1 min-w-0 truncate rounded-md border border-border bg-background px-2 py-1 text-xs"
+            >
+              {experiences.map(e => (
+                <option key={e.id} value={e.id}>
+                  {(e.title || "Untitled role") + (e.company ? ` — ${e.company}` : "")}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <button
           onClick={generate}
           disabled={generating || selected.size === 0}

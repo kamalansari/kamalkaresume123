@@ -1504,13 +1504,15 @@ export function Builder() {
                   <AtsPanel
                     data={data}
                     onClose={() => setAtsSheetOpen(false)}
-                    onAppendBulletsToFirstExperience={(bullets) => {
+                    onAppendBulletsToFirstExperience={(bullets, targetId) => {
                       setData(d => {
                         const exp = [...d.experience];
                         if (exp.length === 0) {
                           exp.push({ id: uid(), title: d.headline || "Role", company: "", date: "", bullets: bullets.join("\n") });
                         } else {
-                          exp[0] = { ...exp[0], bullets: [exp[0].bullets, ...bullets].filter(Boolean).join("\n") };
+                          const idx = targetId ? exp.findIndex(e => e.id === targetId) : 0;
+                          const i = idx >= 0 ? idx : 0;
+                          exp[i] = { ...exp[i], bullets: [exp[i].bullets, ...bullets].filter(Boolean).join("\n") };
                         }
                         return { ...d, experience: exp };
                       });
@@ -1550,13 +1552,15 @@ export function Builder() {
         <AtsPanel
           data={data}
           onClose={() => setAtsOpen(false)}
-          onAppendBulletsToFirstExperience={(bullets) => {
+          onAppendBulletsToFirstExperience={(bullets, targetId) => {
             setData(d => {
               const exp = [...d.experience];
               if (exp.length === 0) {
                 exp.push({ id: uid(), title: d.headline || "Role", company: "", date: "", bullets: bullets.join("\n") });
               } else {
-                exp[0] = { ...exp[0], bullets: [exp[0].bullets, ...bullets].filter(Boolean).join("\n") };
+                const idx = targetId ? exp.findIndex(e => e.id === targetId) : 0;
+                const i = idx >= 0 ? idx : 0;
+                exp[i] = { ...exp[i], bullets: [exp[i].bullets, ...bullets].filter(Boolean).join("\n") };
               }
               return { ...d, experience: exp };
             });
