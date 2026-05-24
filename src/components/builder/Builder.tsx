@@ -691,17 +691,23 @@ export function Builder() {
     if (!data.jobDescription.trim()) { toast.error("Paste a job description first."); return; }
     setGenerating(true);
     try {
+      // Always tailor from Primary Resume if set, and save the result as a NEW resume
+      // so the Primary stays untouched.
+      const primary = resumeStore.getPrimary();
+      const source: ResumeData = primary
+        ? { ...defaultResume, ...primary.data, jobDescription: data.jobDescription }
+        : data;
       const res = await fetch("/api/generate-from-jd", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           jobDescription: data.jobDescription,
           current: {
-            name: data.name,
-            headline: data.headline,
-            summary: data.summary,
-            skills: data.skills,
-            experience: data.experience.map(e => ({ id: e.id, title: e.title, company: e.company, bullets: e.bullets })),
+            name: source.name,
+            headline: source.headline,
+            summary: source.summary,
+            skills: source.skills,
+            experience: source.experience.map(e => ({ id: e.id, title: e.title, company: e.company, bullets: e.bullets })),
           },
         }),
       });
@@ -709,17 +715,33 @@ export function Builder() {
       if (res.status === 402) { toast.error("AI credits exhausted."); return; }
       if (!res.ok) { toast.error("AI tailoring failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
-      setData(d => ({
-        ...d,
-        headline: out.headline || d.headline,
-        summary: out.summary || d.summary,
-        skills: out.skills || d.skills,
-        experience: d.experience.map(e => {
+      const tailored: ResumeData = {
+        ...source,
+        jobDescription: data.jobDescription,
+        headline: out.headline || source.headline,
+        summary: out.summary || source.summary,
+        skills: out.skills || source.skills,
+        experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
           return match ? { ...e, bullets: match.bullets } : e;
         }),
-      }));
-      toast.success("Resume tailored to JD");
+      };
+      // Derive a friendly new resume name from the JD (first meaningful line) + date.
+      const firstLine = data.jobDescription
+        .split("\n").map(s => s.trim()).find(Boolean) ?? "";
+      const roleHint = firstLine.replace(/[^a-zA-Z0-9 +/&-]/g, "").slice(0, 40).trim();
+      const stamp = new Date().toLocaleDateString();
+      const name = roleHint ? `Tailored — ${roleHint} (${stamp})` : `Tailored — ${stamp}`;
+      const id = newId();
+      resumeStore.upsert({ id, name, updatedAt: Date.now(), data: tailored });
+      resumeStore.saveDraft(tailored);
+      setData(tailored);
+      setCurrentId(id);
+      setCurrentName(name);
+      refreshList();
+      toast.success(primary
+        ? `Tailored from Primary, saved as "${name}"`
+        : `Tailored resume saved as "${name}"`);
     } catch {
       toast.error("Network error.");
     } finally {
