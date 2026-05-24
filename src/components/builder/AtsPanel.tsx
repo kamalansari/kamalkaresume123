@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Sparkles, Loader2, Pencil, MessageCircle, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Sparkles, Loader2, Pencil, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight, Trash2, Mic, ArrowUpRight, Briefcase, Lightbulb, Gauge, MessageSquareText, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -433,65 +433,281 @@ function AtsScoreView({
   );
 }
 
+type NovaAction = { label: string; icon: "open" | "jobs" | "recs"; onActivate: () => void };
+type NovaMessage = {
+  role: "user" | "assistant";
+  content: string;
+  actions?: NovaAction[];
+};
+
+const INITIAL_NOVA: NovaMessage[] = [
+  {
+    role: "assistant",
+    content:
+      "Hi! I'm Nova — your AI career copilot. I can review your resume, surface matching jobs, and tailor your application in seconds.",
+  },
+];
+
 function NovaChatView({ data }: { data: ResumeData }) {
-  const [msgs, setMsgs] = useState<{ role: "user" | "assistant"; content: string }[]>([
-    { role: "assistant", content: "Hi! I'm NOVA. Ask me anything about tailoring this resume to your target job." },
-  ]);
+  const [msgs, setMsgs] = useState<NovaMessage[]>(INITIAL_NOVA);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [listening, setListening] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const send = async () => {
-    const text = input.trim();
+  const scrollToBottom = () => {
+    requestAnimationFrame(() => {
+      const el = scrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+  };
+
+  const appendAssistant = (content: string, actions?: NovaAction[]) => {
+    setMsgs(m => [...m, { role: "assistant", content, actions }]);
+    scrollToBottom();
+  };
+
+  const openMyResume = () => {
+    const el = typeof document !== "undefined" ? document.getElementById("resume-preview") : null;
+    if (el) { el.scrollIntoView({ behavior: "smooth", block: "start" }); toast.success("Opened your resume"); }
+    else if (typeof window !== "undefined") { window.location.assign("/builder"); }
+  };
+  const goToJobs = () => {
+    if (typeof window !== "undefined") window.location.assign("/jobs");
+  };
+  const goToRecommendations = () => {
+    if (typeof window !== "undefined") window.location.assign("/dashboard");
+  };
+
+  const replyWithCanned = (intent: "score" | "feedback" | "tailor" | "jobs" | "recs" | "open") => {
+    if (intent === "score") {
+      const s = computeScore(data);
+      const pct = Math.round(s.coverage * 100);
+      const overall = s.score;
+      appendAssistant(
+        `Your current ATS score is **${pct}%** and your overall resume score is **${overall}/100**.\n\nWould you like to review and improve your score with AI suggestions?`,
+        [{ label: "Open My Resume", icon: "open", onActivate: openMyResume }],
+      );
+      return;
+    }
+    if (intent === "feedback") {
+      const s = computeScore(data);
+      const failing = s.checks.filter(c => !c.pass).slice(0, 3);
+      const lines = failing.length
+        ? failing.map(c => `• ${c.label}${c.hint ? ` — ${c.hint}` : ""}`).join("\n")
+        : "Everything looks great — no major issues detected.";
+      appendAssistant(`Here are the top areas to improve right now:\n\n${lines}`, [
+        { label: "Open My Resume", icon: "open", onActivate: openMyResume },
+      ]);
+      return;
+    }
+    if (intent === "tailor") {
+      if (!data.jobDescription?.trim()) {
+        appendAssistant("Paste a target job description in the editor and I'll tailor your resume to it.");
+        return;
+      }
+      appendAssistant("Got it — switching to the ATS tab will let you run a one-click tailor against your pasted job description.");
+      return;
+    }
+    if (intent === "jobs") {
+      appendAssistant("You can browse personalized job matches in the Jobs tab.", [
+        { label: "Find matching jobs for me", icon: "jobs", onActivate: goToJobs },
+      ]);
+      return;
+    }
+    if (intent === "recs") {
+      appendAssistant("You can browse personalized job recommendations in the Recommendations tab.", [
+        { label: "Go to Recommendations", icon: "recs", onActivate: goToRecommendations },
+      ]);
+      return;
+    }
+    if (intent === "open") {
+      appendAssistant("Opening your resume now.", [
+        { label: "Open My Resume", icon: "open", onActivate: openMyResume },
+      ]);
+      openMyResume();
+    }
+  };
+
+  const send = async (override?: string) => {
+    const text = (override ?? input).trim();
     if (!text || sending) return;
-    const next = [...msgs, { role: "user" as const, content: text }];
-    setMsgs(next);
+    setMsgs(m => [...m, { role: "user", content: text }]);
     setInput("");
+    scrollToBottom();
+
+    // Lightweight intent routing — keeps key features working without an API round-trip.
+    const t = text.toLowerCase();
+    if (/score/.test(t)) return replyWithCanned("score");
+    if (/feedback|review|improve|suggest/.test(t)) return replyWithCanned("feedback");
+    if (/tailor|customi[sz]e|optimi[sz]e/.test(t)) return replyWithCanned("tailor");
+    if (/job|match|hiring|role/.test(t)) return replyWithCanned("jobs");
+    if (/recommend/.test(t)) return replyWithCanned("recs");
+    if (/open|show.*resume|preview/.test(t)) return replyWithCanned("open");
+
     setSending(true);
     try {
       const res = await fetch("/api/nova-chat", {
-        method: "POST", headers: { "content-type": "application/json" },
+        method: "POST",
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          messages: next,
+          messages: [...msgs, { role: "user", content: text }],
           resume: { headline: data.headline, summary: data.summary, skills: data.skills },
           jobDescription: data.jobDescription,
         }),
       });
       if (res.status === 429) { toast.error("Rate limit hit."); return; }
       if (res.status === 402) { toast.error("AI credits exhausted."); return; }
-      if (!res.ok) { toast.error("Nova couldn't respond."); return; }
+      if (!res.ok) {
+        // Graceful fallback so the panel always feels alive.
+        appendAssistant("I'm having trouble reaching the server right now, but here are a few things I can help with:", [
+          { label: "Open My Resume", icon: "open", onActivate: openMyResume },
+          { label: "Find matching jobs for me", icon: "jobs", onActivate: goToJobs },
+          { label: "Go to Recommendations", icon: "recs", onActivate: goToRecommendations },
+        ]);
+        return;
+      }
       const out = (await res.json()) as { reply?: string };
-      setMsgs(m => [...m, { role: "assistant", content: out.reply || "(no reply)" }]);
-    } catch { toast.error("Network error."); }
-    finally { setSending(false); }
+      appendAssistant(out.reply || "(no reply)");
+    } catch {
+      appendAssistant("I'm offline at the moment. Try one of these in the meantime:", [
+        { label: "Open My Resume", icon: "open", onActivate: openMyResume },
+        { label: "Find matching jobs for me", icon: "jobs", onActivate: goToJobs },
+        { label: "Go to Recommendations", icon: "recs", onActivate: goToRecommendations },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const clearChat = () => { setMsgs(INITIAL_NOVA); toast.success("Chat cleared"); };
+
+  const toggleMic = () => {
+    type SR = { new (): { lang: string; interimResults: boolean; onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void; onend: () => void; start: () => void; stop: () => void } };
+    const w = typeof window !== "undefined" ? (window as unknown as { SpeechRecognition?: SR; webkitSpeechRecognition?: SR }) : undefined;
+    const Ctor = w?.SpeechRecognition ?? w?.webkitSpeechRecognition;
+    if (!Ctor) { toast.error("Voice input isn't supported in this browser"); return; }
+    if (listening) { setListening(false); return; }
+    const rec = new Ctor();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join(" ");
+      setInput(prev => (prev ? prev + " " : "") + transcript);
+    };
+    rec.onend = () => setListening(false);
+    rec.start();
+    setListening(true);
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card flex flex-col h-[520px]">
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
-        <MessageCircle className="h-4 w-4 text-[var(--navy-light)]" />
-        <span className="font-semibold text-sm">NOVA · Career Coach</span>
+    <div className="rounded-xl border border-border bg-card flex flex-col h-[560px] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border">
+        <div className="relative h-8 w-8 rounded-full bg-gradient-to-br from-[var(--navy-light)] to-[var(--navy-deep,#0c2340)] flex items-center justify-center text-white text-xs font-bold">
+          N
+          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold leading-tight">Nova <span className="text-muted-foreground font-normal">· Your AI Copilot</span></div>
+          <div className="text-[10px] uppercase tracking-widest text-emerald-600 font-semibold">● Online</div>
+        </div>
+        <button onClick={clearChat} className="rounded-md p-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-50" title="Clear chat">
+          <Trash2 className="h-4 w-4" />
+        </button>
       </div>
-      <div className="flex-1 overflow-auto p-3 space-y-2.5">
+
+      {/* Messages */}
+      <div ref={scrollRef} className="flex-1 overflow-auto p-3 space-y-3">
         {msgs.map((m, i) => (
-          <div key={i} className={cn("max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap",
-            m.role === "user" ? "ml-auto bg-[var(--navy-light)] text-white" : "bg-secondary")}>
-            {m.content}
+          <div key={i} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start gap-2")}>
+            {m.role === "assistant" && (
+              <div className="h-6 w-6 mt-0.5 rounded-full bg-[var(--navy-light)] text-white flex items-center justify-center text-[10px] font-bold shrink-0">N</div>
+            )}
+            <div className={cn("max-w-[88%] space-y-2")}>
+              <div className={cn("rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap leading-relaxed",
+                m.role === "user"
+                  ? "bg-[var(--navy-light)] text-white rounded-br-sm"
+                  : "bg-secondary text-foreground rounded-bl-sm")}>
+                {m.content}
+              </div>
+              {m.actions?.map(a => (
+                <button
+                  key={a.label}
+                  onClick={a.onActivate}
+                  className="w-full inline-flex items-center justify-between rounded-xl bg-[var(--navy-light)] text-white px-3.5 py-2.5 text-sm font-medium hover:opacity-95"
+                >
+                  <span>{a.label}</span>
+                  <ArrowUpRight className="h-4 w-4" />
+                </button>
+              ))}
+            </div>
           </div>
         ))}
-        {sending && <div className="text-xs text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Nova is thinking…</div>}
+        {sending && (
+          <div className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+            <Loader2 className="h-3 w-3 animate-spin" /> Nova is thinking…
+          </div>
+        )}
       </div>
-      <div className="flex items-center gap-2 p-2 border-t border-border">
-        <Input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") send(); }}
-          placeholder="Ask Nova…"
-          className="h-9"
-        />
-        <Button size="sm" onClick={send} disabled={sending || !input.trim()}>
-          <Send className="h-3.5 w-3.5" />
-        </Button>
+
+      {/* Quick action chips */}
+      <div className="flex gap-1.5 overflow-x-auto px-2 pb-2 scrollbar-thin">
+        <QuickChip icon={Gauge} label="Show my resume score" onClick={() => send("Show my resume score")} />
+        <QuickChip icon={MessageSquareText} label="Give me resume feedback" onClick={() => send("Give me resume feedback")} />
+        <QuickChip icon={Wand2} label="Tailor my resume" onClick={() => send("Tailor my resume")} />
+        <QuickChip icon={Briefcase} label="Find jobs" onClick={() => send("Find matching jobs for me")} />
+        <QuickChip icon={Lightbulb} label="Recommendations" onClick={() => send("Go to recommendations")} />
+      </div>
+
+      {/* Composer */}
+      <div className="border-t border-border p-2 space-y-1.5">
+        <div className="flex items-center gap-2">
+          <Input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+            placeholder="Ask Nova anything…"
+            className="h-9 flex-1 rounded-full bg-secondary/60 border-transparent focus-visible:bg-card"
+          />
+          <button
+            onClick={toggleMic}
+            className={cn("h-9 w-9 rounded-full inline-flex items-center justify-center transition-colors",
+              listening ? "bg-rose-500 text-white animate-pulse" : "text-muted-foreground hover:bg-secondary")}
+            title={listening ? "Listening… click to stop" : "Voice input"}
+          >
+            <Mic className="h-4 w-4" />
+          </button>
+          <Button
+            size="icon"
+            onClick={() => send()}
+            disabled={sending || !input.trim()}
+            className="h-9 w-9 rounded-full"
+            title="Send"
+          >
+            <Send className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <div className="flex items-center justify-between px-1 text-[10px] text-muted-foreground">
+          <button className="inline-flex items-center gap-1 hover:text-foreground" title="Assistant mode">
+            <Sparkles className="h-3 w-3" /> Assistant <ChevronDown className="h-3 w-3" />
+          </button>
+          <span className="uppercase tracking-widest">Press ↵ to send</span>
+        </div>
       </div>
     </div>
+  );
+}
+
+function QuickChip({ icon: Icon, label, onClick }: { icon: typeof Gauge; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:border-[var(--navy-light)] hover:text-[var(--navy-light)] transition-colors"
+    >
+      <Icon className="h-3.5 w-3.5 opacity-80" />
+      <span className="whitespace-nowrap">{label}</span>
+      <ArrowUpRight className="h-3 w-3 opacity-60" />
+    </button>
   );
 }
