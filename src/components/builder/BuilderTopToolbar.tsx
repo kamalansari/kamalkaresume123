@@ -336,7 +336,7 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, 
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onEnd}>
           <SortableContext items={data.sectionOrder} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2">
               {data.sectionOrder.map((id, i) => (
                 <SortableRow
                   key={id}
@@ -344,12 +344,12 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, 
                   onRemove={() => onRemove(id)}
                   onLeft={() => move(i, i - 1)}
                   onRight={() => move(i, i + 1)}
-                  onUp={() => move(i, i - 2)}
-                  onDown={() => move(i, i + 2)}
+                  onUp={() => move(i, i - 1)}
+                  onDown={() => move(i, i + 1)}
                   canLeft={i > 0}
                   canRight={i < data.sectionOrder.length - 1}
-                  canUp={i - 2 >= 0}
-                  canDown={i + 2 < data.sectionOrder.length}
+                  canUp={i > 0}
+                  canDown={i < data.sectionOrder.length - 1}
                 />
               ))}
             </div>
