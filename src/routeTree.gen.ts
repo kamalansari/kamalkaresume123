@@ -16,6 +16,7 @@ import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CoverLetterRouteImport } from './routes/cover-letter'
 import { Route as BuilderRouteImport } from './routes/builder'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRoadmapRouteImport } from './routes/api/roadmap'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
@@ -62,6 +63,11 @@ const CoverLetterRoute = CoverLetterRouteImport.update({
 const BuilderRoute = BuilderRouteImport.update({
   id: '/builder',
   path: '/builder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -127,6 +133,7 @@ const ApiAlignResumeRoute = ApiAlignResumeRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/builder': typeof BuilderRoute
   '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/builder': typeof BuilderRoute
   '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
@@ -170,6 +178,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/builder': typeof BuilderRoute
   '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/builder'
     | '/cover-letter'
     | '/dashboard'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/builder'
     | '/cover-letter'
     | '/dashboard'
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/auth'
     | '/builder'
     | '/cover-letter'
     | '/dashboard'
@@ -257,6 +269,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   BuilderRoute: typeof BuilderRoute
   CoverLetterRoute: typeof CoverLetterRoute
   DashboardRoute: typeof DashboardRoute
@@ -326,6 +339,13 @@ declare module '@tanstack/react-router' {
       path: '/builder'
       fullPath: '/builder'
       preLoaderRoute: typeof BuilderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -417,6 +437,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   BuilderRoute: BuilderRoute,
   CoverLetterRoute: CoverLetterRoute,
   DashboardRoute: DashboardRoute,
