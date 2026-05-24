@@ -1,66 +1,70 @@
-# Template-specific sidebar vs main section assignment
+# Sidebar section move controls (up / down / left / right)
+
+## Problem
+
+In two-column templates (Two column, Sidebar right, Compact two, Fresher, Contemporary), the sidebar holds Skills, Languages, Education (plus optionally Certifications/Awards). Today the row controls in the Sections popover treat `sectionOrder` as one flat list:
+
+- Up/Down moves the row by ±1 in `sectionOrder`, ignoring which column it's actually rendered in. So clicking Up on a sidebar item can swap it with a main-column item without visibly moving it inside the sidebar.
+- Left/Right does the exact same thing as Up/Down (also ±1 in `sectionOrder`), so it has no column meaning.
+- Column membership can only be changed via the separate PanelLeft/PanelRight toggle.
 
 ## Goal
 
-Today the two-column templates (`two-column`, `sidebar-right`, `compact-two`) hardcode `["skills", "languages", "education"]` as the sidebar in `ResumeDocument.tsx`. Single-column templates have no sidebar. Reordering a section across the sidebar/main boundary via `sectionOrder` has no visual effect.
+Sidebar sections (Skills, Languages, Education, and any other sidebar-eligible section currently in the sidebar) get the same intuitive controls as main sections:
 
-We want:
-- A **per-template default** for which section types go in the sidebar.
-- A **per-resume override** so the user can move a section between sidebar and main.
-- `sectionOrder` continues to control the order **within each column**.
+- **Up / Down** — reorder *within the same column*, skipping rows from the other column.
+- **Left / Right** — move the section to the other column (sidebar ↔ main), matching the template's visual layout.
 
-## What changes
+## Changes
 
-### 1. Data model (`src/components/builder/types.ts`)
+### `src/components/builder/BuilderTopToolbar.tsx`
 
-- Add an optional field on `ResumeData`:
-  ```ts
-  sidebarSections?: SectionId[];   // user override; when omitted, fall back to template default
-  ```
-- Add a new module-level map keyed by `TemplateId`:
-  ```ts
-  export const TEMPLATE_SIDEBAR_DEFAULTS: Partial<Record<TemplateId, SectionId[]>> = {
-    "two-column":    ["skills", "languages", "education"],
-    "sidebar-right": ["skills", "languages", "education"],
-    "compact-two":   ["skills", "languages", "certifications"],
-    // single-column templates omitted -> [] (no sidebar)
-  };
-  ```
-- Helper: `getSidebarSectionIds(data: ResumeData): SectionId[]` returns `data.sidebarSections ?? TEMPLATE_SIDEBAR_DEFAULTS[data.template] ?? []`. Filtered to ids that actually exist in `data.sectionOrder` so a removed section can't linger in the sidebar.
-- Sidebar-eligible types: `skills`, `languages`, `education`, `certifications`, `awards`. `summary` and `experience` stay in main (they need full width). `projects` and `customSections` stay in main for now (mixed media doesn't fit narrow sidebar typography). This list becomes a constant `SIDEBAR_ELIGIBLE: SectionId[]` next to the defaults map so the UI can use the same source of truth.
+In `SectionsPopover`, replace the current flat `move(from, to)` wiring for `SortableRow` with column-aware handlers. Logic per row id:
 
-### 2. Renderer (`src/components/builder/ResumeDocument.tsx`)
+1. Compute `col = sidebarModeFor(id)` — `"sidebar"`, `"main"`, `"off"` (single-col template), or `null` (not sidebar-eligible).
+2. **Up/Down**: find the previous/next index in `data.sectionOrder` whose row belongs to the same column.
+   - For `"off"` (no sidebar) and `null` (non-eligible section in a two-col template), "same column" = main, so behavior matches today for those.
+   - For `"sidebar"` or `"main"` in a two-col template, skip over rows in the opposite column.
+   - `canUp` / `canDown` reflect whether a same-column neighbor exists.
+3. **Left/Right**: in two-column templates, map to "move to sidebar" or "move to main" based on which side the sidebar is on for the active template (left-sidebar: `two-column`, `compact-two`, `fresher`; right-sidebar: `sidebar-right`, `contemporary`).
+   - Only enabled when the section is sidebar-eligible (`SIDEBAR_ELIGIBLE`) and moving would actually change its column.
+   - "Move to sidebar" / "Move to main" calls the existing `onToggleSidebar(id)` (already wired through `Builder.tsx`, already pushes history).
+   - In single-column templates (`"off"`), keep today's behavior: left/right = up/down equivalent (±1 in `sectionOrder`).
 
-- Replace the local `const sidebarSectionIds: SectionId[] = ["skills", "languages", "education"]` with `const sidebarSectionIds = getSidebarSectionIds(data)`.
-- Expand `sidebarRenderers` to cover all sidebar-eligible types (add `certifications`, `awards`). Keep the dark/light handling (`dark={!compact}`) consistent with the existing blocks.
-- Main column already uses `!sidebarSectionIds.includes(id)`, so it picks up everything else automatically — no further change.
-- When the chosen template has no entry in `TEMPLATE_SIDEBAR_DEFAULTS` and the user hasn't set `sidebarSections`, the array is empty and the existing single-column code path runs unchanged.
+Keep the existing `PanelLeft/PanelRight` toggle button in the row — it still shows the section's current column at a glance and gives a one-click toggle. Left/Right arrows now do the same thing for sidebar-eligible rows; this is intentional symmetry with main sections.
 
-### 3. Sections panel UI (`src/components/builder/BuilderTopToolbar.tsx`)
+No changes to: drag-and-drop, custom sections, `Add to resume` list, undo/redo plumbing, the toggle button, or the underlying `sectionOrder` / `sidebarSections` data model.
 
-Inside the existing active-sections list (the rows with up/down/left/right buttons), add a single inline control per row:
+### Out of scope
 
-- If the current template supports a sidebar AND the section id is in `SIDEBAR_ELIGIBLE`, render a small "Sidebar" toggle (e.g. a `Switch` or a `PanelLeft` / `PanelRight` icon button) on the right of the row.
-- Toggling it calls a new prop `onToggleSidebar(id)` that flips membership in `data.sidebarSections` (initialising it from the template default on first edit). Wired through `Builder.tsx`.
-- If the template has no sidebar, the toggle is hidden — no visual noise on single-column templates.
+- A separate explicit `sidebarOrder` array (current model — sidebar order = `sectionOrder` filtered — is preserved).
+- Allowing `summary`, `experience`, `projects`, or custom sections in the sidebar.
+- Cross-column drag-and-drop.
+- Any change to `ResumeDocument.tsx`, `Builder.tsx`, or `types.ts` — all rendering and state already react correctly once `sectionOrder` / `sidebarSections` update.
 
-This reuses the existing `pushSectionsHistory` undo/redo machinery in `Builder.tsx` so sidebar moves are undoable like reorder moves.
+## Technical detail
 
-### 4. Template switch behaviour
+```text
+sidebarSide(template):
+  two-column | compact-two | fresher       -> "left"
+  sidebar-right | contemporary             -> "right"
+  otherwise                                -> none
 
-When the user changes template:
-- Do **not** wipe `sidebarSections` automatically (the user's intent should survive a template swap when possible).
-- The renderer already filters the array against `sectionOrder` and `SIDEBAR_ELIGIBLE`, so switching to a single-column template simply hides the sidebar without losing the override.
+sameColumn(idA, idB):
+  colA = sidebarIds.has(idA) ? "sidebar" : "main"
+  colB = sidebarIds.has(idB) ? "sidebar" : "main"
+  return colA === colB  (only meaningful when template has sidebar)
 
-## Out of scope
+onUp(i):  find largest j < i where sameColumn(order[j], order[i]); if found, arrayMove(order, i, j)
+onDown(i): find smallest j > i where sameColumn(order[j], order[i]); if found, arrayMove(order, i, j)
 
-- Letting `projects` or custom sections live in the sidebar (typography/spacing tuning is non-trivial).
-- A separate `sidebarOrder` array. Sidebar order continues to be derived from `sectionOrder` filtered by membership, which matches the user's prior "respect sectionOrder" instruction.
-- Drag-and-drop between columns. The left/right arrows + new toggle cover the same intent without rebuilding the DnD context.
+onLeft(i):
+  if no sidebar template:    move(i, i-1)
+  if sidebarSide === "left"  and eligible and currently "main":    onToggleSidebar(id)
+  if sidebarSide === "right" and eligible and currently "sidebar": onToggleSidebar(id)
+  else: disabled
 
-## Files touched
+onRight(i):  mirror of onLeft
+```
 
-- `src/components/builder/types.ts` — add `sidebarSections`, `TEMPLATE_SIDEBAR_DEFAULTS`, `SIDEBAR_ELIGIBLE`, `getSidebarSectionIds`.
-- `src/components/builder/ResumeDocument.tsx` — use helper, extend `sidebarRenderers` to cover certifications + awards.
-- `src/components/builder/BuilderTopToolbar.tsx` — sidebar toggle button per row.
-- `src/components/builder/Builder.tsx` — `onToggleSidebar` handler, history push, prop wiring.
+`canUp`/`canDown`/`canLeft`/`canRight` are derived from the same predicates so disabled buttons are accurate.

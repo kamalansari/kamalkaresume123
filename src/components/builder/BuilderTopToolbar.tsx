@@ -329,6 +329,57 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onToggleSideb
     if (!eligible.has(id)) return null;
     return sidebarIds.has(id) ? "sidebar" : "main";
   };
+  const sidebarSide: "left" | "right" | null = !hasSidebar
+    ? null
+    : (data.template === "sidebar-right" || data.template === "contemporary")
+      ? "right"
+      : "left";
+  const colOf = (id: SectionId): "sidebar" | "main" =>
+    hasSidebar && sidebarIds.has(id) ? "sidebar" : "main";
+  const findSameColPrev = (i: number): number => {
+    if (!hasSidebar) return i - 1;
+    const target = colOf(data.sectionOrder[i]);
+    for (let j = i - 1; j >= 0; j--) {
+      if (colOf(data.sectionOrder[j]) === target) return j;
+    }
+    return -1;
+  };
+  const findSameColNext = (i: number): number => {
+    if (!hasSidebar) return i + 1 < data.sectionOrder.length ? i + 1 : -1;
+    const target = colOf(data.sectionOrder[i]);
+    for (let j = i + 1; j < data.sectionOrder.length; j++) {
+      if (colOf(data.sectionOrder[j]) === target) return j;
+    }
+    return -1;
+  };
+  const canMoveLeft = (id: SectionId): boolean => {
+    if (!hasSidebar) return data.sectionOrder.indexOf(id) > 0;
+    if (!eligible.has(id)) return false;
+    const cur = colOf(id);
+    // left arrow targets whatever column is visually on the left
+    const targetCol = sidebarSide === "left" ? "sidebar" : "main";
+    return cur !== targetCol;
+  };
+  const canMoveRight = (id: SectionId): boolean => {
+    if (!hasSidebar) {
+      const i = data.sectionOrder.indexOf(id);
+      return i >= 0 && i < data.sectionOrder.length - 1;
+    }
+    if (!eligible.has(id)) return false;
+    const cur = colOf(id);
+    const targetCol = sidebarSide === "left" ? "main" : "sidebar";
+    return cur !== targetCol;
+  };
+  const handleLeft = (i: number) => {
+    const id = data.sectionOrder[i];
+    if (!hasSidebar) { move(i, i - 1); return; }
+    if (canMoveLeft(id)) onToggleSidebar(id);
+  };
+  const handleRight = (i: number) => {
+    const id = data.sectionOrder[i];
+    if (!hasSidebar) { move(i, i + 1); return; }
+    if (canMoveRight(id)) onToggleSidebar(id);
+  };
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -371,14 +422,14 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onToggleSideb
                   key={id}
                   id={id}
                   onRemove={() => onRemove(id)}
-                  onLeft={() => move(i, i - 1)}
-                  onRight={() => move(i, i + 1)}
-                  onUp={() => move(i, i - 1)}
-                  onDown={() => move(i, i + 1)}
-                  canLeft={i > 0}
-                  canRight={i < data.sectionOrder.length - 1}
-                  canUp={i > 0}
-                  canDown={i < data.sectionOrder.length - 1}
+                  onLeft={() => handleLeft(i)}
+                  onRight={() => handleRight(i)}
+                  onUp={() => { const j = findSameColPrev(i); if (j >= 0) move(i, j); }}
+                  onDown={() => { const j = findSameColNext(i); if (j >= 0) move(i, j); }}
+                  canLeft={canMoveLeft(id)}
+                  canRight={canMoveRight(id)}
+                  canUp={findSameColPrev(i) >= 0}
+                  canDown={findSameColNext(i) >= 0}
                   sidebarMode={sidebarModeFor(id)}
                   onToggleSidebar={() => onToggleSidebar(id)}
                 />
