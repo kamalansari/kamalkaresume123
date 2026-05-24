@@ -1323,7 +1323,9 @@ export function Builder() {
             </Card>
             </div>
           )}
+            </TabsContent>
 
+            <TabsContent value="target" className="space-y-6 mt-4">
           <Card
             title="Target job description"
             action={
@@ -1352,6 +1354,8 @@ export function Builder() {
               <JobSearchButton site="naukri" data={data} />
             </div>
           </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Preview */}
