@@ -278,11 +278,12 @@ function SortableRow({ id, onRemove, onUp, onDown, onLeft, onRight, canUp, canDo
   );
 }
 
-export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, onUpdateCustom, onRemoveCustom, onReorderCustom, onUndo, onRedo, canUndo, canRedo }: {
+export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onToggleSidebar, onAddCustom, onUpdateCustom, onRemoveCustom, onReorderCustom, onUndo, onRedo, canUndo, canRedo }: {
   data: ResumeData;
   onUpdate: (order: SectionId[]) => void;
   onAdd: (id: SectionId) => void;
   onRemove: (id: SectionId) => void;
+  onToggleSidebar: (id: SectionId) => void;
   onAddCustom: () => void;
   onUpdateCustom: (id: string, patch: Partial<CustomSection>) => void;
   onRemoveCustom: (id: string) => void;
@@ -319,6 +320,14 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, 
   const moveCustom = (from: number, to: number) => {
     if (to < 0 || to >= customs.length) return;
     onReorderCustom(arrayMove(customs, from, to));
+  };
+  const hasSidebar = templateHasSidebar(data.template);
+  const sidebarIds = new Set(getSidebarSectionIds(data));
+  const eligible = new Set(SIDEBAR_ELIGIBLE);
+  const sidebarModeFor = (id: SectionId): "off" | "main" | "sidebar" | null => {
+    if (!hasSidebar) return "off";
+    if (!eligible.has(id)) return null;
+    return sidebarIds.has(id) ? "sidebar" : "main";
   };
   return (
     <Popover>
@@ -370,6 +379,8 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, 
                   canRight={i < data.sectionOrder.length - 1}
                   canUp={i > 0}
                   canDown={i < data.sectionOrder.length - 1}
+                  sidebarMode={sidebarModeFor(id)}
+                  onToggleSidebar={() => onToggleSidebar(id)}
                 />
               ))}
             </div>
