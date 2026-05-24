@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold, ChevronUp, ChevronDown } from "lucide-react";
+import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold, ChevronUp, ChevronDown, Undo2, Redo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
@@ -237,7 +237,7 @@ function SortableRow({ id, onRemove, onUp, onDown, canUp, canDown }: {
   );
 }
 
-export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, onUpdateCustom, onRemoveCustom, onReorderCustom }: {
+export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, onUpdateCustom, onRemoveCustom, onReorderCustom, onUndo, onRedo, canUndo, canRedo }: {
   data: ResumeData;
   onUpdate: (order: SectionId[]) => void;
   onAdd: (id: SectionId) => void;
@@ -246,6 +246,10 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, 
   onUpdateCustom: (id: string, patch: Partial<CustomSection>) => void;
   onRemoveCustom: (id: string) => void;
   onReorderCustom: (next: CustomSection[]) => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const onEnd = (e: DragEndEvent) => {
@@ -283,9 +287,31 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, 
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[440px] max-h-[75vh] overflow-y-auto p-4">
-        <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center justify-between mb-2.5 gap-2">
           <div className="text-[11px] font-semibold tracking-wider text-foreground/80 uppercase">Active sections</div>
-          <div className="text-[11px] text-muted-foreground">{data.sectionOrder.length} of {available.length} · drag any direction</div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onUndo}
+              disabled={!canUndo}
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+              className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={onRedo}
+              disabled={!canRedo}
+              title="Redo (Ctrl+Shift+Z)"
+              aria-label="Redo"
+              className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <Redo2 className="h-3.5 w-3.5" />
+            </button>
+            <span className="ml-1 text-[11px] text-muted-foreground">{data.sectionOrder.length}/{available.length}</span>
+          </div>
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onEnd}>
           <SortableContext items={data.sectionOrder} strategy={rectSortingStrategy}>
