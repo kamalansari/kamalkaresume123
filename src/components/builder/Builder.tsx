@@ -96,6 +96,13 @@ export function Builder() {
   const [profileRenameId, setProfileRenameId] = useState<string | null>(null);
   const score = useMemo(() => computeScore(data), [data]);
 
+  // Opening-from-URL UX: skeleton + retry when ?open=ID arrives but the
+  // resume isn't in local store yet (e.g. cloud sync hasn't pulled).
+  const [openingState, setOpeningState] = useState<
+    | { phase: "loading" | "notfound"; id: string; attempt: number }
+    | null
+  >(null);
+
   const profileApplied = useMemo(() => {
     const p = profileStore.get();
     if (!p) return false;
