@@ -425,7 +425,7 @@ function AtsScoreView({
               <span className="capitalize truncate">{s.keyword}</span>
               <span className={cn("w-6 text-center font-semibold tabular-nums", s.resume === 0 ? "text-rose-600" : "text-emerald-600")}>{s.resume}</span>
               <span className="w-6 text-center text-muted-foreground tabular-nums">{s.jd}</span>
-              <span className="flex items-center gap-0.5">
+              <span className="flex items-center justify-center">
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); copyKeyword(s.keyword); }}
@@ -434,22 +434,12 @@ function AtsScoreView({
                 >
                   <Copy className="h-3 w-3" />
                 </button>
-                <button
-                  type="button"
-                  disabled={generatingKw === s.keyword || generating}
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); runGenerate([s.keyword], s.keyword); }}
-                  className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-[var(--navy-light)] disabled:opacity-50"
-                  title={`Generate bullet for "${s.keyword}"`}
-                >
-                  {generatingKw === s.keyword ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                </button>
               </span>
               <input
                 type="checkbox"
                 checked={selected.has(s.keyword)}
                 onChange={() => toggle(s.keyword)}
-                disabled={s.matched}
-                className="h-4 w-4 accent-[var(--navy-light)] disabled:opacity-30"
+                className="h-4 w-4 accent-[var(--navy-light)]"
               />
             </label>
           ))}
