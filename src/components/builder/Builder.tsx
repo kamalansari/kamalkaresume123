@@ -1184,7 +1184,9 @@ export function Builder() {
             </div>
           </Card>
           </div>
+            </TabsContent>
 
+            <TabsContent value="education" className="space-y-6 mt-4">
           <div id="edit-education" className="rounded-xl">
           <Card title="Education" action={<Button size="sm" variant="outline" onClick={addEdu}><Plus /> Add</Button>}>
             <div className="space-y-3">
@@ -1203,7 +1205,9 @@ export function Builder() {
             </div>
           </Card>
           </div>
+            </TabsContent>
 
+            <TabsContent value="skills" className="space-y-6 mt-4">
           <div id="edit-skills" className="rounded-xl">
           <Card
             title="Skills"
@@ -1221,7 +1225,9 @@ export function Builder() {
             <p className="mt-2 text-xs text-muted-foreground">Separate with <code>,</code> or <code>|</code>. {parseSkills(data.skills).length} skills detected.</p>
           </Card>
           </div>
+            </TabsContent>
 
+            <TabsContent value="extras" className="space-y-6 mt-4">
           {data.sectionOrder.includes("projects") && (
             <div id="edit-projects" className="rounded-xl">
             <Card title="Projects" action={<Button size="sm" variant="outline" onClick={addProject}><Plus /> Add</Button>}>
