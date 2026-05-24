@@ -921,7 +921,9 @@ export function Builder() {
           return match ? { ...e, bullets: match.bullets } : e;
         }),
       };
-      if (jdSaveAsNew) {
+      // Never overwrite the Primary Resume — when primary exists, force save-as-new.
+      const forceNew = jdSaveAsNew || !!primary;
+      if (forceNew) {
         // Save tailored version as a NEW resume — Primary stays untouched
         const id = newId();
         const name = (jdTailoredName.trim() || `Tailored — ${new Date().toLocaleDateString()}`);
