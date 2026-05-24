@@ -32,6 +32,7 @@ import lzString from "lz-string";
 const { decompressFromEncodedURIComponent } = lzString;
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -96,6 +97,13 @@ export function Builder() {
   const [profileRenameId, setProfileRenameId] = useState<string | null>(null);
   const score = useMemo(() => computeScore(data), [data]);
 
+  // Opening-from-URL UX: skeleton + retry when ?open=ID arrives but the
+  // resume isn't in local store yet (e.g. cloud sync hasn't pulled).
+  const [openingState, setOpeningState] = useState<
+    | { phase: "loading" | "notfound"; id: string; attempt: number }
+    | null
+  >(null);
+
   const profileApplied = useMemo(() => {
     const p = profileStore.get();
     if (!p) return false;
@@ -152,28 +160,60 @@ export function Builder() {
     }
   }, []);
 
-  // Load a specific saved resume when navigated from the dashboard via ?open=ID.
-  // Reacts to search-param changes so navigating /builder?open=X while already on
-  // /builder still loads the requested resume.
+  // React to ?open=ID search-param changes (even while already on /builder).
   const search = useRouterState({ select: s => s.location.search });
   const navigate = useNavigate();
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const openId = params.get("open");
+    const openId = new URLSearchParams(window.location.search).get("open");
     if (!openId) return;
-    const entry = resumeStore.get(openId);
-    if (entry) {
-      setData({ ...defaultResume, ...entry.data });
-      setCurrentId(entry.id);
-      setCurrentName(entry.name);
-      toast.success(`Opened "${entry.name}"`);
-    } else {
-      toast.error("Resume not found");
-    }
-    // Clear the search param without reloading
+    // Show the skeleton; the resolver effect below handles fetch + retry.
+    setOpeningState({ phase: "loading", id: openId, attempt: 0 });
+    // Strip the param from the URL so refreshes don't re-trigger the flow.
     navigate({ to: "/builder", search: {} as never, replace: true });
   }, [search, navigate]);
+
+  // Resolver: try to load the requested resume, retry when cloud sync fires
+  // `resumeforge:refresh`, and fall back to a not-found state after a timeout.
+  useEffect(() => {
+    if (!openingState || openingState.phase !== "loading") return;
+    const { id } = openingState;
+
+    const tryLoad = () => {
+      const entry = resumeStore.get(id);
+      if (entry) {
+        setData({ ...defaultResume, ...entry.data });
+        setCurrentId(entry.id);
+        setCurrentName(entry.name);
+        toast.success(`Opened "${entry.name}"`);
+        setOpeningState(null);
+        return true;
+      }
+      return false;
+    };
+
+    if (tryLoad()) return;
+
+    const onRefresh = () => { tryLoad(); };
+    window.addEventListener("resumeforge:refresh", onRefresh);
+
+    // After 8s give up and offer manual retry. Resets when attempt changes.
+    const timeout = window.setTimeout(() => {
+      if (!resumeStore.get(id)) {
+        setOpeningState(s => (s && s.id === id ? { ...s, phase: "notfound" } : s));
+      }
+    }, 8000);
+
+    return () => {
+      window.removeEventListener("resumeforge:refresh", onRefresh);
+      window.clearTimeout(timeout);
+    };
+  }, [openingState]);
+
+  const retryOpen = () => {
+    setOpeningState(s => (s ? { phase: "loading", id: s.id, attempt: s.attempt + 1 } : s));
+  };
+  const cancelOpen = () => setOpeningState(null);
 
   const refreshList = () => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); };
 
@@ -818,6 +858,13 @@ export function Builder() {
 
   return (
     <div className="min-h-screen bg-secondary/40">
+      {openingState && (
+        <OpeningResumeOverlay
+          state={openingState}
+          onRetry={retryOpen}
+          onCancel={cancelOpen}
+        />
+      )}
       <header className="no-print sticky top-0 z-30 backdrop-blur-md bg-background/80 border-b border-border">
         <div className="mx-auto max-w-[1600px] px-6 h-14 flex items-center justify-between">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -1761,6 +1808,70 @@ function TemplateThumb({ id, accent }: { id: TemplateId; accent: string }) {
         <div className="h-0.5 w-full rounded bg-foreground/10" />
         <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
         <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+      </div>
+    </div>
+  );
+}
+
+function OpeningResumeOverlay({
+  state,
+  onRetry,
+  onCancel,
+}: {
+  state: { phase: "loading" | "notfound"; id: string; attempt: number };
+  onRetry: () => void;
+  onCancel: () => void;
+}) {
+  const isLoading = state.phase === "loading";
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm no-print"
+      role="dialog"
+      aria-modal="true"
+      aria-label={isLoading ? "Opening resume" : "Resume not found"}
+    >
+      <div className="w-[min(420px,92vw)] rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)] p-6">
+        {isLoading ? (
+          <>
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--navy)]" />
+              <div>
+                <div className="text-sm font-display font-semibold">Opening your resume…</div>
+                <div className="text-xs text-muted-foreground">
+                  Syncing from the cloud if needed.
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 space-y-2">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-3 w-2/3" />
+              <Skeleton className="h-3 w-5/6" />
+              <Skeleton className="h-3 w-1/2" />
+              <Skeleton className="h-20 w-full mt-3 rounded-lg" />
+            </div>
+            <div className="mt-5 flex justify-end">
+              <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-3">
+              <XCircle className="h-5 w-5 text-amber-600" />
+              <div>
+                <div className="text-sm font-display font-semibold">Couldn’t find this resume</div>
+                <div className="text-xs text-muted-foreground">
+                  It may not have synced to this device yet, or it was deleted elsewhere.
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={onCancel}>Dismiss</Button>
+              <Button size="sm" variant="accent" onClick={onRetry}>
+                <RotateCcw className="h-3.5 w-3.5" /> Retry
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
