@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, FileText, Mail, Mic, Briefcase } from "lucide-react";
+import { LayoutDashboard, FileText, Mail, Mic, Briefcase, FlaskConical, Map } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -14,8 +14,10 @@ import {
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Resume Builder", url: "/builder", icon: FileText },
+  { title: "Resume Lab", url: "/resume-lab", icon: FlaskConical },
   { title: "Cover Letter", url: "/cover-letter", icon: Mail },
   { title: "Interview", url: "/interview", icon: Mic },
+  { title: "Roadmap", url: "/roadmap", icon: Map },
   { title: "Job & Network Tracker", url: "/jobs", icon: Briefcase },
 ] as const;
 
