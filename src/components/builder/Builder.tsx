@@ -1812,3 +1812,67 @@ function TemplateThumb({ id, accent }: { id: TemplateId; accent: string }) {
     </div>
   );
 }
+
+function OpeningResumeOverlay({
+  state,
+  onRetry,
+  onCancel,
+}: {
+  state: { phase: "loading" | "notfound"; id: string; attempt: number };
+  onRetry: () => void;
+  onCancel: () => void;
+}) {
+  const isLoading = state.phase === "loading";
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm no-print"
+      role="dialog"
+      aria-modal="true"
+      aria-label={isLoading ? "Opening resume" : "Resume not found"}
+    >
+      <div className="w-[min(420px,92vw)] rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)] p-6">
+        {isLoading ? (
+          <>
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--navy)]" />
+              <div>
+                <div className="text-sm font-display font-semibold">Opening your resume…</div>
+                <div className="text-xs text-muted-foreground">
+                  Syncing from the cloud if needed.
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 space-y-2">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-3 w-2/3" />
+              <Skeleton className="h-3 w-5/6" />
+              <Skeleton className="h-3 w-1/2" />
+              <Skeleton className="h-20 w-full mt-3 rounded-lg" />
+            </div>
+            <div className="mt-5 flex justify-end">
+              <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-3">
+              <XCircle className="h-5 w-5 text-amber-600" />
+              <div>
+                <div className="text-sm font-display font-semibold">Couldn’t find this resume</div>
+                <div className="text-xs text-muted-foreground">
+                  It may not have synced to this device yet, or it was deleted elsewhere.
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={onCancel}>Dismiss</Button>
+              <Button size="sm" variant="accent" onClick={onRetry}>
+                <RotateCcw className="h-3.5 w-3.5" /> Retry
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
