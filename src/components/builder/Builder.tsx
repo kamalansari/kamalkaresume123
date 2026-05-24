@@ -1575,7 +1575,7 @@ export function Builder() {
           <Card
             title="Target job description"
             action={
-              <Button size="sm" variant="accent" onClick={generateFromJD} disabled={generating || !data.jobDescription.trim()}>
+              <Button size="sm" variant="accent" onClick={openTailorConfirm} disabled={generating || !data.jobDescription.trim()}>
                 {generating ? <Loader2 className="animate-spin" /> : <Wand2 />}
                 {generating ? "Tailoring…" : "AI tailor resume"}
               </Button>
