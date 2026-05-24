@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, FileText, Mail, Mic, Briefcase, FlaskConical, Map, LogIn, LogOut, CloudCheck } from "lucide-react";
+import { LayoutDashboard, FileText, Mail, Mic, Briefcase, FlaskConical, Map, LogIn, LogOut, Cloud } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -73,7 +73,7 @@ export function AppSidebar() {
             <>
               <SidebarMenuItem>
                 <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground">
-                  <CloudCheck className="h-3.5 w-3.5 text-emerald-500" />
+                  <Cloud className="h-3.5 w-3.5 text-emerald-500" />
                   <span className="truncate">{email}</span>
                 </div>
               </SidebarMenuItem>
