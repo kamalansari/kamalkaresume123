@@ -117,6 +117,19 @@ export function Builder() {
   const dataRef = useRef(data);
   useEffect(() => { dataRef.current = data; }, [data]);
 
+  // Transient highlight for the most recently moved/added section in the preview.
+  const [flashSection, setFlashSection] = useState<SectionId | null>(null);
+  const flashTimerRef = useRef<number | null>(null);
+  const flashMoved = (id: SectionId) => {
+    if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
+    setFlashSection(null);
+    // Re-set on next frame so the animation restarts even if the same id flashes twice in a row.
+    window.requestAnimationFrame(() => {
+      setFlashSection(id);
+      flashTimerRef.current = window.setTimeout(() => setFlashSection(null), 1200);
+    });
+  };
+
   const snapshotNow = (): SectionsSnapshot => ({
     sectionOrder: [...dataRef.current.sectionOrder],
     customSections: (dataRef.current.customSections ?? []).map(c => ({ ...c })),
