@@ -4,8 +4,19 @@ import { FlaskConical, Sparkles, Loader2, CheckCircle2, AlertCircle, ArrowRight 
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { resumeStore } from "@/components/builder/resumeStore";
+import { resumeStore, newId } from "@/components/builder/resumeStore";
 import { defaultResume, type ResumeData, type Experience } from "@/components/builder/types";
 import { computeScore } from "@/components/builder/atsScore";
 
@@ -33,6 +44,9 @@ function ResumeLabPage() {
   const [jd, setJd] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<AlignResult | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [tailoredName, setTailoredName] = useState("");
+  const hasPrimary = typeof window !== "undefined" && !!resumeStore.getPrimaryId();
 
   useEffect(() => {
     const primary = resumeStore.getPrimary();
@@ -85,7 +99,7 @@ function ResumeLabPage() {
     }
   };
 
-  const apply = () => {
+  const confirmApply = () => {
     if (!result) return;
     const merged: ResumeData = {
       ...resume,
@@ -95,10 +109,15 @@ function ResumeLabPage() {
       experience: mergeExperience(resume.experience, result.experience),
       jobDescription: jd || resume.jobDescription,
     };
+    // Never overwrite the Primary resume — always save tailored output as a NEW copy.
+    const stamp = new Date().toLocaleDateString();
+    const name = (tailoredName.trim() || `Tailored — ${stamp}`);
+    const id = newId();
+    resumeStore.upsert({ id, name, updatedAt: Date.now(), data: merged });
     resumeStore.saveDraft(merged);
-    const primary = resumeStore.getPrimary();
-    if (primary) resumeStore.upsert({ ...primary, data: merged, updatedAt: Date.now() });
-    toast.success("Applied to your resume draft — open Resume Builder to review");
+    setConfirmOpen(false);
+    setTailoredName("");
+    toast.success(`Saved as new resume "${name}" — Primary is untouched`);
   };
 
   return (
@@ -172,13 +191,40 @@ function ResumeLabPage() {
                 )}
               </div>
               <div className="flex gap-2 pt-2">
-                <Button onClick={apply}>Apply to my resume</Button>
+                <Button onClick={() => setConfirmOpen(true)}>Apply to my resume</Button>
                 <Button variant="outline" asChild><Link to="/builder">Open builder <ArrowRight className="h-4 w-4" /></Link></Button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save tailored resume?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {hasPrimary
+                ? "Your Primary Resume will not be modified. The tailored rewrite will be saved as a new resume so you can review it before using it."
+                : "The tailored rewrite will be saved as a new resume. Your existing resumes stay untouched."}
+              {" "}ATS-friendly formatting (plain text, clean section order) is preserved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Name this tailored version</Label>
+            <Input
+              value={tailoredName}
+              onChange={e => setTailoredName(e.target.value)}
+              placeholder={`Tailored — ${new Date().toLocaleDateString()}`}
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmApply}>Save as new resume</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
