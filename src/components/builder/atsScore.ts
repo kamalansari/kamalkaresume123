@@ -110,6 +110,30 @@ export function jdKeywordSet(jd: unknown): Set<string> {
   return new Set(tokens(jd).map(canonical));
 }
 
+/** Common ATS / resume power-words that get auto-bolded in the preview even
+ *  when no job description is provided. Kept intentionally generic so it
+ *  helps any role without skewing toward a specific domain. */
+const COMMON_ATS_KEYWORDS = [
+  // impact / leadership verbs
+  "led","managed","built","designed","developed","launched","shipped","drove",
+  "delivered","owned","created","implemented","architected","optimized",
+  "improved","reduced","increased","grew","scaled","automated","streamlined",
+  "spearheaded","mentored","coordinated","executed","achieved","established",
+  // outcomes / business
+  "revenue","growth","performance","efficiency","productivity","roi","kpi",
+  "stakeholders","strategy","roadmap","cross-functional","collaboration",
+  "leadership","ownership","impact","results",
+  // generic tech / process
+  "api","apis","rest","sql","cloud","aws","gcp","azure","docker","kubernetes",
+  "ci","cd","agile","scrum","testing","analytics","data","metrics",
+  "automation","integration","deployment","architecture","frontend","backend",
+  "fullstack","microservices","devops","security",
+];
+
+export const COMMON_ATS_KEYWORD_SET: Set<string> = new Set(
+  COMMON_ATS_KEYWORDS.map(canonical),
+);
+
 /** True if `word` (as it appears in resume text) matches a JD keyword. */
 export function isJdKeyword(word: string, set: Set<string>): boolean {
   const lower = word.toLowerCase();
