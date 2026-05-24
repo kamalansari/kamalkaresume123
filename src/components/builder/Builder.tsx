@@ -1539,6 +1539,10 @@ export function Builder() {
                   onUpdate={(order) => update("sectionOrder", order)}
                   onAdd={(id) => addSectionIfMissing(id)}
                   onRemove={(id) => removeSectionFromOrder(id)}
+                  onAddCustom={() => setData(d => ({ ...d, customSections: [...(d.customSections ?? []), { id: uid(), title: "", content: "" }] }))}
+                  onUpdateCustom={(id, patch) => setData(d => ({ ...d, customSections: (d.customSections ?? []).map(c => c.id === id ? { ...c, ...patch } : c) }))}
+                  onRemoveCustom={(id) => setData(d => ({ ...d, customSections: (d.customSections ?? []).filter(c => c.id !== id) }))}
+                  onReorderCustom={(next) => setData(d => ({ ...d, customSections: next }))}
                 />
                 <StylePopover data={data} onPatch={(p) => setData(d => ({ ...d, ...p }))} />
               </>
