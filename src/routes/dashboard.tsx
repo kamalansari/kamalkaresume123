@@ -42,6 +42,7 @@ import { defaultResume, type ResumeData, type TemplateId } from "@/components/bu
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard")({
+  codeSplitGroupings: [["loader", "component"]],
   head: () => ({
     meta: [
       { title: "Dashboard — ResumeForge" },
