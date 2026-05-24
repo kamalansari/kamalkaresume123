@@ -4,12 +4,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Undo2, Redo2 } from "lucide-react";
+import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Undo2, Redo2, PanelLeft, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { COLOR_PRESETS, FONT_PRESETS, type CustomSection, type ResumeData, type SectionId, type TemplateId } from "./types";
+import { COLOR_PRESETS, FONT_PRESETS, SIDEBAR_ELIGIBLE, getSidebarSectionIds, templateHasSidebar, type CustomSection, type ResumeData, type SectionId, type TemplateId } from "./types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -219,7 +219,7 @@ export function TemplatesPopover({ data, onPick }: { data: ResumeData; onPick: (
   );
 }
 
-function SortableRow({ id, onRemove, onUp, onDown, onLeft, onRight, canUp, canDown, canLeft, canRight }: {
+function SortableRow({ id, onRemove, onUp, onDown, onLeft, onRight, canUp, canDown, canLeft, canRight, sidebarMode, onToggleSidebar }: {
   id: SectionId;
   onRemove: () => void;
   onUp: () => void;
@@ -230,6 +230,12 @@ function SortableRow({ id, onRemove, onUp, onDown, onLeft, onRight, canUp, canDo
   canDown: boolean;
   canLeft: boolean;
   canRight: boolean;
+  // sidebarMode: "off" = template has no sidebar (hide control),
+  //              "main" = section is in main column,
+  //              "sidebar" = section is in sidebar.
+  // null when this section is not eligible for the sidebar.
+  sidebarMode: "off" | "main" | "sidebar" | null;
+  onToggleSidebar: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
@@ -239,6 +245,20 @@ function SortableRow({ id, onRemove, onUp, onDown, onLeft, onRight, canUp, canDo
         <GripVertical className="h-4 w-4" />
       </button>
       <span className="flex-1 font-medium truncate">{SECTION_LABELS[id]}</span>
+      {sidebarMode !== "off" && sidebarMode !== null && (
+        <button
+          onClick={onToggleSidebar}
+          title={sidebarMode === "sidebar" ? "Move to main column" : "Move to sidebar"}
+          aria-label={sidebarMode === "sidebar" ? "Move to main column" : "Move to sidebar"}
+          aria-pressed={sidebarMode === "sidebar"}
+          className={cn(
+            "h-6 w-6 inline-flex items-center justify-center rounded hover:bg-muted",
+            sidebarMode === "sidebar" ? "text-primary" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {sidebarMode === "sidebar" ? <PanelLeft className="h-3.5 w-3.5" /> : <PanelRight className="h-3.5 w-3.5" />}
+        </button>
+      )}
       <button onClick={onLeft} disabled={!canLeft} className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Move left">
         <ChevronLeft className="h-3.5 w-3.5" />
       </button>
@@ -258,11 +278,12 @@ function SortableRow({ id, onRemove, onUp, onDown, onLeft, onRight, canUp, canDo
   );
 }
 
-export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, onUpdateCustom, onRemoveCustom, onReorderCustom, onUndo, onRedo, canUndo, canRedo }: {
+export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onToggleSidebar, onAddCustom, onUpdateCustom, onRemoveCustom, onReorderCustom, onUndo, onRedo, canUndo, canRedo }: {
   data: ResumeData;
   onUpdate: (order: SectionId[]) => void;
   onAdd: (id: SectionId) => void;
   onRemove: (id: SectionId) => void;
+  onToggleSidebar: (id: SectionId) => void;
   onAddCustom: () => void;
   onUpdateCustom: (id: string, patch: Partial<CustomSection>) => void;
   onRemoveCustom: (id: string) => void;
@@ -299,6 +320,14 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, 
   const moveCustom = (from: number, to: number) => {
     if (to < 0 || to >= customs.length) return;
     onReorderCustom(arrayMove(customs, from, to));
+  };
+  const hasSidebar = templateHasSidebar(data.template);
+  const sidebarIds = new Set(getSidebarSectionIds(data));
+  const eligible = new Set(SIDEBAR_ELIGIBLE);
+  const sidebarModeFor = (id: SectionId): "off" | "main" | "sidebar" | null => {
+    if (!hasSidebar) return "off";
+    if (!eligible.has(id)) return null;
+    return sidebarIds.has(id) ? "sidebar" : "main";
   };
   return (
     <Popover>
@@ -350,6 +379,8 @@ export function SectionsPopover({ data, onUpdate, onAdd, onRemove, onAddCustom, 
                   canRight={i < data.sectionOrder.length - 1}
                   canUp={i > 0}
                   canDown={i < data.sectionOrder.length - 1}
+                  sidebarMode={sidebarModeFor(id)}
+                  onToggleSidebar={() => onToggleSidebar(id)}
                 />
               ))}
             </div>

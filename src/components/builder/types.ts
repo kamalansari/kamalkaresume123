@@ -48,6 +48,32 @@ export type SectionId =
   | "awards"
   | "languages";
 
+// Which section types are allowed to render in a sidebar column.
+// Summary/experience need full width; projects + custom sections have layouts
+// that don't fit a narrow rail (kept in main for now).
+export const SIDEBAR_ELIGIBLE: SectionId[] = [
+  "skills",
+  "languages",
+  "education",
+  "certifications",
+  "awards",
+];
+
+// Per-template default sidebar assignment. Templates not listed here have no
+// sidebar (single-column layouts) and the helper returns [].
+export const TEMPLATE_SIDEBAR_DEFAULTS: Partial<Record<TemplateId, SectionId[]>> = {
+  "two-column":    ["skills", "languages", "education"],
+  "sidebar-right": ["skills", "languages", "education"],
+  "compact-two":   ["skills", "languages", "certifications"],
+  "fresher":       ["skills", "languages", "education"],
+  "contemporary":  ["skills", "languages", "education"],
+};
+
+// Templates that render a sidebar column at all.
+export function templateHasSidebar(template: TemplateId): boolean {
+  return TEMPLATE_SIDEBAR_DEFAULTS[template] !== undefined;
+}
+
 export type FontPreset = {
   id: string;
   label: string;
@@ -110,6 +136,9 @@ export type ResumeData = {
   justifyText: boolean;
   boldBody: boolean;
   customSections: CustomSection[];
+  // Optional per-resume override of which section ids appear in the sidebar.
+  // When undefined, the template default (TEMPLATE_SIDEBAR_DEFAULTS) is used.
+  sidebarSections?: SectionId[];
 };
 
 export const defaultResume: ResumeData = {
@@ -160,3 +189,14 @@ export const defaultResume: ResumeData = {
   boldBody: false,
   customSections: [],
 };
+
+// Resolve the effective sidebar section ids for a resume, respecting:
+//  - the user override (data.sidebarSections) when set,
+//  - otherwise the template default,
+//  - filtered to ids that are currently active (in sectionOrder) and eligible.
+export function getSidebarSectionIds(data: ResumeData): SectionId[] {
+  const base = data.sidebarSections ?? TEMPLATE_SIDEBAR_DEFAULTS[data.template] ?? [];
+  const active = new Set(data.sectionOrder);
+  const eligible = new Set(SIDEBAR_ELIGIBLE);
+  return base.filter(id => active.has(id) && eligible.has(id));
+}
