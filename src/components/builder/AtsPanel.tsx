@@ -1,9 +1,11 @@
 import { useMemo, useRef, useState } from "react";
-import { Sparkles, Loader2, Pencil, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight, Trash2, Mic, ArrowUpRight, Briefcase, Lightbulb, Gauge, MessageSquareText, ChevronDown, SpellCheck, Target, UserCheck } from "lucide-react";
+import { Sparkles, Loader2, Pencil, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight, Trash2, Mic, ArrowUpRight, Briefcase, Lightbulb, Gauge, MessageSquareText, ChevronDown, SpellCheck, Target, UserCheck, Copy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { computeScore } from "./atsScore";
 import type { ResumeData } from "./types";
