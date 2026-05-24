@@ -1111,14 +1111,34 @@ export function Builder() {
         {/* Editor */}
         <div className="no-print">
           <Tabs defaultValue="basics" className="w-full">
-            <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-card border border-border p-1 sticky top-16 z-10">
-              <TabsTrigger value="basics" className="flex-1 min-w-[80px]">Basics</TabsTrigger>
-              <TabsTrigger value="experience" className="flex-1 min-w-[80px]">Experience</TabsTrigger>
-              <TabsTrigger value="education" className="flex-1 min-w-[80px]">Education</TabsTrigger>
-              <TabsTrigger value="skills" className="flex-1 min-w-[80px]">Skills</TabsTrigger>
-              <TabsTrigger value="extras" className="flex-1 min-w-[80px]">Extras</TabsTrigger>
-              <TabsTrigger value="target" className="flex-1 min-w-[80px]">Target</TabsTrigger>
-            </TabsList>
+            <div className="sticky top-16 z-10 -mx-1 px-1 pb-2 pt-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+              <TabsList
+                className={cn(
+                  "h-auto w-full p-1 gap-1 rounded-xl border border-border bg-card shadow-[var(--shadow-soft)]",
+                  // Mobile: horizontal scroll with snap; Desktop: even grid that never wraps awkwardly
+                  "flex overflow-x-auto snap-x snap-mandatory scrollbar-thin",
+                  "sm:grid sm:grid-cols-6 sm:overflow-visible"
+                )}
+              >
+                {[
+                  { v: "basics", label: "Basics", icon: User },
+                  { v: "experience", label: "Experience", icon: Briefcase },
+                  { v: "education", label: "Education", icon: IdCard },
+                  { v: "skills", label: "Skills", icon: Star },
+                  { v: "extras", label: "Extras", icon: Plus },
+                  { v: "target", label: "Target", icon: MousePointerClick },
+                ].map(({ v, label, icon: Icon }) => (
+                  <TabsTrigger
+                    key={v}
+                    value={v}
+                    className="snap-start shrink-0 sm:shrink min-w-[96px] sm:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap"
+                  >
+                    <Icon className="h-3.5 w-3.5 opacity-80" />
+                    <span>{label}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
             <TabsContent value="basics" className="space-y-6 mt-4">
           <div id="edit-personal" className="rounded-xl">
           <Card title="Personal">
