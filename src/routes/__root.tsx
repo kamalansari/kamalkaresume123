@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { useEffect } from "react";
+import { initCloudSync } from "@/lib/cloudSync";
 
 function NotFoundComponent() {
   return (
@@ -116,6 +118,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const showSidebar = pathname !== "/";
+  useEffect(() => { initCloudSync(); }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
