@@ -1483,7 +1483,7 @@ export function Builder() {
               </Button>
             }
           >
-            <Textarea rows={3} value={data.skills} onChange={e => update("skills", e.target.value)} placeholder="Comma or pipe separated: React | TypeScript, Figma | Design Systems" />
+            <FormattableTextarea rows={3} value={data.skills} onChange={v => update("skills", v)} placeholder="Comma or pipe separated: React | TypeScript, Figma | Design Systems" />
             <p className="mt-2 text-xs text-muted-foreground">Separate with <code>,</code> or <code>|</code>. {parseSkills(data.skills).length} skills detected.</p>
           </Card>
           </div>
