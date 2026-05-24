@@ -1,7 +1,25 @@
 export type Experience = { id: string; title: string; company: string; date: string; bullets: string };
-export type Education = { id: string; degree: string; school: string; date: string };
+export type Education = {
+  id: string;
+  degree: string;
+  school: string;
+  date: string;
+  field?: string;
+  location?: string;
+  gpa?: string;
+  honors?: string;
+};
 export type Project = { id: string; name: string; link: string; date: string; bullets: string };
-export type Certification = { id: string; name: string; issuer: string; date: string };
+export type Certification = {
+  id: string;
+  name: string;
+  issuer: string;
+  date: string;
+  expires?: string;
+  noExpiry?: boolean;
+  credentialId?: string;
+  url?: string;
+};
 export type Award = { id: string; name: string; issuer: string; date: string };
 export type Language = { id: string; name: string; level: string };
 

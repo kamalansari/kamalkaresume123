@@ -334,12 +334,23 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
 function EducationSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
   return (
     <Section title="Education" accent={accent} headingFont={headingFont}>
-      {data.education.map(ed => (
-        <div key={ed.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
-          <div><span style={{ fontWeight: 600 }}>{ed.degree}</span> · {ed.school}</div>
-          <div style={{ color: "#666", whiteSpace: "nowrap" }}>{ed.date}</div>
-        </div>
-      ))}
+      {data.education.map(ed => {
+        const degreeLine = [ed.degree, ed.field].filter(Boolean).join(", ");
+        const meta = [ed.gpa ? `GPA ${ed.gpa}` : "", ed.honors ?? ""].filter(Boolean).join(" · ");
+        return (
+          <div key={ed.id} style={{ marginBottom: 6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <div>
+                <span style={{ fontWeight: 600 }}>{degreeLine || ed.degree}</span>
+                {ed.school ? <> · {ed.school}</> : null}
+                {ed.location ? <span style={{ color: "#666" }}> · {ed.location}</span> : null}
+              </div>
+              <div style={{ color: "#666", whiteSpace: "nowrap" }}>{ed.date}</div>
+            </div>
+            {meta && <div style={{ color: "#555", fontSize: "0.92em", marginTop: 2 }}>{meta}</div>}
+          </div>
+        );
+      })}
     </Section>
   );
 }
@@ -388,12 +399,23 @@ function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; acce
 function CertSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
   return (
     <Section title="Certifications" accent={accent} headingFont={headingFont}>
-      {data.certifications.map(c => (
-        <div key={c.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
-          <div><span style={{ fontWeight: 600 }}>{c.name}</span>{c.issuer ? ` · ${c.issuer}` : ""}</div>
-          <div style={{ color: "#666", whiteSpace: "nowrap" }}>{c.date}</div>
-        </div>
-      ))}
+      {data.certifications.map(c => {
+        const dateLine = c.noExpiry
+          ? c.date
+          : c.expires
+          ? `${c.date}${c.date ? " — " : ""}${c.expires}`
+          : c.date;
+        const meta = [c.credentialId ? `ID: ${c.credentialId}` : "", c.url ?? ""].filter(Boolean).join(" · ");
+        return (
+          <div key={c.id} style={{ marginBottom: 6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <div><span style={{ fontWeight: 600 }}>{c.name}</span>{c.issuer ? ` · ${c.issuer}` : ""}</div>
+              <div style={{ color: "#666", whiteSpace: "nowrap" }}>{dateLine}</div>
+            </div>
+            {meta && <div style={{ color: "#555", fontSize: "0.92em", marginTop: 2 }}>{meta}</div>}
+          </div>
+        );
+      })}
     </Section>
   );
 }
