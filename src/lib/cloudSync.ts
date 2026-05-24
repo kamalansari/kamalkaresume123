@@ -26,40 +26,40 @@ async function pullAll(userId: string) {
 
   // Merge by id, last-write-wins on updatedAt. Push back whichever side is newer.
   const local = resumeStore.list();
-  const localById = new Map(local.map(r => [r.id, r]));
-  const cloudById = new Map(cloud.map(r => [r.id, r]));
-  const allIds = new Set<string>([...localById.keys(), ...cloudById.keys()]);
+  const localById: Record<string, SavedResume> = {};
+  for (const r of local) localById[r.id] = r;
+  const cloudById: Record<string, SavedResume> = {};
+  for (const r of cloud) cloudById[r.id] = r;
+  const allIds = Array.from(new Set([...Object.keys(localById), ...Object.keys(cloudById)]));
 
-  const merged = new Map<string, SavedResume>();
+  const merged: Record<string, SavedResume> = {};
   const pushBack: SavedResume[] = [];
   const primaryCloudId = (data ?? []).find(r => r.is_primary)?.id ?? null;
 
   for (const id of allIds) {
-    const l = localById.get(id);
-    const c = cloudById.get(id);
+    const l = localById[id];
+    const c = cloudById[id];
     if (l && c) {
-      // Conflict — newest updatedAt wins; if local is newer, push it.
       if (l.updatedAt > c.updatedAt) {
-        merged.set(id, l);
+        merged[id] = l;
         pushBack.push(l);
       } else if (c.updatedAt > l.updatedAt) {
-        merged.set(id, c);
+        merged[id] = c;
       } else {
-        merged.set(id, c); // identical timestamps — prefer cloud (canonical)
+        merged[id] = c;
       }
     } else if (c) {
-      merged.set(id, c); // cloud-only → adopt locally
+      merged[id] = c;
     } else if (l) {
-      merged.set(id, l); // local-only → push to cloud
+      merged[id] = l;
       pushBack.push(l);
     }
   }
 
-  // Persist merged locally without re-triggering syncUpsert
   suppressPush = true;
   try {
-    for (const r of merged.values()) resumeStore.upsert(r);
-    if (primaryCloudId && merged.has(primaryCloudId)) {
+    for (const r of Object.values(merged)) resumeStore.upsert(r);
+    if (primaryCloudId && merged[primaryCloudId]) {
       resumeStore.setPrimary(primaryCloudId);
     }
   } finally { suppressPush = false; }

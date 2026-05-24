@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, FileText, Mail, Mic, Briefcase, FlaskConical, Map, LogIn, LogOut, Cloud } from "lucide-react";
+import { LayoutDashboard, FileText, Mail, Mic, Briefcase, FlaskConical, Map as MapIcon, LogIn, LogOut, Cloud } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -21,7 +21,7 @@ const items = [
   { title: "Resume Lab", url: "/resume-lab", icon: FlaskConical },
   { title: "Cover Letter", url: "/cover-letter", icon: Mail },
   { title: "Interview", url: "/interview", icon: Mic },
-  { title: "Roadmap", url: "/roadmap", icon: Map },
+  { title: "Roadmap", url: "/roadmap", icon: MapIcon },
   { title: "Job & Network Tracker", url: "/jobs", icon: Briefcase },
 ] as const;
 

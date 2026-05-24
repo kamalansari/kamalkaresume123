@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Map, Loader2, Sparkles, Target } from "lucide-react";
+import { Map as MapIcon, Loader2, Sparkles, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { defaultBrief, targetBriefStore } from "@/lib/targetBriefStore";
@@ -64,7 +64,7 @@ function RoadmapPage() {
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
       <header className="flex items-center gap-3">
-        <Map className="h-5 w-5 text-primary" />
+        <MapIcon className="h-5 w-5 text-primary" />
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Prep Roadmap</h1>
           <p className="text-sm text-muted-foreground">Week-by-week plan that prioritizes your weakest readiness tracks.</p>
