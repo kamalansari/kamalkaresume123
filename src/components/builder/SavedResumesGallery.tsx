@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp, Search, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp, Search, X, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ResumeDocument } from "./ResumeDocument";
-import type { SavedResume } from "./resumeStore";
+import { resumeStore, newId, type SavedResume } from "./resumeStore";
+import { toast } from "sonner";
 
 type Props = {
   saved: SavedResume[];
@@ -24,6 +25,46 @@ export function SavedResumesGallery({
 }: Props) {
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState("");
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const exportAll = () => {
+    const payload = { version: 1, exportedAt: Date.now(), resumes: saved };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `resumeforge-resumes-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${saved.length} resume${saved.length === 1 ? "" : "s"}`);
+  };
+
+  const importFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const list: SavedResume[] = Array.isArray(parsed) ? parsed : parsed.resumes;
+      if (!Array.isArray(list)) throw new Error("Invalid file");
+      const existingIds = new Set(saved.map(s => s.id));
+      let added = 0;
+      for (const item of list) {
+        if (!item || !item.data) continue;
+        const entry: SavedResume = {
+          id: existingIds.has(item.id) ? newId() : (item.id || newId()),
+          name: item.name || "Imported resume",
+          updatedAt: item.updatedAt || Date.now(),
+          data: item.data,
+        };
+        resumeStore.upsert(entry);
+        added++;
+      }
+      toast.success(`Imported ${added} resume${added === 1 ? "" : "s"}`);
+      // Force parent refresh by reloading the page region; simplest reliable signal:
+      window.dispatchEvent(new Event("resumeforge:refresh"));
+    } catch (e) {
+      toast.error("Could not import — file is not a valid resume export");
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -90,6 +131,25 @@ export function SavedResumesGallery({
                   {filtered.length} of {saved.length}
                 </span>
               )}
+              <div className="ml-auto flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={exportAll} disabled={saved.length === 0} title="Download all saved resumes as a JSON file">
+                  <Download className="h-3.5 w-3.5" /> Export
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} title="Import resumes from a JSON file exported on another device">
+                  <Upload className="h-3.5 w-3.5" /> Import
+                </Button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) importFile(f);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {/* Add new tile */}
