@@ -641,11 +641,17 @@ function NovaChatView({ data }: { data: ResumeData }) {
               <div className="h-6 w-6 mt-0.5 rounded-full bg-[var(--navy-light)] text-white flex items-center justify-center text-[10px] font-bold shrink-0">N</div>
             )}
             <div className={cn("max-w-[88%] space-y-2")}>
-              <div className={cn("rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap leading-relaxed",
+              <div className={cn("rounded-2xl px-3 py-2 text-sm leading-relaxed",
                 m.role === "user"
-                  ? "bg-[var(--navy-light)] text-white rounded-br-sm"
+                  ? "bg-[var(--navy-light)] text-white rounded-br-sm whitespace-pre-wrap"
                   : "bg-secondary text-foreground rounded-bl-sm")}>
-                {m.content}
+                {m.role === "assistant" ? (
+                  <div className="prose prose-sm max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground prose-headings:font-semibold">
+                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  m.content
+                )}
               </div>
               {m.actions?.map(a => (
                 <button
@@ -669,9 +675,13 @@ function NovaChatView({ data }: { data: ResumeData }) {
 
       {/* Quick action chips */}
       <div className="flex gap-1.5 overflow-x-auto px-2 pb-2 scrollbar-thin">
-        <QuickChip icon={Gauge} label="Show my resume score" onClick={() => send("Show my resume score")} />
-        <QuickChip icon={MessageSquareText} label="Give me resume feedback" onClick={() => send("Give me resume feedback")} />
-        <QuickChip icon={Wand2} label="Tailor my resume" onClick={() => send("Tailor my resume")} />
+        <QuickChip icon={MessageSquareText} label="Review my resume" onClick={() => send("Review my resume end-to-end. Call out the top strengths and the top 3 weaknesses with concrete fixes.")} />
+        <QuickChip icon={Sparkles} label="Suggest improvements" onClick={() => send("Suggest specific improvements to my summary, headline, and weakest bullets to make them more impactful.")} />
+        <QuickChip icon={SpellCheck} label="Fix grammar" onClick={() => send("Proofread my resume. Find grammar, spelling, tense, and clarity issues and show Before / After corrections for each.")} />
+        <QuickChip icon={Target} label="Optimize ATS keywords" onClick={() => send("Optimize my resume for ATS against the target JD. Use the missing keywords list and tell me exactly where to weave each one in naturally.")} />
+        <QuickChip icon={Wand2} label="Achievement bullets" onClick={() => send("Rewrite my experience bullets as achievement-based bullets using strong action verbs and measurable outcomes. Use [add metric] when a number is unknown.")} />
+        <QuickChip icon={UserCheck} label="Recruiter tips" onClick={() => send("Give me recruiter-focused recommendations for the target role: what hiring managers look for, red flags in my current resume, and how to position me.")} />
+        <QuickChip icon={Gauge} label="My score" onClick={() => send("Show my resume score")} />
         <QuickChip icon={Briefcase} label="Find jobs" onClick={() => send("Find matching jobs for me")} />
         <QuickChip icon={Lightbulb} label="Recommendations" onClick={() => send("Go to recommendations")} />
       </div>
