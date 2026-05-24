@@ -409,65 +409,8 @@ function AtsScoreView({
 
       {/* Keyword table */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
-          <span className="text-xs">Select keywords to generate bullet points:</span>
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs"
-              title="Copy all keywords"
-              onClick={async () => {
-                const kws = stats.map(s => s.keyword).join(", ");
-                if (!kws) { toast.error("No keywords to copy"); return; }
-                try {
-                  await navigator.clipboard.writeText(kws);
-                  toast.success(`Copied ${stats.length} keywords`);
-                } catch { toast.error("Clipboard unavailable"); }
-              }}
-            >
-              <Copy className="h-3 w-3" /> Copy
-            </Button>
-            <Popover open={editOpen} onOpenChange={(o) => {
-              setEditOpen(o);
-              if (o) setEditDraft(stats.filter(s => !s.matched).map(s => s.keyword).join(", "));
-            }}>
-              <PopoverTrigger asChild>
-                <Button size="sm" variant="outline" className="h-7 text-xs">
-                  <Pencil className="h-3 w-3" /> Edit
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-80 p-3 space-y-2">
-                <div className="text-xs font-medium">Add custom keywords</div>
-                <p className="text-[11px] text-muted-foreground">
-                  Comma-separated. These are added to your resume's extra keyword list so ATS picks them up.
-                </p>
-                <Textarea
-                  rows={4}
-                  value={editDraft}
-                  onChange={e => setEditDraft(e.target.value)}
-                  placeholder="e.g. Kubernetes, GraphQL, A/B testing"
-                  className="text-xs"
-                />
-                <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditOpen(false)}>Cancel</Button>
-                  <Button
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => {
-                      const kw = editDraft.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
-                      if (kw.length === 0) { toast.error("Add at least one keyword"); return; }
-                      onAddExtraKeywords(kw);
-                      toast.success(`Added ${kw.length} keyword${kw.length === 1 ? "" : "s"}`);
-                      setEditOpen(false);
-                    }}
-                  >
-                    Save
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+        <div className="px-3 py-2 border-b border-border text-xs text-muted-foreground">
+          Select keywords to generate bullet points
         </div>
         <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold border-b border-border bg-secondary/40">
           <span>Keyword</span><span>Resume</span><span>JD</span><span className="text-center">Actions</span><span></span>
