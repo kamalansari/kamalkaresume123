@@ -1,8 +1,13 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, FileText, Gauge, Sparkles, ShieldCheck, Download, Eye, GripVertical } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileText, Gauge, Sparkles, ShieldCheck, Download, Eye, GripVertical, Upload, FilePlus2 } from "lucide-react";
 import { ResumePreviewMock } from "./ResumePreviewMock";
+import { ThemeToggle } from "./ThemeToggle";
+import { AnimatedStats } from "./AnimatedStats";
+import { TemplatePreviews } from "./TemplatePreviews";
 import {
   DndContext,
   closestCenter,
@@ -23,10 +28,13 @@ import { CSS } from "@dnd-kit/utilities";
 
 export function Landing() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
+      <BackgroundDecor />
       <Header />
       <Hero />
+      <AnimatedStats />
       <LogoStrip />
+      <TemplatePreviews />
       <Features />
       <HowItWorks />
       <CTA />
@@ -35,9 +43,28 @@ export function Landing() {
   );
 }
 
+function BackgroundDecor() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+      <div
+        className="absolute top-[-10%] left-[-10%] h-[40rem] w-[40rem] rounded-full opacity-25 blur-3xl"
+        style={{ background: "var(--gradient-hero)" }}
+      />
+      <div
+        className="absolute top-[20%] right-[-15%] h-[36rem] w-[36rem] rounded-full opacity-20 blur-3xl"
+        style={{ background: "var(--gradient-accent)" }}
+      />
+      <div
+        className="absolute bottom-[-20%] left-[20%] h-[30rem] w-[30rem] rounded-full opacity-15 blur-3xl"
+        style={{ background: "var(--gradient-hero)" }}
+      />
+    </div>
+  );
+}
+
 function Header() {
   return (
-    <header className="no-print sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-border">
+    <header className="no-print sticky top-0 z-40 backdrop-blur-xl bg-background/60 border-b border-border/60">
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-md grid place-items-center text-primary-foreground font-display font-bold" style={{ background: "var(--gradient-hero)" }}>R</div>
@@ -45,49 +72,65 @@ function Header() {
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+          <a href="#templates" className="hover:text-foreground transition-colors">Templates</a>
           <a href="#how" className="hover:text-foreground transition-colors">How it works</a>
           <a href="#cta" className="hover:text-foreground transition-colors">Pricing</a>
         </nav>
-        <Link to="/builder">
-          <Button variant="hero" style={{ background: "var(--gradient-hero)" }}>
-            Start building <ArrowRight />
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link to="/builder" className="hidden sm:block">
+            <Button variant="hero" style={{ background: "var(--gradient-hero)" }}>
+              Start building <ArrowRight />
+            </Button>
+          </Link>
+        </div>
       </div>
     </header>
   );
 }
 
 function Hero() {
+  const navigate = useNavigate();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try { sessionStorage.setItem("rf.uploadedResumeName", f.name); } catch {}
+    navigate({ to: "/builder" });
+  };
   return (
     <section className="relative overflow-hidden">
-      <div aria-hidden className="absolute inset-0 -z-10 opacity-60"
-        style={{ background: "radial-gradient(60% 80% at 20% 0%, color-mix(in oklab, var(--navy-light) 25%, transparent), transparent 60%), radial-gradient(40% 60% at 90% 20%, color-mix(in oklab, var(--navy-mid) 18%, transparent), transparent 70%)" }}
-      />
-      <div className="mx-auto max-w-7xl px-6 pt-20 pb-24 grid lg:grid-cols-2 gap-16 items-center">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground mb-6">
+      <div className="mx-auto max-w-7xl px-6 pt-20 pb-16 grid lg:grid-cols-2 gap-16 items-center">
+        <div className="animate-fade-in">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 backdrop-blur-xl px-3 py-1 text-xs text-muted-foreground mb-6 shadow-sm">
             <Sparkles className="h-3.5 w-3.5" /> Trusted by 240,000+ job seekers
           </div>
-          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.02]">
-            Beat the bots.<br />
+          <h1 className="font-display text-4xl md:text-6xl lg:text-[4.5rem] font-bold tracking-tight leading-[1.04]">
+            Build{" "}
             <span className="bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-hero)" }}>
-              Land the interview.
+              ATS-Friendly
             </span>
+            <br />Resume in Minutes
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed">
-            A surgical resume builder engineered for applicant tracking systems.
+            A recruiter-grade builder engineered for applicant tracking systems.
             Live preview, real-time ATS scoring, and a clean PDF export—no fluff, no gimmicks.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/builder">
-              <Button variant="hero" size="xl" style={{ background: "var(--gradient-hero)" }}>
-                Build my resume <ArrowRight />
+              <Button variant="hero" size="xl" style={{ background: "var(--gradient-hero)" }} className="hover-scale shadow-[var(--shadow-elegant)]">
+                <FilePlus2 /> Create Resume
               </Button>
             </Link>
-            <a href="#features">
-              <Button variant="outline" size="xl">See how it works</Button>
-            </a>
+            <Button
+              variant="outline"
+              size="xl"
+              onClick={() => fileRef.current?.click()}
+              className="backdrop-blur-xl bg-card/60 hover-scale"
+            >
+              <Upload /> Upload Resume
+            </Button>
+            <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" onChange={onUpload} />
           </div>
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
             {["Free forever", "No signup required", "Export as PDF"].map(t => (
@@ -98,9 +141,9 @@ function Hero() {
           </ul>
         </div>
 
-        <div className="relative">
-          <div className="absolute -inset-6 rounded-3xl opacity-30 blur-2xl" style={{ background: "var(--gradient-hero)" }} />
-          <div className="relative rounded-2xl border border-border bg-card shadow-[var(--shadow-elegant)] overflow-hidden">
+        <div className="relative animate-fade-in" style={{ animationDelay: "120ms", animationFillMode: "both" }}>
+          <div className="absolute -inset-8 rounded-[2rem] opacity-40 blur-3xl" style={{ background: "var(--gradient-hero)" }} />
+          <div className="relative rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl shadow-[var(--shadow-elegant)] overflow-hidden">
             <div className="flex items-center gap-1.5 px-4 py-3 border-b border-border bg-secondary/50">
               <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
               <span className="h-2.5 w-2.5 rounded-full bg-[var(--navy-light)]/60" />
@@ -111,7 +154,7 @@ function Hero() {
               <ResumePreviewMock />
             </div>
           </div>
-          <div className="absolute -bottom-6 -right-6 rounded-xl bg-card border border-border shadow-[var(--shadow-soft)] p-4 w-56">
+          <div className="absolute -bottom-6 -right-6 rounded-xl bg-card/80 backdrop-blur-xl border border-border shadow-[var(--shadow-soft)] p-4 w-56 animate-fade-in" style={{ animationDelay: "400ms", animationFillMode: "both" }}>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Gauge className="h-4 w-4 text-[var(--navy-light)]" /> ATS Score
             </div>
@@ -119,6 +162,10 @@ function Hero() {
             <div className="mt-2 h-1.5 rounded-full bg-secondary overflow-hidden">
               <div className="h-full rounded-full" style={{ width: "94%", background: "var(--gradient-accent)" }} />
             </div>
+          </div>
+          <div className="absolute -top-4 -left-4 hidden md:flex items-center gap-2 rounded-xl bg-card/80 backdrop-blur-xl border border-border shadow-[var(--shadow-soft)] px-3 py-2 animate-fade-in" style={{ animationDelay: "550ms", animationFillMode: "both" }}>
+            <CheckCircle2 className="h-4 w-4 text-[var(--navy-light)]" />
+            <span className="text-xs font-medium">Passed 12 ATS checks</span>
           </div>
         </div>
       </div>
@@ -199,7 +246,7 @@ function FeatureCard({ item }: { item: { id: string; icon: typeof Gauge; title: 
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative p-6 rounded-xl border bg-card transition-colors ${isDragging ? "border-[var(--navy-light)] shadow-[var(--shadow-elegant)]" : "border-border hover:border-[var(--navy-light)]"}`}
+      className={`group relative p-6 rounded-2xl border bg-card/60 backdrop-blur-xl transition-all hover:-translate-y-1 ${isDragging ? "border-[var(--navy-light)] shadow-[var(--shadow-elegant)]" : "border-border hover:border-[var(--navy-light)] hover:shadow-[var(--shadow-elegant)]"}`}
     >
       <button
         type="button"
