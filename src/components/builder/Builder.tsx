@@ -159,28 +159,60 @@ export function Builder() {
     }
   }, []);
 
-  // Load a specific saved resume when navigated from the dashboard via ?open=ID.
-  // Reacts to search-param changes so navigating /builder?open=X while already on
-  // /builder still loads the requested resume.
+  // React to ?open=ID search-param changes (even while already on /builder).
   const search = useRouterState({ select: s => s.location.search });
   const navigate = useNavigate();
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const openId = params.get("open");
+    const openId = new URLSearchParams(window.location.search).get("open");
     if (!openId) return;
-    const entry = resumeStore.get(openId);
-    if (entry) {
-      setData({ ...defaultResume, ...entry.data });
-      setCurrentId(entry.id);
-      setCurrentName(entry.name);
-      toast.success(`Opened "${entry.name}"`);
-    } else {
-      toast.error("Resume not found");
-    }
-    // Clear the search param without reloading
+    // Show the skeleton; the resolver effect below handles fetch + retry.
+    setOpeningState({ phase: "loading", id: openId, attempt: 0 });
+    // Strip the param from the URL so refreshes don't re-trigger the flow.
     navigate({ to: "/builder", search: {} as never, replace: true });
   }, [search, navigate]);
+
+  // Resolver: try to load the requested resume, retry when cloud sync fires
+  // `resumeforge:refresh`, and fall back to a not-found state after a timeout.
+  useEffect(() => {
+    if (!openingState || openingState.phase !== "loading") return;
+    const { id } = openingState;
+
+    const tryLoad = () => {
+      const entry = resumeStore.get(id);
+      if (entry) {
+        setData({ ...defaultResume, ...entry.data });
+        setCurrentId(entry.id);
+        setCurrentName(entry.name);
+        toast.success(`Opened "${entry.name}"`);
+        setOpeningState(null);
+        return true;
+      }
+      return false;
+    };
+
+    if (tryLoad()) return;
+
+    const onRefresh = () => { tryLoad(); };
+    window.addEventListener("resumeforge:refresh", onRefresh);
+
+    // After 8s give up and offer manual retry. Resets when attempt changes.
+    const timeout = window.setTimeout(() => {
+      if (!resumeStore.get(id)) {
+        setOpeningState(s => (s && s.id === id ? { ...s, phase: "notfound" } : s));
+      }
+    }, 8000);
+
+    return () => {
+      window.removeEventListener("resumeforge:refresh", onRefresh);
+      window.clearTimeout(timeout);
+    };
+  }, [openingState]);
+
+  const retryOpen = () => {
+    setOpeningState(s => (s ? { phase: "loading", id: s.id, attempt: s.attempt + 1 } : s));
+  };
+  const cancelOpen = () => setOpeningState(null);
 
   const refreshList = () => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); };
 
