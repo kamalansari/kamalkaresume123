@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Filter, MapPin, Briefcase, Calendar, Building2, Tag, Bookmark, Sparkles, Loader2, ArrowLeft, ExternalLink, Gauge, ChevronDown, Download } from "lucide-react";
+import { Search, Filter, MapPin, Briefcase, Calendar, Building2, Tag, Bookmark, Sparkles, Loader2, ArrowLeft, ExternalLink, Gauge, ChevronDown, Download, ChevronRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -632,6 +632,7 @@ function JobCard({ job, resume, onScore, onNova, naukriUrl, liveScore }: { job: 
   const scoringText = getJobScoringText(job);
   const computedScore = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
   const score = liveScore ?? computedScore;
+  const [expanded, setExpanded] = useState(false);
   const tone = score >= 80 ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
     : score >= 60 ? "bg-[var(--navy-light)]/10 text-[var(--navy-light)] border-[var(--navy-light)]/20"
     : score >= 40 ? "bg-amber-500/10 text-amber-700 border-amber-500/30"
@@ -662,6 +663,34 @@ function JobCard({ job, resume, onScore, onNova, naukriUrl, liveScore }: { job: 
         {job.experience && <Chip>{job.experience}</Chip>}
         {job.location && <Chip><MapPin className="h-3 w-3" /> {job.location}</Chip>}
         {job.salary && <Chip className="text-[var(--navy-light)] bg-[var(--navy-light)]/10 border-[var(--navy-light)]/20">{job.salary}</Chip>}
+      </div>
+
+      {/* Expandable JD preview — same text the ATS score uses */}
+      <div className="rounded-lg border border-border bg-secondary/40">
+        <button
+          type="button"
+          onClick={() => setExpanded(e => !e)}
+          aria-expanded={expanded}
+          className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium hover:bg-secondary/70 transition-colors rounded-lg"
+        >
+          <span className="inline-flex items-center gap-1.5 text-foreground">
+            <FileText className="h-3.5 w-3.5 text-[var(--navy-light)]" />
+            {expanded ? "Hide" : "Show"} job description used for scoring
+          </span>
+          <ChevronRight className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", expanded && "rotate-90")} />
+        </button>
+        {expanded && (
+          <div className="px-3 pb-3 pt-1 text-xs leading-relaxed text-muted-foreground max-h-56 overflow-auto whitespace-pre-wrap border-t border-border">
+            {scoringText || "No job description text was provided for this listing."}
+            {job.tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {job.tags.map(t => (
+                  <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-background border border-border">{t}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
