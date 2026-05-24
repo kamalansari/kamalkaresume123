@@ -1677,8 +1677,14 @@ export function Builder() {
                 <TemplatesPopover data={data} onPick={(id) => update("template", id)} />
                 <SectionsPopover
                   data={data}
-                  onUpdate={(order) => { pushSectionsHistory("reorder"); update("sectionOrder", order); }}
-                  onAdd={(id) => { pushSectionsHistory(); addSectionIfMissing(id); }}
+                  onUpdate={(order) => {
+                    pushSectionsHistory("reorder");
+                    const prev = dataRef.current.sectionOrder;
+                    const moved = order.find((id, i) => prev[i] !== id);
+                    update("sectionOrder", order);
+                    if (moved) flashMoved(moved);
+                  }}
+                  onAdd={(id) => { pushSectionsHistory(); addSectionIfMissing(id); flashMoved(id); }}
                   onRemove={(id) => { pushSectionsHistory(); removeSectionFromOrder(id); }}
                   onToggleSidebar={(id) => {
                     if (!SIDEBAR_ELIGIBLE.includes(id)) return;
@@ -1690,6 +1696,7 @@ export function Builder() {
                         : [...current, id];
                       return { ...d, sidebarSections: next };
                     });
+                    flashMoved(id);
                   }}
                   onAddCustom={() => { pushSectionsHistory(); setData(d => ({ ...d, customSections: [...(d.customSections ?? []), { id: uid(), title: "", content: "" }] })); }}
                   onUpdateCustom={(id, patch) => {
