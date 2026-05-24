@@ -27,6 +27,7 @@ import { PreviewToolbar } from "./PreviewToolbar";
 import { MonthYearPicker, DateRangePicker } from "./MonthYearPicker";
 import { SavedResumesGallery } from "./SavedResumesGallery";
 import { TemplatesPopover, SectionsPopover, StylePopover } from "./BuilderTopToolbar";
+import { ExperienceSection } from "./ExperienceSection";
 import lzString from "lz-string";
 const { decompressFromEncodedURIComponent } = lzString;
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -1172,38 +1173,15 @@ export function Builder() {
 
             <TabsContent value="experience" className="space-y-6 mt-4">
           <div id="edit-experience" className="rounded-xl">
-          <Card title="Experience" action={<Button size="sm" variant="outline" onClick={addExp}><Plus /> Add</Button>}>
-            <div className="space-y-4">
-              {data.experience.map(e => (
-                <div key={e.id} className="rounded-lg border border-border p-4 bg-background">
-                  <Grid>
-                    <Field label="Title"><Input value={e.title} onChange={ev => updateExp(e.id, { title: ev.target.value })} /></Field>
-                    <Field label="Company"><Input value={e.company} onChange={ev => updateExp(e.id, { company: ev.target.value })} /></Field>
-                    <Field label="Dates" full><Input value={e.date} onChange={ev => updateExp(e.id, { date: ev.target.value })} placeholder="2022 — Present" /></Field>
-                  </Grid>
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs text-muted-foreground">Bullets (one per line)</Label>
-                      <Button
-                        size="sm" variant="ghost"
-                        disabled={rewritingKey === `exp-${e.id}` || !e.bullets.trim()}
-                        onClick={async () => {
-                          const out = await rewriteWithAI("bullets", e.bullets, { title: e.title, company: e.company }, `exp-${e.id}`);
-                          if (out) { updateExp(e.id, { bullets: out }); toast.success("Bullets rewritten"); }
-                        }}
-                      >
-                        {rewritingKey === `exp-${e.id}` ? <Loader2 className="animate-spin" /> : <Sparkles />} AI rewrite
-                      </Button>
-                    </div>
-                    <FormattableTextarea rows={4} className="mt-1.5" value={e.bullets} onChange={v => updateExp(e.id, { bullets: v })} placeholder="Led redesign of checkout flow, lifting conversion 18%." />
-                  </div>
-                  <div className="mt-2 flex justify-end">
-                    <Button size="sm" variant="ghost" onClick={() => removeExp(e.id)}><Trash2 /> Remove</Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <ExperienceSection
+            experiences={data.experience}
+            setExperiences={next => update("experience", next)}
+            updateExp={updateExp}
+            addExp={addExp}
+            removeExp={removeExp}
+            rewriteWithAI={rewriteWithAI}
+            rewritingKey={rewritingKey}
+          />
           </div>
             </TabsContent>
 
