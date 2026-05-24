@@ -17,7 +17,13 @@ function heading(text: string, color: string, font?: string) {
 }
 
 function inlineRuns(text: string, baseBold?: boolean) {
-  return parseInline(text).map(r => new TextRun({ text: r.text, size: 21, bold: r.bold || baseBold }));
+  return parseInline(text).map(r => new TextRun({
+    text: r.text,
+    size: 21,
+    bold: r.bold || baseBold,
+    italics: r.italic,
+    underline: r.underline ? {} : undefined,
+  }));
 }
 
 function bullet(text: string, bodyBold?: boolean, justify?: boolean) {
