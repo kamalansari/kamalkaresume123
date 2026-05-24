@@ -90,6 +90,13 @@ export function ResumeDocument({
 
   const ordered = data.sectionOrder.map(id => sections[id]);
 
+  const customBlocks = (data.customSections ?? []).filter(c => (c.title?.trim() || c.content?.trim())).map(c => (
+    <section key={c.id} style={{ marginTop: 14 }}>
+      <h2 style={{ fontFamily: headingFont, fontSize: `${fs + 1.5}pt`, fontWeight: 700, color: accent, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${accent}33`, paddingBottom: 4, marginBottom: 6 }}>{c.title || "Custom section"}</h2>
+      <div style={{ whiteSpace: "pre-wrap" }}><InlineText text={c.content || ""} /></div>
+    </section>
+  ));
+
   const base = {
     width: "8.5in",
     minHeight: "11in",
@@ -156,6 +163,7 @@ export function ResumeDocument({
     const main = (
       <main style={{ padding: "0.55in 0.5in" }}>
         {data.sectionOrder.filter(id => mainSectionIds.includes(id)).map(id => sections[id])}
+        {customBlocks}
       </main>
     );
     return (
@@ -178,6 +186,7 @@ export function ResumeDocument({
           <div style={{ marginTop: 8, color: "#fff", opacity: 0.92 }}><ContactRow data={data} color="#ffffff" /></div>
         </header>
         <div style={{ padding: "0.35in 0.6in 0.6in" }}>{ordered}</div>
+        <div style={{ padding: "0 0.6in 0.6in" }}>{customBlocks}</div>
       </div>
     );
   }
@@ -193,6 +202,7 @@ export function ResumeDocument({
         <div style={{ marginTop: 6, display: "flex", justifyContent: isMinimal ? "flex-start" : "center" }}>{contactLine}</div>
       </header>
       {ordered}
+      {customBlocks}
     </div>
   );
 }
