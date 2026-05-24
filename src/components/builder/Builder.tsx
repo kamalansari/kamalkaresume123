@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
