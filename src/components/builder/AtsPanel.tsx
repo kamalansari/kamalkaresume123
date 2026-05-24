@@ -646,7 +646,7 @@ function NovaChatView({ data }: { data: ResumeData }) {
                   ? "bg-[var(--navy-light)] text-white rounded-br-sm whitespace-pre-wrap"
                   : "bg-secondary text-foreground rounded-bl-sm")}>
                 {m.role === "assistant" ? (
-                  <div className="prose prose-sm max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-strong:text-foreground prose-headings:text-foreground prose-headings:font-semibold">
+                  <div className="nova-md">
                     <ReactMarkdown>{m.content}</ReactMarkdown>
                   </div>
                 ) : (
