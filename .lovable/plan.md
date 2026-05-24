@@ -1,37 +1,66 @@
-# Build plan — ATS Resume Builder mega-update
+# Template-specific sidebar vs main section assignment
 
-Your message bundles ~30 distinct features. To keep quality high I'll ship them in 4 waves. Each wave is testable on its own. Tell me to proceed and I'll start with **Wave 1**, or reorder.
+## Goal
 
-## Wave 1 — Builder UX foundation (laptop + mobile)
-- Responsive Builder layout (collapsible panels, mobile bottom-sheet for ATS).
-- Live preview improvements: real-time updates (already wired), **zoom in/out controls**, **print** button, **shareable link** (URL-encoded resume snapshot).
-- PDF export (browser print-to-PDF) + existing DOCX export polished.
-- Personal Info form: input validation (zod), auto-save (already in store), profile image upload (base64 → preview/DOCX), LinkedIn/portfolio fields with URL validation.
+Today the two-column templates (`two-column`, `sidebar-right`, `compact-two`) hardcode `["skills", "languages", "education"]` as the sidebar in `ResumeDocument.tsx`. Single-column templates have no sidebar. Reordering a section across the sidebar/main boundary via `sectionOrder` has no visual effect.
 
-## Wave 2 — Templates
-Add 6 ATS-friendly templates as distinct designs (single + two-column variants):
-Professional, Modern, Executive, Minimal, Two-Column, Fresher. Each printable & responsive. Add a template gallery with thumbnails.
+We want:
+- A **per-template default** for which section types go in the sidebar.
+- A **per-resume override** so the user can move a section between sidebar and main.
+- `sectionOrder` continues to control the order **within each column**.
 
-## Wave 3 — AI tools
-- **AI Resume Assistant chatbot** (extends existing NOVA): review, grammar fix, ATS keyword optimization, achievement bullets, recruiter recommendations — conversational UI with markdown.
-- **AI Cover Letter Generator**: role + JD + tone → ATS letter, editable, download as PDF/DOCX.
-- **JD Match Analyzer page**: paste/upload JD, match %, missing keywords chart, highlighted keywords, AI suggestions (extends existing `atsScore` + new viz with recharts).
+## What changes
 
-## Wave 4 — Landing + polish
-- New landing page: hero "Build ATS-Friendly Resume in Minutes", CTAs (Create Resume, Upload Resume), animated stats, template previews carousel, glassmorphism cards, gradients.
-- **Dark/light mode** toggle (next-themes).
-- Infinite scroll on Jobs page ("show more on scroll"), click job → real-time ATS score panel (already partly built — wire to drawer).
-- LinkedIn optimization tool (AI rewrites headline + About from resume).
+### 1. Data model (`src/components/builder/types.ts`)
 
-## Technical notes
-- All AI calls go through existing Lovable AI gateway pattern (`google/gemini-3-flash-preview`).
-- Zoom = CSS transform on preview wrapper; Print = `window.print()` + print stylesheet.
-- Shareable link = LZ-compressed JSON in URL hash → `/builder#r=...`.
-- Profile image stored as data URL in `ResumeData` (no backend needed; Cloud not required for this wave).
-- "Unlimited downloads / Advanced ATS" are already unlimited — I'll just remove any gating copy and label features as included.
+- Add an optional field on `ResumeData`:
+  ```ts
+  sidebarSections?: SectionId[];   // user override; when omitted, fall back to template default
+  ```
+- Add a new module-level map keyed by `TemplateId`:
+  ```ts
+  export const TEMPLATE_SIDEBAR_DEFAULTS: Partial<Record<TemplateId, SectionId[]>> = {
+    "two-column":    ["skills", "languages", "education"],
+    "sidebar-right": ["skills", "languages", "education"],
+    "compact-two":   ["skills", "languages", "certifications"],
+    // single-column templates omitted -> [] (no sidebar)
+  };
+  ```
+- Helper: `getSidebarSectionIds(data: ResumeData): SectionId[]` returns `data.sidebarSections ?? TEMPLATE_SIDEBAR_DEFAULTS[data.template] ?? []`. Filtered to ids that actually exist in `data.sectionOrder` so a removed section can't linger in the sidebar.
+- Sidebar-eligible types: `skills`, `languages`, `education`, `certifications`, `awards`. `summary` and `experience` stay in main (they need full width). `projects` and `customSections` stay in main for now (mixed media doesn't fit narrow sidebar typography). This list becomes a constant `SIDEBAR_ELIGIBLE: SectionId[]` next to the defaults map so the UI can use the same source of truth.
 
-## Out of scope (flag for confirmation)
-- Real auth / paywall / accounts (would need Lovable Cloud — say the word).
-- True file upload parsing for "Upload Resume" (needs PDF/DOCX parsing on server — confirm if you want this in Wave 1).
+### 2. Renderer (`src/components/builder/ResumeDocument.tsx`)
 
-Reply **"go"** to start Wave 1, or tell me which wave to start with.
+- Replace the local `const sidebarSectionIds: SectionId[] = ["skills", "languages", "education"]` with `const sidebarSectionIds = getSidebarSectionIds(data)`.
+- Expand `sidebarRenderers` to cover all sidebar-eligible types (add `certifications`, `awards`). Keep the dark/light handling (`dark={!compact}`) consistent with the existing blocks.
+- Main column already uses `!sidebarSectionIds.includes(id)`, so it picks up everything else automatically — no further change.
+- When the chosen template has no entry in `TEMPLATE_SIDEBAR_DEFAULTS` and the user hasn't set `sidebarSections`, the array is empty and the existing single-column code path runs unchanged.
+
+### 3. Sections panel UI (`src/components/builder/BuilderTopToolbar.tsx`)
+
+Inside the existing active-sections list (the rows with up/down/left/right buttons), add a single inline control per row:
+
+- If the current template supports a sidebar AND the section id is in `SIDEBAR_ELIGIBLE`, render a small "Sidebar" toggle (e.g. a `Switch` or a `PanelLeft` / `PanelRight` icon button) on the right of the row.
+- Toggling it calls a new prop `onToggleSidebar(id)` that flips membership in `data.sidebarSections` (initialising it from the template default on first edit). Wired through `Builder.tsx`.
+- If the template has no sidebar, the toggle is hidden — no visual noise on single-column templates.
+
+This reuses the existing `pushSectionsHistory` undo/redo machinery in `Builder.tsx` so sidebar moves are undoable like reorder moves.
+
+### 4. Template switch behaviour
+
+When the user changes template:
+- Do **not** wipe `sidebarSections` automatically (the user's intent should survive a template swap when possible).
+- The renderer already filters the array against `sectionOrder` and `SIDEBAR_ELIGIBLE`, so switching to a single-column template simply hides the sidebar without losing the override.
+
+## Out of scope
+
+- Letting `projects` or custom sections live in the sidebar (typography/spacing tuning is non-trivial).
+- A separate `sidebarOrder` array. Sidebar order continues to be derived from `sectionOrder` filtered by membership, which matches the user's prior "respect sectionOrder" instruction.
+- Drag-and-drop between columns. The left/right arrows + new toggle cover the same intent without rebuilding the DnD context.
+
+## Files touched
+
+- `src/components/builder/types.ts` — add `sidebarSections`, `TEMPLATE_SIDEBAR_DEFAULTS`, `SIDEBAR_ELIGIBLE`, `getSidebarSectionIds`.
+- `src/components/builder/ResumeDocument.tsx` — use helper, extend `sidebarRenderers` to cover certifications + awards.
+- `src/components/builder/BuilderTopToolbar.tsx` — sidebar toggle button per row.
+- `src/components/builder/Builder.tsx` — `onToggleSidebar` handler, history push, prop wiring.
