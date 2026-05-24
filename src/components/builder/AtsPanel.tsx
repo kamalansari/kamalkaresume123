@@ -318,10 +318,11 @@ function AtsScoreView({
     });
   };
 
-  const generate = async () => {
-    const keywords = Array.from(selected);
+  const [generatingKw, setGeneratingKw] = useState<string | null>(null);
+
+  const runGenerate = async (keywords: string[], singleKw?: string) => {
     if (keywords.length === 0) return;
-    setGenerating(true);
+    if (singleKw) setGeneratingKw(singleKw); else setGenerating(true);
     try {
       const target = experiences.find(e => e.id === effectiveTargetId) ?? experiences[0];
       const res = await fetch("/api/keyword-bullets", {
@@ -342,10 +343,17 @@ function AtsScoreView({
         onAppendBulletsToFirstExperience(out.bullets, effectiveTargetId || undefined);
         onAddExtraKeywords(keywords);
         toast.success(`Added ${out.bullets.length} bullets${target?.title ? ` to ${target.title}` : ""}`);
-        setSelected(new Set());
+        if (!singleKw) setSelected(new Set());
       }
     } catch { toast.error("Network error."); }
-    finally { setGenerating(false); }
+    finally { if (singleKw) setGeneratingKw(null); else setGenerating(false); }
+  };
+
+  const generate = () => runGenerate(Array.from(selected));
+
+  const copyKeyword = async (kw: string) => {
+    try { await navigator.clipboard.writeText(kw); toast.success(`Copied "${kw}"`); }
+    catch { toast.error("Clipboard unavailable"); }
   };
 
   if (!data.jobDescription.trim()) {
@@ -461,19 +469,38 @@ function AtsScoreView({
             </Popover>
           </div>
         </div>
-        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold border-b border-border bg-secondary/40">
-          <span>Keyword</span><span>Resume</span><span>JD</span><span></span>
+        <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold border-b border-border bg-secondary/40">
+          <span>Keyword</span><span>Resume</span><span>JD</span><span className="text-center">Actions</span><span></span>
         </div>
         <div className="max-h-72 overflow-auto divide-y divide-border">
           {stats.slice(0, 30).map(s => (
             <label
               key={s.keyword}
-              className={cn("grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center px-3 py-2 text-sm cursor-pointer hover:bg-secondary/40",
+              className={cn("grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center px-3 py-2 text-sm cursor-pointer hover:bg-secondary/40",
                 !s.matched && "bg-rose-50/40 dark:bg-rose-950/10")}
             >
               <span className="capitalize truncate">{s.keyword}</span>
               <span className={cn("w-6 text-center font-semibold tabular-nums", s.resume === 0 ? "text-rose-600" : "text-emerald-600")}>{s.resume}</span>
               <span className="w-6 text-center text-muted-foreground tabular-nums">{s.jd}</span>
+              <span className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); copyKeyword(s.keyword); }}
+                  className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"
+                  title={`Copy "${s.keyword}"`}
+                >
+                  <Copy className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  disabled={generatingKw === s.keyword || generating}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); runGenerate([s.keyword], s.keyword); }}
+                  className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-[var(--navy-light)] disabled:opacity-50"
+                  title={`Generate bullet for "${s.keyword}"`}
+                >
+                  {generatingKw === s.keyword ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                </button>
+              </span>
               <input
                 type="checkbox"
                 checked={selected.has(s.keyword)}
