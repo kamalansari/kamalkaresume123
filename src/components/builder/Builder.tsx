@@ -1383,7 +1383,7 @@ export function Builder() {
           {!atsOpen && (
             <button
               onClick={() => setAtsOpen(true)}
-              className="no-print hidden lg:inline-flex absolute right-2 top-2 z-10 items-center gap-1.5 rounded-md border border-border bg-background h-8 px-2.5 text-xs font-medium hover:border-[var(--navy-light)]"
+              className="no-print hidden xl:inline-flex absolute right-2 top-2 z-10 items-center gap-1.5 rounded-md border border-border bg-background h-8 px-2.5 text-xs font-medium hover:border-[var(--navy-light)]"
               title="Open ATS panel"
             >
               <PanelRightOpen className="h-3.5 w-3.5" /> ATS · {score.score}
@@ -1408,8 +1408,8 @@ export function Builder() {
               </>
             }
           />
-          {/* Mobile ATS trigger */}
-          <div className="no-print lg:hidden mb-3">
+          {/* Mobile/tablet ATS trigger — collapses to a sheet below xl */}
+          <div className="no-print xl:hidden mb-3 sticky top-16 z-10">
             <Sheet open={atsSheetOpen} onOpenChange={setAtsSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" className="w-full">
