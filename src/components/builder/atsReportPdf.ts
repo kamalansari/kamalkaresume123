@@ -42,7 +42,8 @@ export function downloadAtsReportPdf(job: AtsReportJob, resume: ResumeData) {
     const size = opts.size ?? 10.5;
     doc.setFont("helvetica", opts.bold ? "bold" : "normal");
     doc.setFontSize(size);
-    doc.setTextColor(...(opts.color ?? [40, 40, 40]));
+    const col: [number, number, number] = opts.color ?? [40, 40, 40];
+    doc.setTextColor(col[0], col[1], col[2]);
     const lines = doc.splitTextToSize(text, W - M * 2);
     for (const line of lines) {
       ensureRoom(size + 4);
@@ -77,8 +78,8 @@ export function downloadAtsReportPdf(job: AtsReportJob, resume: ResumeData) {
   doc.setFillColor(235, 238, 245);
   doc.roundedRect(M, gaugeY, gaugeW, 14, 7, 7, "F");
   const pct = Math.max(0, Math.min(100, score.score));
-  const fill = pct >= 80 ? [16, 185, 129] : pct >= 60 ? [37, 99, 235] : pct >= 40 ? [245, 158, 11] : [220, 38, 38];
-  doc.setFillColor(...(fill as [number, number, number]));
+  const fill: [number, number, number] = pct >= 80 ? [16, 185, 129] : pct >= 60 ? [37, 99, 235] : pct >= 40 ? [245, 158, 11] : [220, 38, 38];
+  doc.setFillColor(fill[0], fill[1], fill[2]);
   doc.roundedRect(M, gaugeY, (gaugeW * pct) / 100, 14, 7, 7, "F");
   y += 22;
   doc.setFont("helvetica", "bold");
