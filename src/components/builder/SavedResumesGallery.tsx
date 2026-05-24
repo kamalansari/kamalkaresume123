@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import lzString from "lz-string";
+const { compressToEncodedURIComponent } = lzString;
 
 type Props = {
   saved: SavedResume[];
@@ -62,9 +64,13 @@ export function SavedResumesGallery({
     toast.success(`Downloaded "${r.name}"`);
   };
 
-  const openInNewTab = (id: string) => {
-    onOpen(id);
-    window.open("/builder", "_blank", "noopener,noreferrer");
+  const openInNewTab = (r: SavedResume) => {
+    try {
+      const payload = compressToEncodedURIComponent(JSON.stringify(r.data));
+      window.open(`/builder#r=${payload}`, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error("Could not open in new tab");
+    }
   };
 
   const exportAll = () => {
@@ -320,7 +326,7 @@ export function SavedResumesGallery({
                       </div>
 
                       <div className="flex items-center justify-between pt-1 border-t border-border/60">
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Open in new tab" onClick={() => openInNewTab(s.id)}>
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Open in new tab" onClick={() => openInNewTab(s)}>
                           <ExternalLink className="h-4 w-4" />
                         </Button>
                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Edit" onClick={() => onOpen(s.id)}>
