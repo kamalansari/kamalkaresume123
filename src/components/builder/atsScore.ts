@@ -104,6 +104,19 @@ function tokens(text: unknown): string[] {
   return (toText(text).toLowerCase().match(/[a-z][a-z0-9+.#-]{1,}/g) || []).filter(t => !STOP.has(t) && t.length > 2);
 }
 
+/** Canonical-form keyword set extracted from a job description, suitable for
+ *  auto-highlighting matches in resume body text. */
+export function jdKeywordSet(jd: unknown): Set<string> {
+  return new Set(tokens(jd).map(canonical));
+}
+
+/** True if `word` (as it appears in resume text) matches a JD keyword. */
+export function isJdKeyword(word: string, set: Set<string>): boolean {
+  const lower = word.toLowerCase();
+  if (lower.length <= 2 || STOP.has(lower)) return false;
+  return set.has(canonical(lower));
+}
+
 /** Tokenize + canonicalize for stemming/synonym-aware matching. */
 function canonTokens(text: unknown): string[] {
   return tokens(text).map(canonical);
