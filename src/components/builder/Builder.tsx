@@ -683,9 +683,22 @@ export function Builder() {
     if (!root) return;
     let storeTimer: ReturnType<typeof setTimeout> | null = null;
     let stateTimer: ReturnType<typeof setTimeout> | null = null;
+    // Build the live keyword set once per effect run (common ATS terms +
+    // any tokens from the current job description) so we can re-bold
+    // matches in the contentEditable preview as the user types.
+    const liveSet = new Set<string>(COMMON_ATS_KEYWORD_SET);
+    for (const k of jdKeywordSet(data.jobDescription || "")) liveSet.add(k);
+    const isKw = (w: string) => isJdKeyword(w, liveSet);
     const onInput = (e: Event) => {
       const target = e.target as HTMLElement | null;
-      if (!target || !target.closest?.("[data-preview-edit]")) return;
+      const editEl = target?.closest?.("[data-preview-edit]") as HTMLElement | null;
+      if (!editEl) return;
+      // Live keyword highlighting — wrap matching tokens in <strong>
+      // immediately so bold updates as the user types. Skip while an IME
+      // composition is active to avoid disrupting it.
+      if (!(e as InputEvent).isComposing) {
+        try { highlightKeywordsInEditable(editEl, isKw); } catch { /* ignore */ }
+      }
       // Persist to the saved-resume store quickly (no re-render).
       if (storeTimer) clearTimeout(storeTimer);
       storeTimer = setTimeout(() => {
