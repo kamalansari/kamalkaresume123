@@ -537,24 +537,39 @@ function NovaChatView({ data }: { data: ResumeData }) {
     setInput("");
     scrollToBottom();
 
-    // Lightweight intent routing — keeps key features working without an API round-trip.
+    // Lightweight intent routing for purely navigational / score-readout asks.
+    // Substantive asks (review, grammar, bullets, recruiter tips, keyword
+    // optimization) always go to the AI for a tailored answer.
     const t = text.toLowerCase();
-    if (/score/.test(t)) return replyWithCanned("score");
-    if (/feedback|review|improve|suggest/.test(t)) return replyWithCanned("feedback");
-    if (/tailor|customi[sz]e|optimi[sz]e/.test(t)) return replyWithCanned("tailor");
-    if (/job|match|hiring|role/.test(t)) return replyWithCanned("jobs");
-    if (/recommend/.test(t)) return replyWithCanned("recs");
-    if (/open|show.*resume|preview/.test(t)) return replyWithCanned("open");
+    if (/\b(my )?(ats |resume )?score\b/.test(t) && !/improve|why|how/.test(t)) return replyWithCanned("score");
+    if (/find.*jobs?|matching jobs?/.test(t)) return replyWithCanned("jobs");
+    if (/^(open|show)\b.*\b(resume|preview)/.test(t)) return replyWithCanned("open");
 
     setSending(true);
     try {
+      const s = computeScore(data);
       const res = await fetch("/api/nova-chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           messages: [...msgs, { role: "user", content: text }],
-          resume: { headline: data.headline, summary: data.summary, skills: data.skills },
+          resume: {
+            name: data.name,
+            headline: data.headline,
+            summary: data.summary,
+            skills: data.skills,
+            experience: (data.experience ?? []).map(e => ({
+              title: e.title, company: e.company, date: e.date, bullets: e.bullets,
+            })),
+            education: (data.education ?? []).map(e => ({
+              degree: e.degree, school: e.school, date: e.date,
+            })),
+          },
           jobDescription: data.jobDescription,
+          atsScore: s.score,
+          coverage: s.coverage,
+          matchedKeywords: s.matched,
+          missingKeywords: s.missing,
         }),
       });
       if (res.status === 429) { toast.error("Rate limit hit."); return; }
