@@ -815,8 +815,18 @@ export function Builder() {
     }
   };
 
+  const openTailorConfirm = () => {
+    if (!data.jobDescription.trim()) { toast.error("Paste a job description first."); return; }
+    const firstLine = data.jobDescription.split("\n").map(s => s.trim()).find(Boolean) ?? "";
+    const roleHint = firstLine.replace(/[^a-zA-Z0-9 +/&-]/g, "").slice(0, 40).trim();
+    const stamp = new Date().toLocaleDateString();
+    setTailorConfirmName(roleHint ? `Tailored — ${roleHint} (${stamp})` : `Tailored — ${stamp}`);
+    setTailorConfirmOpen(true);
+  };
+
   const generateFromJD = async () => {
     if (!data.jobDescription.trim()) { toast.error("Paste a job description first."); return; }
+    setTailorConfirmOpen(false);
     setGenerating(true);
     try {
       // Always tailor from Primary Resume if set, and save the result as a NEW resume
@@ -854,12 +864,9 @@ export function Builder() {
           return match ? { ...e, bullets: match.bullets } : e;
         }),
       };
-      // Derive a friendly new resume name from the JD (first meaningful line) + date.
-      const firstLine = data.jobDescription
-        .split("\n").map(s => s.trim()).find(Boolean) ?? "";
-      const roleHint = firstLine.replace(/[^a-zA-Z0-9 +/&-]/g, "").slice(0, 40).trim();
+      // Always create a NEW tailored copy — never overwrite the Primary or current resume.
       const stamp = new Date().toLocaleDateString();
-      const name = roleHint ? `Tailored — ${roleHint} (${stamp})` : `Tailored — ${stamp}`;
+      const name = (tailorConfirmName.trim() || `Tailored — ${stamp}`);
       const id = newId();
       resumeStore.upsert({ id, name, updatedAt: Date.now(), data: tailored });
       resumeStore.saveDraft(tailored);
