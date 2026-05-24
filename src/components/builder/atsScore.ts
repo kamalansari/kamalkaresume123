@@ -95,7 +95,7 @@ for (const group of SYNONYM_GROUPS) {
 }
 
 /** Normalize a single token to a canonical form for matching. */
-function canonical(token: string): string {
+export function canonical(token: string): string {
   const lower = token.toLowerCase();
   return SYNONYM_INDEX.get(lower) ?? SYNONYM_INDEX.get(stem(lower)) ?? stem(lower);
 }
