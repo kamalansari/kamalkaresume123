@@ -446,7 +446,7 @@ function ScoreView({ jd, resume }: { jd: string; resume: ResumeData }) {
   const matchedBySection = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const kw of score.matched) {
-      const sections = sectionMap.get(kw) ?? ["Other"];
+      const sections = sectionMap.get(canonical(kw)) ?? ["Other"];
       for (const s of sections) {
         if (!map.has(s)) map.set(s, []);
         map.get(s)!.push(kw);
