@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Mail, Phone, MapPin, Link as LinkIcon, Sparkles, Loader2 } from "lucide-react";
-import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
+import { FONT_PRESETS, getSidebarSectionIds, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
 
@@ -122,7 +122,7 @@ export function ResumeDocument({
     const compact = variant === "compact-two";
     const sidebarBg = compact ? "#f4f3ef" : accent;
     const sidebarText = compact ? "#1a1a1a" : "#ffffff";
-    const sidebarSectionIds: SectionId[] = ["skills", "languages", "education"];
+    const sidebarSectionIds = getSidebarSectionIds(data);
     const sidebarRenderers: Partial<Record<SectionId, React.ReactNode>> = {
       skills: data.skills ? (
         <SidebarBlock key="skills" title="Skills" headingFont={headingFont} dark={!compact}>
@@ -147,6 +147,28 @@ export function ResumeDocument({
               <div style={{ fontWeight: 600 }}>{ed.degree}</div>
               <div style={{ opacity: 0.9 }}>{ed.school}</div>
               <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{ed.date}</div>
+            </div>
+          ))}
+        </SidebarBlock>
+      ) : null,
+      certifications: data.certifications?.length ? (
+        <SidebarBlock key="certifications" title="Certifications" headingFont={headingFont} dark={!compact}>
+          {data.certifications.map(c => (
+            <div key={c.id} style={{ marginBottom: 6 }}>
+              <div style={{ fontWeight: 600 }}>{c.name}</div>
+              <div style={{ opacity: 0.9 }}>{c.issuer}</div>
+              {c.date && <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{c.date}</div>}
+            </div>
+          ))}
+        </SidebarBlock>
+      ) : null,
+      awards: data.awards?.length ? (
+        <SidebarBlock key="awards" title="Awards" headingFont={headingFont} dark={!compact}>
+          {data.awards.map(a => (
+            <div key={a.id} style={{ marginBottom: 6 }}>
+              <div style={{ fontWeight: 600 }}>{a.name}</div>
+              <div style={{ opacity: 0.9 }}>{a.issuer}</div>
+              {a.date && <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{a.date}</div>}
             </div>
           ))}
         </SidebarBlock>
