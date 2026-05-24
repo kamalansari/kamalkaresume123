@@ -445,7 +445,7 @@ const INITIAL_NOVA: NovaMessage[] = [
   {
     role: "assistant",
     content:
-      "Hi! I'm Nova — your AI career copilot. I can review your resume, surface matching jobs, and tailor your application in seconds.",
+      "Hi! I'm **Nova** — your AI Resume Assistant.\n\nI can:\n- Review your resume and flag weaknesses\n- Suggest concrete improvements\n- Fix grammar and tighten phrasing\n- Optimize ATS keywords against your target JD\n- Rewrite bullets as achievements with measurable impact\n- Share recruiter-focused recommendations\n\nWhat would you like to start with?",
   },
 ];
 
