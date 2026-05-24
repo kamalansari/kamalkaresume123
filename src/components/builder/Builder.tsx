@@ -152,6 +152,12 @@ export function Builder() {
 
   const refreshList = () => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); };
 
+  useEffect(() => {
+    const onRefresh = () => refreshList();
+    window.addEventListener("resumeforge:refresh", onRefresh);
+    return () => window.removeEventListener("resumeforge:refresh", onRefresh);
+  }, []);
+
   const setAsPrimary = (id: string, name: string) => {
     resumeStore.setPrimary(id);
     refreshList();
