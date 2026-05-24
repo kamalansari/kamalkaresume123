@@ -36,12 +36,18 @@ function deriveName(data: ResumeData, fallback = "Recovered draft") {
   return fallback;
 }
 
+function looksLikeResumeData(value: Record<string, unknown>) {
+  return "summary" in value || "experience" in value || "skills" in value || "headline" in value;
+}
+
 function normalizeEntry(value: unknown): SavedResume | null {
-  if (!isRecord(value) || !isRecord(value.data)) return null;
-  const data = { ...defaultResume, ...(value.data as Partial<ResumeData>) };
+  if (!isRecord(value)) return null;
+  const rawData = isRecord(value.data) ? value.data : looksLikeResumeData(value) ? value : null;
+  if (!rawData) return null;
+  const data = { ...defaultResume, ...(rawData as Partial<ResumeData>) };
   const id = typeof value.id === "string" && value.id.trim() ? value.id : newId();
   const name =
-    typeof value.name === "string" && value.name.trim()
+    isRecord(value.data) && typeof value.name === "string" && value.name.trim()
       ? value.name.trim()
       : deriveName(data, "Untitled resume");
   const rawUpdatedAt = value.updatedAt ?? value.updated_at;
@@ -70,7 +76,9 @@ function readListFromKey(key: string): SavedResume[] {
     ? parsed
     : isRecord(parsed) && Array.isArray(parsed.resumes)
       ? parsed.resumes
-      : [];
+      : isRecord(parsed)
+        ? Object.values(parsed)
+        : [];
   return compactList(
     rawList.map(normalizeEntry).filter((entry): entry is SavedResume => Boolean(entry)),
   );
