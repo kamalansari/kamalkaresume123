@@ -309,7 +309,6 @@ function AtsScoreView({
   const missingCount = stats.length - matchedCount;
   const experiences = data.experience ?? [];
   const effectiveTargetId = targetExpId || experiences[0]?.id || "";
-  const targetLabel = experiences.find(e => e.id === effectiveTargetId);
 
   const toggle = (k: string) => {
     setSelected(prev => {
