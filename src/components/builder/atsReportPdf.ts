@@ -96,8 +96,8 @@ export function downloadAtsReportPdf(job: AtsReportJob, resume: ResumeData) {
   heading("Score Breakdown");
   for (const c of score.checks) {
     ensureRoom(16);
-    const dot = c.pass ? [16, 185, 129] : [180, 60, 60];
-    doc.setFillColor(...(dot as [number, number, number]));
+    const dot: [number, number, number] = c.pass ? [16, 185, 129] : [180, 60, 60];
+    doc.setFillColor(dot[0], dot[1], dot[2]);
     doc.circle(M + 4, y - 3, 3, "F");
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10.5);
@@ -105,7 +105,8 @@ export function downloadAtsReportPdf(job: AtsReportJob, resume: ResumeData) {
     doc.text(c.label, M + 14, y);
     const points = c.pass ? `+${c.weight}` : `0 / ${c.weight}`;
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...(c.pass ? [16, 110, 80] : [120, 120, 120]));
+    const txt: [number, number, number] = c.pass ? [16, 110, 80] : [120, 120, 120];
+    doc.setTextColor(txt[0], txt[1], txt[2]);
     doc.text(points, W - M, y, { align: "right" });
     y += 16;
     if (!c.pass && c.hint) {
