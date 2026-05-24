@@ -117,6 +117,19 @@ export function Builder() {
   const dataRef = useRef(data);
   useEffect(() => { dataRef.current = data; }, [data]);
 
+  // Transient highlight for the most recently moved/added section in the preview.
+  const [flashSection, setFlashSection] = useState<SectionId | null>(null);
+  const flashTimerRef = useRef<number | null>(null);
+  const flashMoved = (id: SectionId) => {
+    if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
+    setFlashSection(null);
+    // Re-set on next frame so the animation restarts even if the same id flashes twice in a row.
+    window.requestAnimationFrame(() => {
+      setFlashSection(id);
+      flashTimerRef.current = window.setTimeout(() => setFlashSection(null), 1200);
+    });
+  };
+
   const snapshotNow = (): SectionsSnapshot => ({
     sectionOrder: [...dataRef.current.sectionOrder],
     customSections: (dataRef.current.customSections ?? []).map(c => ({ ...c })),
@@ -1664,8 +1677,14 @@ export function Builder() {
                 <TemplatesPopover data={data} onPick={(id) => update("template", id)} />
                 <SectionsPopover
                   data={data}
-                  onUpdate={(order) => { pushSectionsHistory("reorder"); update("sectionOrder", order); }}
-                  onAdd={(id) => { pushSectionsHistory(); addSectionIfMissing(id); }}
+                  onUpdate={(order) => {
+                    pushSectionsHistory("reorder");
+                    const prev = dataRef.current.sectionOrder;
+                    const moved = order.find((id, i) => prev[i] !== id);
+                    update("sectionOrder", order);
+                    if (moved) flashMoved(moved);
+                  }}
+                  onAdd={(id) => { pushSectionsHistory(); addSectionIfMissing(id); flashMoved(id); }}
                   onRemove={(id) => { pushSectionsHistory(); removeSectionFromOrder(id); }}
                   onToggleSidebar={(id) => {
                     if (!SIDEBAR_ELIGIBLE.includes(id)) return;
@@ -1677,6 +1696,7 @@ export function Builder() {
                         : [...current, id];
                       return { ...d, sidebarSections: next };
                     });
+                    flashMoved(id);
                   }}
                   onAddCustom={() => { pushSectionsHistory(); setData(d => ({ ...d, customSections: [...(d.customSections ?? []), { id: uid(), title: "", content: "" }] })); }}
                   onUpdateCustom={(id, patch) => {
@@ -1739,6 +1759,7 @@ export function Builder() {
                 data={data}
                 onSectionClick={inlineEdit ? undefined : scrollToEditor}
                 editable={inlineEdit}
+                flashSection={flashSection}
                 handlers={{
                   onUpdate: updatePatch,
                   onUpdateExperienceBullets: (id, bullets) => updateExp(id, { bullets }),

@@ -46,11 +46,13 @@ export function ResumeDocument({
   onSectionClick,
   editable,
   handlers,
+  flashSection,
 }: {
   data: ResumeData;
   onSectionClick?: (id: SectionId | "header") => void;
   editable?: boolean;
   handlers?: EditableHandlers;
+  flashSection?: SectionId | null;
 }) {
   useFont(data.fontId);
   const preset = FONT_PRESETS.find(f => f.id === data.fontId) ?? FONT_PRESETS[0];
@@ -74,7 +76,7 @@ export function ResumeDocument({
   const ed = editable && handlers ? handlers : undefined;
 
   const wrap = (id: SectionId, node: React.ReactNode) => (
-    <ClickableSection key={id} id={id} onClick={onSectionClick}>{node}</ClickableSection>
+    <ClickableSection key={id} id={id} onClick={onSectionClick} flash={flashSection === id}>{node}</ClickableSection>
   );
 
   const sections: Record<SectionId, React.ReactNode> = {
@@ -125,23 +127,23 @@ export function ResumeDocument({
     const sidebarSectionIds = getSidebarSectionIds(data);
     const sidebarRenderers: Partial<Record<SectionId, React.ReactNode>> = {
       skills: data.skills ? (
-        <SidebarBlock key="skills" title="Skills" headingFont={headingFont} dark={!compact}>
+        <SidebarFlashWrap key="skills" flash={flashSection === "skills"}><SidebarBlock title="Skills" headingFont={headingFont} dark={!compact}>
           <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
             {parseSkills(data.skills).map((s, i) => (
               <li key={i} style={{ marginBottom: 3 }}>• {s}</li>
             ))}
           </ul>
-        </SidebarBlock>
+        </SidebarBlock></SidebarFlashWrap>
       ) : null,
       languages: data.languages?.length ? (
-        <SidebarBlock key="languages" title="Languages" headingFont={headingFont} dark={!compact}>
+        <SidebarFlashWrap key="languages" flash={flashSection === "languages"}><SidebarBlock title="Languages" headingFont={headingFont} dark={!compact}>
           {data.languages.map(l => (
             <div key={l.id} style={{ marginBottom: 3 }}>{l.name}{l.level ? ` — ${l.level}` : ""}</div>
           ))}
-        </SidebarBlock>
+        </SidebarBlock></SidebarFlashWrap>
       ) : null,
       education: data.education.length ? (
-        <SidebarBlock key="education" title="Education" headingFont={headingFont} dark={!compact}>
+        <SidebarFlashWrap key="education" flash={flashSection === "education"}><SidebarBlock title="Education" headingFont={headingFont} dark={!compact}>
           {data.education.map(ed => (
             <div key={ed.id} style={{ marginBottom: 6 }}>
               <div style={{ fontWeight: 600 }}>{ed.degree}</div>
@@ -149,10 +151,10 @@ export function ResumeDocument({
               <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{ed.date}</div>
             </div>
           ))}
-        </SidebarBlock>
+        </SidebarBlock></SidebarFlashWrap>
       ) : null,
       certifications: data.certifications?.length ? (
-        <SidebarBlock key="certifications" title="Certifications" headingFont={headingFont} dark={!compact}>
+        <SidebarFlashWrap key="certifications" flash={flashSection === "certifications"}><SidebarBlock title="Certifications" headingFont={headingFont} dark={!compact}>
           {data.certifications.map(c => (
             <div key={c.id} style={{ marginBottom: 6 }}>
               <div style={{ fontWeight: 600 }}>{c.name}</div>
@@ -160,10 +162,10 @@ export function ResumeDocument({
               {c.date && <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{c.date}</div>}
             </div>
           ))}
-        </SidebarBlock>
+        </SidebarBlock></SidebarFlashWrap>
       ) : null,
       awards: data.awards?.length ? (
-        <SidebarBlock key="awards" title="Awards" headingFont={headingFont} dark={!compact}>
+        <SidebarFlashWrap key="awards" flash={flashSection === "awards"}><SidebarBlock title="Awards" headingFont={headingFont} dark={!compact}>
           {data.awards.map(a => (
             <div key={a.id} style={{ marginBottom: 6 }}>
               <div style={{ fontWeight: 600 }}>{a.name}</div>
@@ -171,7 +173,7 @@ export function ResumeDocument({
               {a.date && <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{a.date}</div>}
             </div>
           ))}
-        </SidebarBlock>
+        </SidebarBlock></SidebarFlashWrap>
       ) : null,
     };
     const sidebar = (
@@ -232,18 +234,25 @@ export function ResumeDocument({
   );
 }
 
-function ClickableSection({ id, onClick, children }: { id: SectionId; onClick?: (id: SectionId | "header") => void; children: React.ReactNode }) {
-  if (!onClick) return <>{children}</>;
+function ClickableSection({ id, onClick, children, flash }: { id: SectionId; onClick?: (id: SectionId | "header") => void; children: React.ReactNode; flash?: boolean }) {
+  const cls = [onClick ? "preview-clickable" : "", flash ? "preview-flash" : ""].filter(Boolean).join(" ");
+  if (!onClick && !flash) return <>{children}</>;
   return (
     <div
-      onClick={() => onClick(id)}
-      className="preview-clickable"
+      onClick={onClick ? () => onClick(id) : undefined}
+      key={flash ? "flash-on" : "flash-off"}
+      className={cls}
       style={{ cursor: "pointer", borderRadius: 4 }}
-      title="Click to edit this section"
+      title={onClick ? "Click to edit this section" : undefined}
     >
       {children}
     </div>
   );
+}
+
+function SidebarFlashWrap({ flash, children }: { flash: boolean; children: React.ReactNode }) {
+  if (!flash) return <>{children}</>;
+  return <div key="flash-on" className="preview-flash">{children}</div>;
 }
 
 function ContactRow({ data, color }: { data: ResumeData; color: string }) {

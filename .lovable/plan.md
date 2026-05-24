@@ -1,70 +1,55 @@
-# Sidebar section move controls (up / down / left / right)
-
-## Problem
-
-In two-column templates (Two column, Sidebar right, Compact two, Fresher, Contemporary), the sidebar holds Skills, Languages, Education (plus optionally Certifications/Awards). Today the row controls in the Sections popover treat `sectionOrder` as one flat list:
-
-- Up/Down moves the row by ±1 in `sectionOrder`, ignoring which column it's actually rendered in. So clicking Up on a sidebar item can swap it with a main-column item without visibly moving it inside the sidebar.
-- Left/Right does the exact same thing as Up/Down (also ±1 in `sectionOrder`), so it has no column meaning.
-- Column membership can only be changed via the separate PanelLeft/PanelRight toggle.
+# Highlight moved section in preview
 
 ## Goal
 
-Sidebar sections (Skills, Languages, Education, and any other sidebar-eligible section currently in the sidebar) get the same intuitive controls as main sections:
+When a section is reordered (up/down within a column) or moved between columns (left/right / sidebar toggle), briefly highlight it in the live preview so the user can immediately confirm where it landed.
 
-- **Up / Down** — reorder *within the same column*, skipping rows from the other column.
-- **Left / Right** — move the section to the other column (sidebar ↔ main), matching the template's visual layout.
+## Approach
 
-## Changes
+Track the most-recently-moved section id with a short-lived state in `Builder.tsx`, pass it into `ResumeDocument`, and have `ClickableSection` (which already wraps every section) apply a temporary highlight class.
 
-### `src/components/builder/BuilderTopToolbar.tsx`
+### `src/components/builder/Builder.tsx`
 
-In `SectionsPopover`, replace the current flat `move(from, to)` wiring for `SortableRow` with column-aware handlers. Logic per row id:
+- Add `const [flashSection, setFlashSection] = useState<SectionId | null>(null)`.
+- Add a helper `flash(id: SectionId)` that sets the state and clears it after ~1200 ms via `setTimeout` (cancel previous timer with a ref so rapid moves restart the animation cleanly).
+- Call `flash(id)` from the SectionsPopover callbacks:
+  - `onUpdate(order)` — diff old vs new `sectionOrder`; the moved id is the one whose index changed the most (or simply the first id whose index differs). Flash it.
+  - `onToggleSidebar(id)` — flash `id`.
+  - `onAdd(id)` — flash `id` so newly added sections also pulse.
+- Pass `flashSection` to `<ResumeDocument flashSection={flashSection} ... />` (one preview at a time; if multiple ResumeDocument instances exist for print/preview, only the visible editing one needs it).
 
-1. Compute `col = sidebarModeFor(id)` — `"sidebar"`, `"main"`, `"off"` (single-col template), or `null` (not sidebar-eligible).
-2. **Up/Down**: find the previous/next index in `data.sectionOrder` whose row belongs to the same column.
-   - For `"off"` (no sidebar) and `null` (non-eligible section in a two-col template), "same column" = main, so behavior matches today for those.
-   - For `"sidebar"` or `"main"` in a two-col template, skip over rows in the opposite column.
-   - `canUp` / `canDown` reflect whether a same-column neighbor exists.
-3. **Left/Right**: in two-column templates, map to "move to sidebar" or "move to main" based on which side the sidebar is on for the active template (left-sidebar: `two-column`, `compact-two`, `fresher`; right-sidebar: `sidebar-right`, `contemporary`).
-   - Only enabled when the section is sidebar-eligible (`SIDEBAR_ELIGIBLE`) and moving would actually change its column.
-   - "Move to sidebar" / "Move to main" calls the existing `onToggleSidebar(id)` (already wired through `Builder.tsx`, already pushes history).
-   - In single-column templates (`"off"`), keep today's behavior: left/right = up/down equivalent (±1 in `sectionOrder`).
+### `src/components/builder/ResumeDocument.tsx`
 
-Keep the existing `PanelLeft/PanelRight` toggle button in the row — it still shows the section's current column at a glance and gives a one-click toggle. Left/Right arrows now do the same thing for sidebar-eligible rows; this is intentional symmetry with main sections.
+- Add optional prop `flashSection?: SectionId | null`.
+- Forward to `ClickableSection` via the existing `wrap(id, node)` helper: add a `flash` boolean (`flashSection === id`).
+- In `ClickableSection`, when `flash` is true add a CSS class like `preview-flash` alongside `preview-clickable`. Use `key={\`flash-${flash}\`}` (or a small `useEffect` toggle) so the animation re-triggers each time the flag flips on.
+- Sidebar-rendered sections in two-column templates render via `sidebarRenderers` (not via `ClickableSection`). Wrap each sidebar block in a thin `<div data-section-id={id} className={flash ? "preview-flash" : undefined}>` so sidebar reorder/toggle also highlights.
 
-No changes to: drag-and-drop, custom sections, `Add to resume` list, undo/redo plumbing, the toggle button, or the underlying `sectionOrder` / `sidebarSections` data model.
+### `src/styles.css` (or the existing builder stylesheet — locate the `preview-clickable` rule and add next to it)
 
-### Out of scope
+Add a keyframe + class:
 
-- A separate explicit `sidebarOrder` array (current model — sidebar order = `sectionOrder` filtered — is preserved).
-- Allowing `summary`, `experience`, `projects`, or custom sections in the sidebar.
-- Cross-column drag-and-drop.
-- Any change to `ResumeDocument.tsx`, `Builder.tsx`, or `types.ts` — all rendering and state already react correctly once `sectionOrder` / `sidebarSections` update.
-
-## Technical detail
-
-```text
-sidebarSide(template):
-  two-column | compact-two | fresher       -> "left"
-  sidebar-right | contemporary             -> "right"
-  otherwise                                -> none
-
-sameColumn(idA, idB):
-  colA = sidebarIds.has(idA) ? "sidebar" : "main"
-  colB = sidebarIds.has(idB) ? "sidebar" : "main"
-  return colA === colB  (only meaningful when template has sidebar)
-
-onUp(i):  find largest j < i where sameColumn(order[j], order[i]); if found, arrayMove(order, i, j)
-onDown(i): find smallest j > i where sameColumn(order[j], order[i]); if found, arrayMove(order, i, j)
-
-onLeft(i):
-  if no sidebar template:    move(i, i-1)
-  if sidebarSide === "left"  and eligible and currently "main":    onToggleSidebar(id)
-  if sidebarSide === "right" and eligible and currently "sidebar": onToggleSidebar(id)
-  else: disabled
-
-onRight(i):  mirror of onLeft
+```css
+@keyframes preview-flash {
+  0%   { background-color: color-mix(in oklab, var(--primary) 28%, transparent); box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 40%, transparent); }
+  100% { background-color: transparent; box-shadow: 0 0 0 0 transparent; }
+}
+.preview-flash {
+  animation: preview-flash 1.1s ease-out;
+  border-radius: 4px;
+}
 ```
 
-`canUp`/`canDown`/`canLeft`/`canRight` are derived from the same predicates so disabled buttons are accurate.
+(Uses existing `--primary` token; no hard-coded colors.)
+
+## Out of scope
+
+- A "moved to position N" text label or toast — the visual pulse on the new location is enough confirmation.
+- Animating the actual position transition (would require layout animation infrastructure not currently in the preview).
+- Highlighting custom-section reorders (can be added later with the same pattern if needed).
+
+## Technical notes
+
+- A single `useRef<number | null>` holds the active timeout so consecutive moves restart cleanly without leaking timers.
+- Sidebar sections currently render through plain `<SidebarBlock>` calls (no `ClickableSection`); the wrapper div above adds the highlight without changing layout or click behavior.
+- No data-model changes; `flashSection` is pure transient UI state.
