@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, TEMPLATE_SIDEBAR_DEFAULTS, SIDEBAR_ELIGIBLE, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId, type CustomSection } from "./types";
-import { computeScore } from "./atsScore";
+import { computeScore, jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
+import { highlightKeywordsInEditable } from "@/lib/liveKeywordHighlight";
 import { ResumeDocument } from "./ResumeDocument";
 import { exportDocx } from "./exportDocx";
 import { resumeStore, newId, type SavedResume } from "./resumeStore";
@@ -682,9 +683,22 @@ export function Builder() {
     if (!root) return;
     let storeTimer: ReturnType<typeof setTimeout> | null = null;
     let stateTimer: ReturnType<typeof setTimeout> | null = null;
+    // Build the live keyword set once per effect run (common ATS terms +
+    // any tokens from the current job description) so we can re-bold
+    // matches in the contentEditable preview as the user types.
+    const liveSet = new Set<string>(COMMON_ATS_KEYWORD_SET);
+    for (const k of jdKeywordSet(data.jobDescription || "")) liveSet.add(k);
+    const isKw = (w: string) => isJdKeyword(w, liveSet);
     const onInput = (e: Event) => {
       const target = e.target as HTMLElement | null;
-      if (!target || !target.closest?.("[data-preview-edit]")) return;
+      const editEl = target?.closest?.("[data-preview-edit]") as HTMLElement | null;
+      if (!editEl) return;
+      // Live keyword highlighting — wrap matching tokens in <strong>
+      // immediately so bold updates as the user types. Skip while an IME
+      // composition is active to avoid disrupting it.
+      if (!(e as InputEvent).isComposing) {
+        try { highlightKeywordsInEditable(editEl, isKw); } catch { /* ignore */ }
+      }
       // Persist to the saved-resume store quickly (no re-render).
       if (storeTimer) clearTimeout(storeTimer);
       storeTimer = setTimeout(() => {
