@@ -11,6 +11,7 @@ import { resumeStore, type SavedResume } from "@/components/builder/resumeStore"
 import { defaultResume, type ResumeData } from "@/components/builder/types";
 import { computeScore, canonical } from "@/components/builder/atsScore";
 import { cn } from "@/lib/utils";
+import { Slider } from "@/components/ui/slider";
 
 export const Route = createFileRoute("/jobs")({
   head: () => ({
@@ -40,6 +41,43 @@ const DATES = ["1 Day", "3 Days", "1 Week", "15 Days", "1 Month", "All time"];
 const EXPERIENCES = ["Fresher", "0-1 years", "1-2 years", "2 years", "2-5 years", "5-8 years", "8-12 years", "12+ years"];
 const DRAFT_RESUME_ID = "__current_draft";
 
+const EXPERIENCE_LEVELS = [
+  { id: "any", label: "Any level", min: -1, max: 100 },
+  { id: "fresher", label: "Fresher (0-1 yr)", min: 0, max: 1 },
+  { id: "junior", label: "Junior (1-3 yrs)", min: 1, max: 3 },
+  { id: "mid", label: "Mid (3-6 yrs)", min: 3, max: 6 },
+  { id: "senior", label: "Senior (6-10 yrs)", min: 6, max: 10 },
+  { id: "lead", label: "Lead (10+ yrs)", min: 10, max: 100 },
+] as const;
+type ExpLevelId = (typeof EXPERIENCE_LEVELS)[number]["id"];
+
+// Parse experience strings like "3-5 years", "0-1 yr", "Fresher", "8+ years"
+function parseExperienceYears(value: string): { min: number; max: number } {
+  const v = (value || "").toLowerCase();
+  if (!v) return { min: 0, max: 100 };
+  if (/fresher|entry/.test(v)) return { min: 0, max: 1 };
+  const range = v.match(/(\d+)\s*[-–to]+\s*(\d+)/);
+  if (range) return { min: Number(range[1]), max: Number(range[2]) };
+  const plus = v.match(/(\d+)\s*\+/);
+  if (plus) return { min: Number(plus[1]), max: 100 };
+  const single = v.match(/(\d+)/);
+  if (single) { const n = Number(single[1]); return { min: n, max: n }; }
+  return { min: 0, max: 100 };
+}
+
+// Parse salary strings like "₹8-15 LPA", "12 LPA", "Not disclosed", "10-18 LPA"
+function parseSalaryLpa(value: string): { min: number; max: number } | null {
+  const v = (value || "").toLowerCase();
+  if (!v || /not\s*disclosed|undisclosed/.test(v)) return null;
+  const nums = v.match(/\d+(?:\.\d+)?/g);
+  if (!nums || nums.length === 0) return null;
+  const isLpa = /lpa|lakh/.test(v);
+  const isCr = /cr|crore/.test(v);
+  const factor = isCr ? 100 : isLpa ? 1 : 1; // assume LPA when units are missing
+  const vals = nums.map(Number).map(n => n * factor);
+  return { min: Math.min(...vals), max: Math.max(...vals) };
+}
+
 function JobsPage() {
   const [resumes, setResumes] = useState<SavedResume[]>([]);
   const [draftResume, setDraftResume] = useState<ResumeData | null>(null);
@@ -61,6 +99,12 @@ function JobsPage() {
   const [novaJob, setNovaJob] = useState<Job | null>(null);
   const [novaLoading, setNovaLoading] = useState(false);
   const [novaResp, setNovaResp] = useState<{ tips: string[]; keywords: string[] } | null>(null);
+
+  // Client-side filter state for recommended-jobs panel
+  const [roleFilter, setRoleFilter] = useState<Set<string>>(new Set());
+  const [expLevel, setExpLevel] = useState<ExpLevelId>("any");
+  const [salaryRange, setSalaryRange] = useState<[number, number]>([0, 100]);
+  const [minScore, setMinScore] = useState<number>(0);
 
   const refreshResumes = () => {
     const list = resumeStore.list();
@@ -112,6 +156,11 @@ function JobsPage() {
       const out = (await res.json()) as { jobs?: Job[] };
       const nextJobs = normalizeJobs(out.jobs ?? []);
       setJobs(nextJobs);
+      // Reset client filters on a fresh search so users see all results first.
+      setRoleFilter(new Set());
+      setExpLevel("any");
+      setMinScore(0);
+      setSalaryRange([0, 100]);
       toast.success(`${nextJobs.length} jobs matched`);
     } catch { toast.error("Network error."); }
     finally { setLoading(false); }
@@ -140,6 +189,74 @@ function JobsPage() {
     const slug = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     const locSlug = location.trim().toLowerCase().split(/[,;|]/)[0].replace(/\s+/g, "-");
     return `https://www.naukri.com/${slug || "jobs"}-jobs${locSlug ? `-in-${locSlug}` : ""}`;
+  };
+
+  // Score every job once against the active resume — used by both rendering and filtering.
+  const scoredJobs = useMemo(() => jobs.map(job => ({
+    job,
+    score: computeScore({ ...activeResume, jobDescription: getJobScoringText(job) }).score,
+    exp: parseExperienceYears(job.experience),
+    salary: parseSalaryLpa(job.salary),
+  })), [jobs, activeResume]);
+
+  // Derive role options + salary bounds from the current jobs list.
+  const roleOptions = useMemo(() => {
+    const seen = new Map<string, number>();
+    for (const { job } of scoredJobs) {
+      const key = job.title.split(/[-–|·,(]/)[0].trim() || job.title;
+      seen.set(key, (seen.get(key) ?? 0) + 1);
+    }
+    return Array.from(seen.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  }, [scoredJobs]);
+
+  const salaryBounds = useMemo<[number, number]>(() => {
+    const all = scoredJobs.flatMap(s => s.salary ? [s.salary.min, s.salary.max] : []);
+    if (all.length === 0) return [0, 100];
+    return [Math.floor(Math.min(...all)), Math.ceil(Math.max(...all))];
+  }, [scoredJobs]);
+
+  // Clamp salaryRange to the available bounds whenever bounds change.
+  useEffect(() => {
+    setSalaryRange(([lo, hi]) => {
+      const [bMin, bMax] = salaryBounds;
+      const isReset = lo === 0 && hi === 100;
+      return isReset ? [bMin, bMax] : [Math.max(lo, bMin), Math.min(hi, bMax)];
+    });
+  }, [salaryBounds]);
+
+  const expRange = EXPERIENCE_LEVELS.find(l => l.id === expLevel)!;
+
+  const filteredJobs = useMemo(() => {
+    return scoredJobs
+      .filter(s => {
+        if (roleFilter.size > 0) {
+          const key = s.job.title.split(/[-–|·,(]/)[0].trim() || s.job.title;
+          if (!roleFilter.has(key)) return false;
+        }
+        if (expLevel !== "any") {
+          // Overlap test between job's experience range and selected level range
+          if (s.exp.max < expRange.min || s.exp.min > expRange.max) return false;
+        }
+        if (s.salary) {
+          if (s.salary.max < salaryRange[0] || s.salary.min > salaryRange[1]) return false;
+        }
+        if (s.score < minScore) return false;
+        return true;
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [scoredJobs, roleFilter, expLevel, expRange, salaryRange, minScore]);
+
+  const clientFilterCount =
+    (roleFilter.size > 0 ? 1 : 0) +
+    (expLevel !== "any" ? 1 : 0) +
+    (salaryRange[0] !== salaryBounds[0] || salaryRange[1] !== salaryBounds[1] ? 1 : 0) +
+    (minScore > 0 ? 1 : 0);
+
+  const resetClientFilters = () => {
+    setRoleFilter(new Set());
+    setExpLevel("any");
+    setSalaryRange(salaryBounds);
+    setMinScore(0);
   };
 
   return (
@@ -226,7 +343,12 @@ function JobsPage() {
         {/* Recommended header + selectors */}
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="font-display text-lg font-semibold">Recommended Jobs <span className="text-sm font-normal text-muted-foreground">({jobs.length} jobs{location ? ` in ${location}` : ""})</span></h2>
+            <h2 className="font-display text-lg font-semibold">
+              Recommended Jobs{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                ({filteredJobs.length}{filteredJobs.length !== jobs.length ? ` of ${jobs.length}` : ""} jobs{location ? ` in ${location}` : ""})
+              </span>
+            </h2>
             <p className="text-xs text-muted-foreground">AI-generated previews for demo — verified listings via "Apply Now" on Naukri.</p>
           </div>
           <div className="flex items-center gap-2">
@@ -263,6 +385,93 @@ function JobsPage() {
           </div>
         </div>
 
+        {/* Client-side refine filters — live ATS rescores via useMemo above */}
+        {!loading && jobs.length > 0 && (
+          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="inline-flex items-center gap-2 text-sm font-semibold">
+                <Filter className="h-4 w-4 text-[var(--navy-light)]" /> Refine recommendations
+                {clientFilterCount > 0 && (
+                  <span className="rounded-full bg-[var(--navy-light)] text-white text-[10px] px-1.5 py-0.5">{clientFilterCount}</span>
+                )}
+              </div>
+              {clientFilterCount > 0 && (
+                <button onClick={resetClientFilters} className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
+                  Reset filters
+                </button>
+              )}
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              {/* Role */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] tracking-widest text-muted-foreground font-semibold">ROLE</Label>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-auto">
+                  {roleOptions.length === 0 && <span className="text-xs text-muted-foreground">No roles to filter.</span>}
+                  {roleOptions.map(([name, count]) => {
+                    const active = roleFilter.has(name);
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => setRoleFilter(prev => {
+                          const next = new Set(prev);
+                          next.has(name) ? next.delete(name) : next.add(name);
+                          return next;
+                        })}
+                        className={cn(
+                          "text-xs px-2 py-1 rounded-full border transition-colors",
+                          active
+                            ? "bg-[var(--navy-light)] text-white border-[var(--navy-light)]"
+                            : "bg-background border-border hover:border-[var(--navy-light)]"
+                        )}
+                      >
+                        {name} <span className={cn("opacity-60", active && "text-white/80")}>({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Experience level */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] tracking-widest text-muted-foreground font-semibold">EXPERIENCE LEVEL</Label>
+                <SelectInline value={expLevel} onChange={v => setExpLevel(v as ExpLevelId)} options={EXPERIENCE_LEVELS.map(l => l.id)} labels={EXPERIENCE_LEVELS.map(l => l.label)} />
+              </div>
+              {/* Salary range */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] tracking-widest text-muted-foreground font-semibold">SALARY (LPA)</Label>
+                  <span className="text-xs text-muted-foreground tabular-nums">₹{salaryRange[0]} – ₹{salaryRange[1]}</span>
+                </div>
+                <Slider
+                  min={salaryBounds[0]}
+                  max={salaryBounds[1]}
+                  step={1}
+                  value={salaryRange}
+                  onValueChange={v => setSalaryRange([v[0] ?? salaryBounds[0], v[1] ?? salaryBounds[1]])}
+                  className="py-2"
+                />
+              </div>
+            </div>
+            {/* Min ATS score */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-1.5 md:col-span-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] tracking-widest text-muted-foreground font-semibold">MINIMUM ATS SCORE</Label>
+                  <span className="text-xs text-muted-foreground tabular-nums">{minScore}+ / 100</span>
+                </div>
+                <Slider
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={[minScore]}
+                  onValueChange={v => setMinScore(v[0] ?? 0)}
+                  className="py-2"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Jobs grid */}
         {loading && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -279,9 +488,27 @@ function JobsPage() {
           </div>
         )}
 
-        {!loading && jobs.length > 0 && (
+        {!loading && jobs.length > 0 && filteredJobs.length === 0 && (
+          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center space-y-2">
+            <Briefcase className="h-8 w-8 mx-auto text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">No jobs match the current filters.</p>
+            <button onClick={resetClientFilters} className="text-sm text-[var(--navy-light)] hover:underline">Reset filters</button>
+          </div>
+        )}
+
+        {!loading && filteredJobs.length > 0 && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {jobs.map(job => <JobCard key={job.id} job={job} resume={activeResume} onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }} onNova={() => askNova(job)} naukriUrl={naukriUrl} />)}
+            {filteredJobs.map(({ job, score }) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                resume={activeResume}
+                liveScore={score}
+                onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }}
+                onNova={() => askNova(job)}
+                naukriUrl={naukriUrl}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -364,18 +591,19 @@ function FieldCell({ label, icon, children, className }: { label: string; icon: 
   );
 }
 
-function SelectInline({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+function SelectInline({ value, onChange, options, labels }: { value: string; onChange: (v: string) => void; options: string[]; labels?: string[] }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
       className="w-full h-9 bg-transparent border-0 text-base focus:outline-none cursor-pointer">
-      {options.map(o => <option key={o} value={o}>{o}</option>)}
+      {options.map((o, i) => <option key={o} value={o}>{labels?.[i] ?? o}</option>)}
     </select>
   );
 }
 
-function JobCard({ job, resume, onScore, onNova, naukriUrl }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; naukriUrl: (t: string) => string }) {
+function JobCard({ job, resume, onScore, onNova, naukriUrl, liveScore }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; naukriUrl: (t: string) => string; liveScore?: number }) {
   const scoringText = getJobScoringText(job);
-  const score = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
+  const computedScore = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
+  const score = liveScore ?? computedScore;
   const tone = score >= 80 ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
     : score >= 60 ? "bg-[var(--navy-light)]/10 text-[var(--navy-light)] border-[var(--navy-light)]/20"
     : score >= 40 ? "bg-amber-500/10 text-amber-700 border-amber-500/30"
