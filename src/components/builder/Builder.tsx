@@ -152,6 +152,24 @@ export function Builder() {
     }
   }, []);
 
+  // Load a specific saved resume when navigated from the dashboard via ?open=ID
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const openId = params.get("open");
+    if (!openId) return;
+    const entry = resumeStore.get(openId);
+    if (entry) {
+      setData({ ...defaultResume, ...entry.data });
+      setCurrentId(entry.id);
+      setCurrentName(entry.name);
+      toast.success(`Opened "${entry.name}"`);
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.delete("open");
+    window.history.replaceState(null, "", url.pathname + (url.search ? `?${url.searchParams}` : ""));
+  }, []);
+
   const refreshList = () => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); };
 
   useEffect(() => {
