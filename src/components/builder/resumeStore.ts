@@ -21,7 +21,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function parseStored(raw: string | null): unknown {
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 function deriveName(data: ResumeData, fallback = "Recovered draft") {
@@ -36,13 +40,17 @@ function normalizeEntry(value: unknown): SavedResume | null {
   if (!isRecord(value) || !isRecord(value.data)) return null;
   const data = { ...defaultResume, ...(value.data as Partial<ResumeData>) };
   const id = typeof value.id === "string" && value.id.trim() ? value.id : newId();
-  const name = typeof value.name === "string" && value.name.trim() ? value.name.trim() : deriveName(data, "Untitled resume");
+  const name =
+    typeof value.name === "string" && value.name.trim()
+      ? value.name.trim()
+      : deriveName(data, "Untitled resume");
   const rawUpdatedAt = value.updatedAt ?? value.updated_at;
-  const updatedAt = typeof rawUpdatedAt === "number"
-    ? rawUpdatedAt
-    : typeof rawUpdatedAt === "string"
-      ? new Date(rawUpdatedAt).getTime()
-      : Date.now();
+  const updatedAt =
+    typeof rawUpdatedAt === "number"
+      ? rawUpdatedAt
+      : typeof rawUpdatedAt === "string"
+        ? new Date(rawUpdatedAt).getTime()
+        : Date.now();
   return { id, name, updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(), data };
 }
 
@@ -63,15 +71,44 @@ function readListFromKey(key: string): SavedResume[] {
     : isRecord(parsed) && Array.isArray(parsed.resumes)
       ? parsed.resumes
       : [];
-  return compactList(rawList.map(normalizeEntry).filter((entry): entry is SavedResume => Boolean(entry)));
+  return compactList(
+    rawList.map(normalizeEntry).filter((entry): entry is SavedResume => Boolean(entry)),
+  );
 }
 
 function hasMeaningfulResumeData(data: ResumeData) {
   const merged = { ...defaultResume, ...data };
-  const textKeys: Array<keyof ResumeData> = ["name", "headline", "email", "phone", "location", "links", "summary", "skills", "jobDescription", "extraKeywords"];
-  if (textKeys.some((key) => String(merged[key] ?? "").trim() && String(merged[key] ?? "").trim() !== String(defaultResume[key] ?? "").trim())) return true;
-  const arrayKeys: Array<keyof ResumeData> = ["experience", "education", "projects", "certifications", "awards", "languages"];
-  return arrayKeys.some((key) => JSON.stringify(merged[key] ?? []) !== JSON.stringify(defaultResume[key] ?? []));
+  const textKeys: Array<keyof ResumeData> = [
+    "name",
+    "headline",
+    "email",
+    "phone",
+    "location",
+    "links",
+    "summary",
+    "skills",
+    "jobDescription",
+    "extraKeywords",
+  ];
+  if (
+    textKeys.some(
+      (key) =>
+        String(merged[key] ?? "").trim() &&
+        String(merged[key] ?? "").trim() !== String(defaultResume[key] ?? "").trim(),
+    )
+  )
+    return true;
+  const arrayKeys: Array<keyof ResumeData> = [
+    "experience",
+    "education",
+    "projects",
+    "certifications",
+    "awards",
+    "languages",
+  ];
+  return arrayKeys.some(
+    (key) => JSON.stringify(merged[key] ?? []) !== JSON.stringify(defaultResume[key] ?? []),
+  );
 }
 
 function recoverList(list: SavedResume[]) {
@@ -124,7 +161,7 @@ function readDraft(): ResumeData | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
-    return raw ? JSON.parse(raw) as ResumeData : null;
+    return raw ? (JSON.parse(raw) as ResumeData) : null;
   } catch {
     return null;
   }
@@ -137,7 +174,11 @@ function writeDraft(data: ResumeData) {
 
 function readPrimary(): string | null {
   if (typeof window === "undefined") return null;
-  try { return localStorage.getItem(PRIMARY_KEY); } catch { return null; }
+  try {
+    return localStorage.getItem(PRIMARY_KEY);
+  } catch {
+    return null;
+  }
 }
 function writePrimary(id: string | null) {
   if (id) localStorage.setItem(PRIMARY_KEY, id);
@@ -149,23 +190,24 @@ export const resumeStore = {
     return read().sort((a, b) => b.updatedAt - a.updatedAt);
   },
   get(id: string): SavedResume | undefined {
-    return read().find(r => r.id === id);
+    return read().find((r) => r.id === id);
   },
   upsert(entry: SavedResume) {
     const list = read();
-    const idx = list.findIndex(r => r.id === entry.id);
-    if (idx >= 0) list[idx] = entry; else list.push(entry);
+    const idx = list.findIndex((r) => r.id === entry.id);
+    if (idx >= 0) list[idx] = entry;
+    else list.push(entry);
     write(list);
     void syncUpsert(entry);
   },
   remove(id: string) {
-    write(read().filter(r => r.id !== id));
+    write(read().filter((r) => r.id !== id));
     if (readPrimary() === id) writePrimary(null);
     void syncDelete(id);
   },
   rename(id: string, name: string) {
     const list = read();
-    const item = list.find(r => r.id === id);
+    const item = list.find((r) => r.id === id);
     if (!item) return;
     item.name = name;
     item.updatedAt = Date.now();
@@ -174,7 +216,7 @@ export const resumeStore = {
   },
   duplicate(id: string): SavedResume | undefined {
     const list = read();
-    const item = list.find(r => r.id === id);
+    const item = list.find((r) => r.id === id);
     if (!item) return undefined;
     const copy: SavedResume = {
       id: newId(),
@@ -187,14 +229,23 @@ export const resumeStore = {
     void syncUpsert(copy);
     return copy;
   },
-  getPrimaryId(): string | null { return readPrimary(); },
+  getPrimaryId(): string | null {
+    return readPrimary();
+  },
   getPrimary(): SavedResume | undefined {
     const id = readPrimary();
-    return id ? read().find(r => r.id === id) : undefined;
+    return id ? read().find((r) => r.id === id) : undefined;
   },
-  setPrimary(id: string | null) { writePrimary(id); void syncSetPrimary(id); },
-  getDraft(): ResumeData | null { return readDraft(); },
-  saveDraft(data: ResumeData) { writeDraft(data); },
+  setPrimary(id: string | null) {
+    writePrimary(id);
+    void syncSetPrimary(id);
+  },
+  getDraft(): ResumeData | null {
+    return readDraft();
+  },
+  saveDraft(data: ResumeData) {
+    writeDraft(data);
+  },
 };
 
 export function newId() {
