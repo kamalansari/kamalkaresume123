@@ -1,4 +1,5 @@
 import type { ResumeData } from "./types";
+import { syncUpsert, syncDelete, syncSetPrimary } from "@/lib/cloudSync";
 
 const KEY = "resumeforge.saved.v1";
 const PRIMARY_KEY = "resumeforge.primary.v1";
@@ -63,10 +64,12 @@ export const resumeStore = {
     const idx = list.findIndex(r => r.id === entry.id);
     if (idx >= 0) list[idx] = entry; else list.push(entry);
     write(list);
+    void syncUpsert(entry);
   },
   remove(id: string) {
     write(read().filter(r => r.id !== id));
     if (readPrimary() === id) writePrimary(null);
+    void syncDelete(id);
   },
   rename(id: string, name: string) {
     const list = read();
@@ -75,6 +78,7 @@ export const resumeStore = {
     item.name = name;
     item.updatedAt = Date.now();
     write(list);
+    void syncUpsert(item);
   },
   duplicate(id: string): SavedResume | undefined {
     const list = read();
@@ -88,6 +92,7 @@ export const resumeStore = {
     };
     list.push(copy);
     write(list);
+    void syncUpsert(copy);
     return copy;
   },
   getPrimaryId(): string | null { return readPrimary(); },
@@ -95,7 +100,7 @@ export const resumeStore = {
     const id = readPrimary();
     return id ? read().find(r => r.id === id) : undefined;
   },
-  setPrimary(id: string | null) { writePrimary(id); },
+  setPrimary(id: string | null) { writePrimary(id); void syncSetPrimary(id); },
   getDraft(): ResumeData | null { return readDraft(); },
   saveDraft(data: ResumeData) { writeDraft(data); },
 };
