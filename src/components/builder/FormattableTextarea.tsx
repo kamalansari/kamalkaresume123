@@ -38,6 +38,12 @@ export function FormattableTextarea({ value, onChange, rows = 4, placeholder, cl
         if ((e.ctrlKey || e.metaKey) && (e.key === "b" || e.key === "B")) {
           e.preventDefault();
           doBold();
+          return;
+        }
+        // Shortcut that doesn't require Ctrl/Cmd: Alt+B toggles bold on the selection.
+        if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === "b" || e.key === "B")) {
+          e.preventDefault();
+          doBold();
         }
       }}
       className={cn(className)}
