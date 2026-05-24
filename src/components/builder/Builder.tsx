@@ -29,6 +29,7 @@ import { TemplatesPopover, SectionsPopover, StylePopover } from "./BuilderTopToo
 import lzString from "lz-string";
 const { decompressFromEncodedURIComponent } = lzString;
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -1108,7 +1109,17 @@ export function Builder() {
           : "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]"
       )}>
         {/* Editor */}
-        <div className="no-print space-y-6">
+        <div className="no-print">
+          <Tabs defaultValue="basics" className="w-full">
+            <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-card border border-border p-1 sticky top-16 z-10">
+              <TabsTrigger value="basics" className="flex-1 min-w-[80px]">Basics</TabsTrigger>
+              <TabsTrigger value="experience" className="flex-1 min-w-[80px]">Experience</TabsTrigger>
+              <TabsTrigger value="education" className="flex-1 min-w-[80px]">Education</TabsTrigger>
+              <TabsTrigger value="skills" className="flex-1 min-w-[80px]">Skills</TabsTrigger>
+              <TabsTrigger value="extras" className="flex-1 min-w-[80px]">Extras</TabsTrigger>
+              <TabsTrigger value="target" className="flex-1 min-w-[80px]">Target</TabsTrigger>
+            </TabsList>
+            <TabsContent value="basics" className="space-y-6 mt-4">
           <div id="edit-personal" className="rounded-xl">
           <Card title="Personal">
             <Grid>
@@ -1136,7 +1147,9 @@ export function Builder() {
             <p className="mt-2 text-xs text-muted-foreground">Select text and click <b>B</b> to bold it. Tip: paste a job description below for a tailored rewrite.</p>
           </Card>
           </div>
+            </TabsContent>
 
+            <TabsContent value="experience" className="space-y-6 mt-4">
           <div id="edit-experience" className="rounded-xl">
           <Card title="Experience" action={<Button size="sm" variant="outline" onClick={addExp}><Plus /> Add</Button>}>
             <div className="space-y-4">
@@ -1171,7 +1184,9 @@ export function Builder() {
             </div>
           </Card>
           </div>
+            </TabsContent>
 
+            <TabsContent value="education" className="space-y-6 mt-4">
           <div id="edit-education" className="rounded-xl">
           <Card title="Education" action={<Button size="sm" variant="outline" onClick={addEdu}><Plus /> Add</Button>}>
             <div className="space-y-3">
@@ -1190,7 +1205,9 @@ export function Builder() {
             </div>
           </Card>
           </div>
+            </TabsContent>
 
+            <TabsContent value="skills" className="space-y-6 mt-4">
           <div id="edit-skills" className="rounded-xl">
           <Card
             title="Skills"
@@ -1208,7 +1225,9 @@ export function Builder() {
             <p className="mt-2 text-xs text-muted-foreground">Separate with <code>,</code> or <code>|</code>. {parseSkills(data.skills).length} skills detected.</p>
           </Card>
           </div>
+            </TabsContent>
 
+            <TabsContent value="extras" className="space-y-6 mt-4">
           {data.sectionOrder.includes("projects") && (
             <div id="edit-projects" className="rounded-xl">
             <Card title="Projects" action={<Button size="sm" variant="outline" onClick={addProject}><Plus /> Add</Button>}>
@@ -1304,7 +1323,9 @@ export function Builder() {
             </Card>
             </div>
           )}
+            </TabsContent>
 
+            <TabsContent value="target" className="space-y-6 mt-4">
           <Card
             title="Target job description"
             action={
@@ -1333,6 +1354,8 @@ export function Builder() {
               <JobSearchButton site="naukri" data={data} />
             </div>
           </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Preview */}
@@ -1420,7 +1443,7 @@ export function Builder() {
 
         {/* ATS panel */}
         {atsOpen && (
-        <div className="no-print hidden lg:block">
+        <div className="no-print hidden lg:block lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
         <AtsPanel
           data={data}
           onClose={() => setAtsOpen(false)}
