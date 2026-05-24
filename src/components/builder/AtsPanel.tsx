@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Sparkles, Loader2, Pencil, MessageCircle, Send, Gauge, CheckCircle2, XCircle, X, Wand2 } from "lucide-react";
+import { Sparkles, Loader2, Pencil, MessageCircle, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,36 +90,195 @@ function TabButton({ active, onClick, label, badge, tone, iconDot }: { active: b
   );
 }
 
+type SectionIssue = { label: string; pass: boolean; hint?: string };
+type SectionGroup = { id: string; label: string; issues: SectionIssue[] };
+
+function buildSectionGroups(data: ResumeData, score: ReturnType<typeof computeScore>): SectionGroup[] {
+  const text = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
+  const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
+  const hasNum = (s: string) => /\d/.test(s);
+  const actionVerbs = /\b(led|built|shipped|launched|designed|drove|grew|reduced|improved|owned|managed|created|delivered|scaled|architected|implemented|optimized|developed|automated|analy[sz]ed)\b/i;
+
+  const summary = text(data.summary);
+  const exp = Array.isArray(data.experience) ? data.experience : [];
+  const edu = Array.isArray(data.education) ? data.education : [];
+  const skills = text(data.skills);
+  const totalBullets = exp.reduce((n, e) => n + text(e.bullets).split("\n").filter(Boolean).length, 0);
+  const expText = exp.map(e => text(e.bullets)).join(" ");
+
+  const personal: SectionIssue[] = [
+    { label: "Full name provided", pass: !!text(data.name).trim() },
+    { label: "Professional headline", pass: !!text(data.headline).trim() },
+    { label: "Email address", pass: /@/.test(text(data.email)) },
+    { label: "Phone number", pass: /\d{6,}/.test(text(data.phone).replace(/\D/g, "")) },
+    { label: "Location", pass: !!text(data.location).trim() },
+    { label: "Profile links (LinkedIn / portfolio)", pass: !!text(data.links).trim() },
+  ];
+
+  const summaryIssues: SectionIssue[] = [
+    { label: "Summary present", pass: !!summary.trim(), hint: "Write a 2–4 line professional summary." },
+    { label: "At least 20 words", pass: words(summary) >= 20, hint: `Current: ${words(summary)} words.` },
+    { label: "Mentions a target role", pass: !!text(data.headline) && summary.toLowerCase().includes(text(data.headline).split(/\s+/)[0]?.toLowerCase() ?? ""), hint: "Reference your target role in the summary." },
+    { label: "No first-person pronouns", pass: !/\b(i|me|my|we)\b/i.test(summary), hint: "Use third-person voice." },
+  ];
+
+  const experienceIssues: SectionIssue[] = [
+    { label: "At least one role listed", pass: exp.length > 0 },
+    { label: "Job titles filled", pass: exp.length > 0 && exp.every(e => !!text(e.title).trim()) },
+    { label: "Company names filled", pass: exp.length > 0 && exp.every(e => !!text(e.company).trim()) },
+    { label: "Dates on every role", pass: exp.length > 0 && exp.every(e => !!text(e.date).trim()) },
+    { label: "3+ accomplishment bullets", pass: totalBullets >= 3, hint: `Current: ${totalBullets} bullets.` },
+    { label: "Strong action verbs", pass: actionVerbs.test(expText), hint: "Start bullets with verbs like Led, Built, Shipped." },
+    { label: "Quantified impact (numbers)", pass: hasNum(expText), hint: "Add %, $, or counts to your bullets." },
+  ];
+
+  const educationIssues: SectionIssue[] = [
+    { label: "At least one entry", pass: edu.length > 0 },
+    { label: "Degree filled", pass: edu.length > 0 && edu.every(e => !!text(e.degree).trim()) },
+    { label: "School / university filled", pass: edu.length > 0 && edu.every(e => !!text(e.school).trim()) },
+  ];
+
+  const skillsIssues: SectionIssue[] = [
+    { label: "Skills section present", pass: !!skills.trim() },
+    { label: "5+ skills listed", pass: skills.split(/[,\n|]/).map(s => s.trim()).filter(Boolean).length >= 5 },
+    { label: "Skills grouped by category", pass: /[:|]/.test(skills), hint: "Use 'Category: skill, skill' format." },
+  ];
+
+  const allText = [data.name, data.headline, data.summary, skills, expText, data.extraKeywords ?? ""].join(" ").toLowerCase();
+  const TOOL_KEYWORDS = ["excel", "sql", "python", "power bi", "tableau", "javascript", "react", "node", "aws", "git", "docker", "figma", "java", "linux"];
+  const toolsHit = TOOL_KEYWORDS.filter(k => allText.includes(k));
+  const toolsIssues: SectionIssue[] = [
+    { label: "Lists technical tools", pass: toolsHit.length >= 1 },
+    { label: "3+ tools / technologies", pass: toolsHit.length >= 3, hint: toolsHit.length ? `Detected: ${toolsHit.slice(0, 5).join(", ")}` : "Add tools like Excel, SQL, Python, etc." },
+  ];
+
+  const wc = words([data.name, data.headline, data.summary, skills, expText].join(" "));
+  const overall: SectionIssue[] = [
+    ...score.checks.map(c => ({ label: c.label, pass: c.pass, hint: c.hint })),
+    { label: "Concise length (250–800 words)", pass: wc >= 250 && wc <= 800, hint: `Current: ${wc} words.` },
+  ];
+
+  return [
+    { id: "summary", label: "Professional Summary", issues: summaryIssues },
+    { id: "education", label: "Education", issues: educationIssues },
+    { id: "experience", label: "Work Experience", issues: experienceIssues },
+    { id: "overall", label: "Over All Resume", issues: overall },
+    { id: "personal", label: "Personal Details", issues: personal },
+    { id: "skills", label: "Skills", issues: skillsIssues },
+    { id: "tools", label: "Tools & Technologies", issues: toolsIssues },
+  ];
+}
+
+function ScoreRing({ value }: { value: number }) {
+  const size = 120;
+  const stroke = 10;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c - (Math.max(0, Math.min(100, value)) / 100) * c;
+  const color = value >= 75 ? "#10b981" : value >= 50 ? "#f59e0b" : "#ef4444";
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} stroke="#e5e7eb" strokeWidth={stroke} fill="none" />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={stroke} fill="none"
+          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 400ms ease" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-baseline justify-center pt-[42px]">
+        <span className="font-display text-3xl font-bold leading-none">{value}</span>
+        <span className="text-xs text-muted-foreground ml-0.5">%</span>
+      </div>
+    </div>
+  );
+}
+
 function ResumeScoreView({ data, score }: { data: ResumeData; score: ReturnType<typeof computeScore> }) {
+  const groups = useMemo(() => buildSectionGroups(data, score), [data, score]);
+  const totals = groups.reduce(
+    (acc, g) => {
+      for (const i of g.issues) { if (i.pass) acc.pass++; else acc.fail++; }
+      return acc;
+    },
+    { pass: 0, fail: 0 },
+  );
+  const value = score.score;
+  const strength = value >= 75 ? "STRONG RESUME" : value >= 50 ? "SOLID START" : "NEEDS WORK";
+  const tone = value >= 75 ? "bg-emerald-50 border-emerald-200" : value >= 50 ? "bg-amber-50 border-amber-200" : "bg-rose-50 border-rose-200";
+  const accent = value >= 75 ? "text-emerald-700" : value >= 50 ? "text-amber-700" : "text-rose-700";
+
   return (
     <>
-      <div className="rounded-xl border border-border bg-card p-5">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Gauge className="h-4 w-4 text-emerald-600" /> RESUME SCORE
-        </div>
-        <div className="mt-1 flex items-baseline gap-1">
-          <span className="font-display text-5xl font-bold">{score.score}</span>
-          <span className="text-muted-foreground">/100</span>
-        </div>
-        <div className="mt-3 h-2 rounded-full bg-secondary overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: `${score.score}%`, background: "linear-gradient(90deg, #10b981, #059669)" }} />
+      {/* Hero card with circular score */}
+      <div className={cn("rounded-xl border p-4", tone)}>
+        <div className="flex items-center gap-4">
+          <ScoreRing value={value} />
+          <div className="flex-1 min-w-0">
+            <div className={cn("text-xs font-bold tracking-widest", accent)}>{strength}</div>
+            <p className="mt-1 text-sm text-foreground/80 leading-snug">
+              {totals.fail > 0
+                ? <>Fix <span className="font-semibold">{totals.fail}</span> remaining issue{totals.fail === 1 ? "" : "s"} to perfect your resume.</>
+                : <>Every check passes — your resume is polished.</>}
+            </p>
+            <div className="mt-3 relative h-1.5 rounded-full bg-white/70 overflow-hidden">
+              <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${value}%`, background: "linear-gradient(90deg,#10b981,#059669)" }} />
+            </div>
+            <div className="mt-1 flex justify-between text-[10px] text-muted-foreground tabular-nums">
+              <span>0</span><span>50</span><span>75</span><span>100</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="rounded-xl border border-border bg-card p-5">
-        <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">Checks</div>
-        <ul className="space-y-2.5">
-          {score.checks.map(c => (
-            <li key={c.label} className="flex gap-2.5 text-sm">
-              {c.pass ? <CheckCircle2 className="h-4 w-4 mt-0.5 text-emerald-600 shrink-0" /> : <XCircle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />}
-              <div>
-                <div className={c.pass ? "" : "font-medium"}>{c.label}</div>
-                {!c.pass && c.hint && <div className="text-xs text-muted-foreground">{c.hint}</div>}
+
+      {/* OPTIMIZE list */}
+      <div className="space-y-2">
+        <div className="text-[11px] font-semibold tracking-widest text-muted-foreground px-1">OPTIMIZE</div>
+        {groups.map(g => {
+          const pass = g.issues.filter(i => i.pass).length;
+          const fail = g.issues.length - pass;
+          return <SectionRow key={g.id} group={g} pass={pass} fail={fail} />;
+        })}
+      </div>
+    </>
+  );
+}
+
+function SectionRow({ group, pass, fail }: { group: SectionGroup; pass: number; fail: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/40 transition-colors"
+      >
+        <span className="flex-1 font-medium text-sm">{group.label}</span>
+        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 text-[11px] font-semibold">
+          <CheckCircle2 className="h-3 w-3" /> {pass}
+        </span>
+        {fail > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 text-[11px] font-semibold">
+            <XCircle className="h-3 w-3" /> {fail}
+          </span>
+        )}
+        <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-90")} />
+      </button>
+      {open && (
+        <ul className="border-t border-border divide-y divide-border/70">
+          {group.issues.map(i => (
+            <li key={i.label} className="flex gap-2.5 px-4 py-2 text-sm">
+              {i.pass
+                ? <CheckCircle2 className="h-4 w-4 mt-0.5 text-emerald-600 shrink-0" />
+                : <XCircle className="h-4 w-4 mt-0.5 text-rose-500 shrink-0" />}
+              <div className="min-w-0">
+                <div className={i.pass ? "text-foreground/80" : "font-medium"}>{i.label}</div>
+                {!i.pass && i.hint && <div className="text-xs text-muted-foreground">{i.hint}</div>}
               </div>
             </li>
           ))}
         </ul>
-      </div>
-    </>
+      )}
+    </div>
   );
 }
 
