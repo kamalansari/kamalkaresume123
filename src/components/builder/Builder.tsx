@@ -1103,10 +1103,10 @@ export function Builder() {
         onSetPrimary={setAsPrimary}
       />
 
-      <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-6 py-6",
+      <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-4 sm:px-6 py-6 grid-cols-1",
         atsOpen
-          ? "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)_minmax(0,360px)]"
-          : "lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]"
+          ? "lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)_minmax(0,320px)]"
+          : "lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]"
       )}>
         {/* Editor */}
         <div className="no-print">
@@ -1463,7 +1463,7 @@ export function Builder() {
 
         {/* ATS panel */}
         {atsOpen && (
-        <div className="no-print hidden lg:block lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+        <div className="no-print hidden xl:block xl:sticky xl:top-20 xl:self-start xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto">
         <AtsPanel
           data={data}
           onClose={() => setAtsOpen(false)}
