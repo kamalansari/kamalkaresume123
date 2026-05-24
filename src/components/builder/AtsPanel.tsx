@@ -22,7 +22,7 @@ export function AtsPanel({
 }: {
   data: ResumeData;
   onClose: () => void;
-  onAppendBulletsToFirstExperience: (bullets: string[]) => void;
+  onAppendBulletsToFirstExperience: (bullets: string[], targetExperienceId?: string) => void;
   onAddExtraKeywords: (kw: string[]) => void;
   onOneClickOptimize: () => void;
   optimizing: boolean;
