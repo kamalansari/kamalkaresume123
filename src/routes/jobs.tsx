@@ -442,6 +442,20 @@ function Chip({ children, className }: { children: React.ReactNode; className?: 
 function ScoreView({ jd, resume }: { jd: string; resume: ResumeData }) {
   const score = useMemo(() => computeScore({ ...resume, jobDescription: jd }), [jd, resume]);
   const isEmpty = !resume.name?.trim() && !resume.skills?.trim() && !resume.summary?.trim();
+  const sectionMap = useMemo(() => buildSectionMap(resume), [resume]);
+  const matchedBySection = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const kw of score.matched) {
+      const sections = sectionMap.get(kw) ?? ["Other"];
+      for (const s of sections) {
+        if (!map.has(s)) map.set(s, []);
+        map.get(s)!.push(kw);
+      }
+    }
+    return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length);
+  }, [score.matched, sectionMap]);
+  const passedChecks = score.checks.filter(c => c.pass);
+  const failedChecks = score.checks.filter(c => !c.pass);
   if (isEmpty) {
     return (
       <div className="space-y-3">
@@ -474,6 +488,51 @@ function ScoreView({ jd, resume }: { jd: string; resume: ResumeData }) {
       <div className="h-2 rounded-full bg-secondary overflow-hidden">
         <div className="h-full" style={{ width: `${score.score}%`, background: "var(--gradient-accent)" }} />
       </div>
+
+      {/* Score breakdown — which checks contributed */}
+      <div className="rounded-lg border border-border bg-card/60 p-3">
+        <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Score breakdown</div>
+        <ul className="space-y-1.5 text-sm">
+          {score.checks.map(c => (
+            <li key={c.label} className="flex items-center justify-between gap-2">
+              <span className={c.pass ? "text-foreground" : "text-muted-foreground"}>
+                <span className={`inline-block h-1.5 w-1.5 rounded-full mr-2 ${c.pass ? "bg-emerald-500" : "bg-rose-400"}`} />
+                {c.label}
+              </span>
+              <span className={`tabular-nums text-xs font-semibold ${c.pass ? "text-emerald-600" : "text-muted-foreground"}`}>
+                {c.pass ? `+${c.weight}` : `0 / ${c.weight}`}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-2 pt-2 border-t border-border flex justify-between text-xs text-muted-foreground">
+          <span>{passedChecks.length} passed · {failedChecks.length} to improve</span>
+          <span className="font-semibold text-foreground">Total {score.score}/100</span>
+        </div>
+      </div>
+
+      {/* Resume sections that contributed matched keywords */}
+      {matchedBySection.length > 0 && (
+        <div className="rounded-lg border border-border bg-card/60 p-3">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Contributing resume sections</div>
+          <div className="space-y-2">
+            {matchedBySection.map(([section, kws]) => (
+              <div key={section}>
+                <div className="text-xs font-semibold mb-1 flex items-center justify-between">
+                  <span>{section}</span>
+                  <span className="text-muted-foreground">{kws.length} keyword{kws.length === 1 ? "" : "s"}</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {kws.slice(0, 20).map(k => (
+                    <span key={k} className="text-xs px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">{k}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {score.matched.length > 0 && (
         <div>
           <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Matched ({score.matched.length})</div>
@@ -496,4 +555,27 @@ function ScoreView({ jd, resume }: { jd: string; resume: ResumeData }) {
       )}
     </div>
   );
+}
+
+function buildSectionMap(resume: ResumeData): Map<string, string[]> {
+  const sections: Record<string, string> = {
+    "Headline": [resume.headline].filter(Boolean).join(" "),
+    "Summary": resume.summary ?? "",
+    "Skills": resume.skills ?? "",
+    "Experience": (resume.experience ?? []).flatMap(e => [e.title, e.company, e.bullets]).filter(Boolean).join(" "),
+    "Projects": (resume.projects ?? []).flatMap(p => [p.name, p.bullets]).filter(Boolean).join(" "),
+    "Education": (resume.education ?? []).flatMap(e => [e.degree, e.school]).filter(Boolean).join(" "),
+    "Certifications": (resume.certifications ?? []).flatMap(c => [c.name, c.issuer]).filter(Boolean).join(" "),
+  };
+  const map = new Map<string, string[]>();
+  for (const [name, text] of Object.entries(sections)) {
+    const lower = (text || "").toLowerCase();
+    if (!lower) continue;
+    const found = new Set(lower.match(/[a-z][a-z0-9+.#-]{1,}/g) || []);
+    for (const tok of found) {
+      if (!map.has(tok)) map.set(tok, []);
+      map.get(tok)!.push(name);
+    }
+  }
+  return map;
 }
