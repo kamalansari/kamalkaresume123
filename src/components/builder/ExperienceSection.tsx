@@ -407,6 +407,14 @@ function SortableExperienceItem({
             className="mt-1.5"
             value={exp.bullets}
             onChange={v => onChange({ bullets: v })}
+            onBlur={() => {
+              if (!exp.bullets.trim()) return;
+              const next = autoActionVerbs(exp.bullets);
+              if (next !== exp.bullets) {
+                onChange({ bullets: next });
+                toast.success("Bullets auto-strengthened with action verbs");
+              }
+            }}
             placeholder="Led redesign of checkout flow, lifting conversion 18% across 14 markets."
           />
         </div>
