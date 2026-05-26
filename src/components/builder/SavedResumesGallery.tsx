@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp, Search, X, Download, Upload, ExternalLink, MoreVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp, Search, X, Download, Upload, ExternalLink, MoreVertical, LayoutGrid, List as ListIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -36,9 +36,18 @@ export function SavedResumesGallery({
 }: Props) {
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"grid" | "list">(() => {
+    if (typeof window === "undefined") return "list";
+    return (localStorage.getItem("resumeforge.gallery.view") as "grid" | "list") || "list";
+  });
+  const [visibleCount, setVisibleCount] = useState(6);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const uploadRef = useRef<HTMLInputElement | null>(null);
   const [importing, setImporting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("resumeforge.gallery.view", view);
+  }, [view]);
 
   const relativeTime = (ts: number) => {
     const diff = Date.now() - ts;
@@ -162,6 +171,12 @@ export function SavedResumesGallery({
     });
   }, [saved, query]);
 
+  // Reset pagination when filter/view changes
+  useEffect(() => { setVisibleCount(view === "grid" ? 6 : 8); }, [query, view]);
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
+
   // Lazy-render the heavy ResumeDocument preview only when the tile scrolls into view.
   function LazyPreview({ resume }: { resume: SavedResume }) {
     const ref = useRef<HTMLDivElement | null>(null);
@@ -233,6 +248,22 @@ export function SavedResumesGallery({
                 </span>
               )}
               <div className="ml-auto flex items-center gap-2">
+                <div className="hidden sm:flex items-center rounded-md border bg-background p-0.5">
+                  <button
+                    onClick={() => setView("list")}
+                    className={cn("flex h-7 items-center gap-1 rounded px-2 text-xs transition-colors", view === "list" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="List view"
+                  >
+                    <ListIcon className="h-3.5 w-3.5" /> List
+                  </button>
+                  <button
+                    onClick={() => setView("grid")}
+                    className={cn("flex h-7 items-center gap-1 rounded px-2 text-xs transition-colors", view === "grid" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Grid view"
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" /> Grid
+                  </button>
+                </div>
                 <Button size="sm" variant="accent" onClick={() => uploadRef.current?.click()} disabled={importing} title="Upload a PDF, DOCX, or TXT resume and auto-fill the builder">
                   <Upload className="h-3.5 w-3.5" /> {importing ? "Importing…" : "Upload Resume"}
                 </Button>
@@ -266,6 +297,7 @@ export function SavedResumesGallery({
                 />
               </div>
             </div>
+            {view === "grid" ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {/* Add new tile */}
               <button
@@ -279,7 +311,7 @@ export function SavedResumesGallery({
                 <div className="text-xs text-muted-foreground">Start from blank</div>
               </button>
 
-              {filtered.map(s => {
+              {visible.map(s => {
                 const isCurrent = currentId === s.id;
                 const isPrimary = primaryId === s.id;
                 const score = computeScore(s.data);
@@ -389,6 +421,129 @@ export function SavedResumesGallery({
                 </div>
               )}
             </div>
+            ) : (
+              <div className="divide-y divide-border rounded-lg border bg-card">
+                <button
+                  onClick={onNew}
+                  className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--navy-light)]/5"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--navy-light)]/10 text-[var(--navy-light)] group-hover:bg-[var(--navy-light)]/20">
+                    <Plus className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">New Resume</div>
+                    <div className="text-xs text-muted-foreground">Start from blank</div>
+                  </div>
+                </button>
+                {visible.map(s => {
+                  const isCurrent = currentId === s.id;
+                  const isPrimary = primaryId === s.id;
+                  const score = computeScore(s.data);
+                  const resumeScore = score.score;
+                  const atsScore = Math.round((score.coverage || 0) * 100);
+                  const scoreColor = (n: number) =>
+                    n >= 70 ? "text-emerald-600" : n >= 40 ? "text-amber-600" : "text-rose-600";
+                  return (
+                    <div
+                      key={s.id}
+                      className={cn(
+                        "group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40",
+                        isCurrent && "bg-[var(--navy-light)]/5"
+                      )}
+                    >
+                      <button
+                        onClick={() => onOpen(s.id)}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        title="Open resume"
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                          <FolderOpen className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="truncate text-sm font-semibold" title={s.name}>{s.name}</span>
+                            {isPrimary && (
+                              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--navy-light)] px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                                <Star className="h-2.5 w-2.5 fill-white" /> Primary
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-0.5 flex items-center gap-3 text-[11px] text-muted-foreground">
+                            <span>{relativeTime(s.updatedAt)}</span>
+                            <span className="hidden sm:inline">·</span>
+                            <span className="hidden sm:inline">Resume <span className={cn("font-semibold", scoreColor(resumeScore))}>{resumeScore}%</span></span>
+                            <span className="hidden sm:inline">·</span>
+                            <span className="hidden sm:inline">ATS <span className={cn("font-semibold", scoreColor(atsScore))}>{atsScore}%</span></span>
+                          </div>
+                        </div>
+                      </button>
+                      <div className="hidden items-center gap-0.5 sm:flex">
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Open in new tab" onClick={() => openInNewTab(s)}>
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Edit" onClick={() => onOpen(s.id)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="Download" onClick={() => downloadOne(s)}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="More">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem onClick={() => onOpen(s.id)}>
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            const next = window.prompt("Rename resume", s.name);
+                            if (next && next.trim()) onRename(s.id, next.trim());
+                          }}>
+                            <Pencil className="h-3.5 w-3.5" /> Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onSetPrimary(s.id, s.name)}>
+                            <Star className={cn("h-3.5 w-3.5", isPrimary && "fill-amber-400 text-amber-500")} />
+                            {isPrimary ? "Unset Primary" : "Set as Primary"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onDuplicate(s.id)}>
+                            <Copy className="h-3.5 w-3.5" /> Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => downloadOne(s)}>
+                            <Download className="h-3.5 w-3.5" /> Download JSON
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onDelete(s.id, s.name)}>
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  );
+                })}
+                {query && filtered.length === 0 && (
+                  <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    No resumes match "{query}".
+                  </div>
+                )}
+              </div>
+            )}
+
+            {hasMore && (
+              <div className="mt-4 flex items-center justify-center gap-3">
+                <span className="text-xs text-muted-foreground">
+                  Showing {visible.length} of {filtered.length}
+                </span>
+                <Button size="sm" variant="outline" onClick={() => setVisibleCount(c => c + (view === "grid" ? 8 : 10))}>
+                  <ChevronDown className="h-3.5 w-3.5" /> Show more
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setVisibleCount(filtered.length)}>
+                  Show all
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
