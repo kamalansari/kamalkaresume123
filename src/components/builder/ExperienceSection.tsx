@@ -94,6 +94,26 @@ export function autoActionVerbs(text: string, fallback?: string): string {
     .join("\n");
 }
 
+/** Same as autoActionVerbs, but also returns each line that was modified. */
+export function autoActionVerbsDetailed(
+  text: string,
+  fallback?: string,
+): { text: string; changes: { before: string; after: string }[] } {
+  const f = fallback && fallback.trim() ? fallback.trim() : "Drove";
+  const changes: { before: string; after: string }[] = [];
+  const out = text
+    .split("\n")
+    .map((l) => {
+      if (!l.trim()) return l;
+      const before = l.trim().replace(/^[-•]\s*/, "");
+      const after = ensureActionVerb(l, f);
+      if (after !== before) changes.push({ before, after });
+      return after;
+    })
+    .join("\n");
+  return { text: out, changes };
+}
+
 /* ---------------- Custom verbs storage ---------------- */
 const CUSTOM_VERBS_KEY = "rb.experience.customVerbs.v1";
 
