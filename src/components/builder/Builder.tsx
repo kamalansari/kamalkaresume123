@@ -1044,6 +1044,21 @@ export function Builder() {
                 <CheckCircle2 className="h-3 w-3" /> Profile applied
               </span>
             )}
+            {verbChanges.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVerbChangesOpen(true)}
+                title="View bullets strengthened by action-verb auto-fix"
+                className="relative"
+              >
+                <Wand2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Changes</span>
+                <span className="ml-1 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-semibold h-4 min-w-4 px-1">
+                  {verbChanges.length}
+                </span>
+              </Button>
+            )}
             <Button variant="accent" onClick={saveCurrent} title={currentId ? `Save "${currentName}"` : "Save resume"}>
               <Save /> <span className="hidden sm:inline">{currentId ? "Save" : "Save…"}</span>
             </Button>
