@@ -25,6 +25,7 @@ import { Route as ApiRoadmapRouteImport } from './routes/api/roadmap'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
 import { Route as ApiRewriteSectionRouteImport } from './routes/api/rewrite-section'
 import { Route as ApiRecommendJobsRouteImport } from './routes/api/recommend-jobs'
+import { Route as ApiParseResumeRouteImport } from './routes/api/parse-resume'
 import { Route as ApiNovaChatRouteImport } from './routes/api/nova-chat'
 import { Route as ApiKeywordBulletsRouteImport } from './routes/api/keyword-bullets'
 import { Route as ApiJobTipRouteImport } from './routes/api/job-tip'
@@ -113,6 +114,11 @@ const ApiRecommendJobsRoute = ApiRecommendJobsRouteImport.update({
   path: '/api/recommend-jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiParseResumeRoute = ApiParseResumeRouteImport.update({
+  id: '/api/parse-resume',
+  path: '/api/parse-resume',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiNovaChatRoute = ApiNovaChatRouteImport.update({
   id: '/api/nova-chat',
   path: '/api/nova-chat',
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/api/job-tip': typeof ApiJobTipRoute
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
+  '/api/parse-resume': typeof ApiParseResumeRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/api/job-tip': typeof ApiJobTipRoute
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
+  '/api/parse-resume': typeof ApiParseResumeRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/api/job-tip': typeof ApiJobTipRoute
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
+  '/api/parse-resume': typeof ApiParseResumeRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -247,6 +256,7 @@ export interface FileRouteTypes {
     | '/api/job-tip'
     | '/api/keyword-bullets'
     | '/api/nova-chat'
+    | '/api/parse-resume'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/api/job-tip'
     | '/api/keyword-bullets'
     | '/api/nova-chat'
+    | '/api/parse-resume'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/api/job-tip'
     | '/api/keyword-bullets'
     | '/api/nova-chat'
+    | '/api/parse-resume'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-summary'
@@ -323,6 +335,7 @@ export interface RootRouteChildren {
   ApiJobTipRoute: typeof ApiJobTipRoute
   ApiKeywordBulletsRoute: typeof ApiKeywordBulletsRoute
   ApiNovaChatRoute: typeof ApiNovaChatRoute
+  ApiParseResumeRoute: typeof ApiParseResumeRoute
   ApiRecommendJobsRoute: typeof ApiRecommendJobsRoute
   ApiRewriteSectionRoute: typeof ApiRewriteSectionRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
@@ -443,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRecommendJobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/parse-resume': {
+      id: '/api/parse-resume'
+      path: '/api/parse-resume'
+      fullPath: '/api/parse-resume'
+      preLoaderRoute: typeof ApiParseResumeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/nova-chat': {
       id: '/api/nova-chat'
       path: '/api/nova-chat'
@@ -515,6 +535,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiJobTipRoute: ApiJobTipRoute,
   ApiKeywordBulletsRoute: ApiKeywordBulletsRoute,
   ApiNovaChatRoute: ApiNovaChatRoute,
+  ApiParseResumeRoute: ApiParseResumeRoute,
   ApiRecommendJobsRoute: ApiRecommendJobsRoute,
   ApiRewriteSectionRoute: ApiRewriteSectionRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
