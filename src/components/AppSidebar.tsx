@@ -1,5 +1,21 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, FileText, Mail, Mic, Briefcase, FlaskConical, Map as MapIcon, LogIn, LogOut, Cloud, Gauge } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileStack,
+  PlusCircle,
+  Gauge,
+  Target,
+  Mail,
+  Zap,
+  Settings,
+  Mic,
+  FlaskConical,
+  Map as MapIcon,
+  LogIn,
+  LogOut,
+  Cloud,
+  Sparkles,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -10,23 +26,29 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const navGroups = [
   {
-    label: "Overview",
-    items: [{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard }],
+    label: "Workspace",
+    items: [
+      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+      { title: "My Resumes", url: "/dashboard", icon: FileStack, match: "/dashboard" },
+      { title: "Create Resume", url: "/builder", icon: PlusCircle },
+    ],
   },
   {
-    label: "Resume",
+    label: "Optimize",
     items: [
-      { title: "Resume Builder", url: "/builder", icon: FileText },
-      { title: "ATS Checker", url: "/ats", icon: Gauge },
-      { title: "Resume Lab", url: "/resume-lab", icon: FlaskConical },
+      { title: "ATS Score", url: "/ats", icon: Gauge },
+      { title: "Job Match", url: "/jobs", icon: Target },
       { title: "Cover Letter", url: "/cover-letter", icon: Mail },
+      { title: "Auto Apply", url: "/jobs", icon: Zap, match: "/jobs/auto" },
     ],
   },
   {
@@ -34,11 +56,8 @@ const navGroups = [
     items: [
       { title: "Interview", url: "/interview", icon: Mic },
       { title: "Roadmap", url: "/roadmap", icon: MapIcon },
+      { title: "Resume Lab", url: "/resume-lab", icon: FlaskConical },
     ],
-  },
-  {
-    label: "Opportunities",
-    items: [{ title: "Job & Network Tracker", url: "/jobs", icon: Briefcase }],
   },
 ] as const;
 
@@ -63,20 +82,43 @@ export function AppSidebar() {
     toast.success("Signed out");
   };
 
+  const initial = (email?.[0] ?? "U").toUpperCase();
+
   return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
+    <Sidebar collapsible="icon" className="border-r">
+      <SidebarHeader className="border-b">
+        <Link
+          to="/dashboard"
+          className="flex items-center gap-2 px-2 py-2 group-data-[collapsible=icon]:justify-center"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
+            <span className="text-sm font-semibold tracking-tight">ResumeForge</span>
+            <span className="text-[10px] text-muted-foreground">ATS Resume Studio</span>
+          </div>
+        </Link>
+      </SidebarHeader>
+      <SidebarContent className="gap-1 py-2">
         {navGroups.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              {group.label}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="gap-0.5">
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                      <Link to={item.url} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(("match" in item && item.match) || item.url)}
+                      tooltip={item.title}
+                      className="h-9 rounded-lg transition-all data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium hover:translate-x-0.5"
+                    >
+                      <Link to={item.url} className="flex items-center gap-3">
+                        <item.icon className="h-[18px] w-[18px]" />
+                        <span className="text-sm">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -85,28 +127,56 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-0.5">
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive("/settings")}
+                  tooltip="Settings"
+                  className="h-9 rounded-lg transition-all hover:translate-x-0.5"
+                >
+                  <Link to="/auth" className="flex items-center gap-3">
+                    <Settings className="h-[18px] w-[18px]" />
+                    <span className="text-sm">Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="border-t">
         <SidebarMenu>
           {email ? (
             <>
               <SidebarMenuItem>
-                <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground">
-                  <Cloud className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="truncate">{email}</span>
+                <div className="flex items-center gap-2 px-1.5 py-1.5 group-data-[collapsible=icon]:justify-center">
+                  <Avatar className="h-7 w-7 shrink-0">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                      {initial}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
+                    <span className="truncate text-xs font-medium">{email}</span>
+                    <span className="flex items-center gap-1 text-[10px] text-emerald-600">
+                      <Cloud className="h-2.5 w-2.5" /> Synced
+                    </span>
+                  </div>
                 </div>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={signOut}>
-                  <LogOut className="h-4 w-4" />
+                <SidebarMenuButton onClick={signOut} tooltip="Sign out" className="h-8 rounded-lg text-muted-foreground hover:text-foreground">
+                  <LogOut className="h-[18px] w-[18px]" />
                   <span>Sign out</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </>
           ) : (
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => navigate({ to: "/auth" })}>
-                <LogIn className="h-4 w-4" />
+              <SidebarMenuButton onClick={() => navigate({ to: "/auth" })} tooltip="Sign in" className="h-8 rounded-lg">
+                <LogIn className="h-[18px] w-[18px]" />
                 <span>Sign in to sync</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
