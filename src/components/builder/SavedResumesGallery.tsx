@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp, Search, X, Download, Upload, ExternalLink, MoreVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Copy, FolderOpen, Star, ChevronDown, ChevronUp, Search, X, Download, Upload, ExternalLink, MoreVertical, LayoutGrid, List as ListIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -36,9 +36,18 @@ export function SavedResumesGallery({
 }: Props) {
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"grid" | "list">(() => {
+    if (typeof window === "undefined") return "list";
+    return (localStorage.getItem("resumeforge.gallery.view") as "grid" | "list") || "list";
+  });
+  const [visibleCount, setVisibleCount] = useState(6);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const uploadRef = useRef<HTMLInputElement | null>(null);
   const [importing, setImporting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("resumeforge.gallery.view", view);
+  }, [view]);
 
   const relativeTime = (ts: number) => {
     const diff = Date.now() - ts;
@@ -161,6 +170,12 @@ export function SavedResumesGallery({
       return hay.includes(q);
     });
   }, [saved, query]);
+
+  // Reset pagination when filter/view changes
+  useEffect(() => { setVisibleCount(view === "grid" ? 6 : 8); }, [query, view]);
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
 
   // Lazy-render the heavy ResumeDocument preview only when the tile scrolls into view.
   function LazyPreview({ resume }: { resume: SavedResume }) {
