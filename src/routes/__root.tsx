@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { TopHeader } from "@/components/TopHeader";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useEffect } from "react";
 import { initCloudSync } from "@/lib/cloudSync";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -128,12 +130,11 @@ function RootComponent() {
           <div className="min-h-screen flex w-full">
             <AppSidebar />
             <div className="flex-1 flex flex-col min-w-0">
-              <header className="h-12 flex items-center border-b bg-background/80 backdrop-blur sticky top-0 z-30 no-print">
-                <SidebarTrigger className="ml-2" />
-              </header>
-              <main className="flex-1 min-w-0">
+              <TopHeader />
+              <main className="flex-1 min-w-0 pb-20 md:pb-0">
                 <AuthGuard><Outlet /></AuthGuard>
               </main>
+              <MobileBottomNav />
             </div>
           </div>
         </SidebarProvider>
