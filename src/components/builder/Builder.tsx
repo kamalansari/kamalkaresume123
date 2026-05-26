@@ -893,6 +893,7 @@ export function Builder() {
       if (!res.ok) { toast.error("AI tailoring failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
       const verbState = loadCustomVerbs();
+      const collected: VerbChange[] = [];
       const tailored: ResumeData = {
         ...source,
         jobDescription: data.jobDescription,
@@ -901,7 +902,10 @@ export function Builder() {
         skills: out.skills || source.skills,
         experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
-          return match ? { ...e, bullets: autoActionVerbs(match.bullets, verbState.fallback) } : e;
+          if (!match) return e;
+          const { text, changes } = autoActionVerbsDetailed(match.bullets, verbState.fallback);
+          for (const c of changes) collected.push({ expId: e.id, title: e.title, company: e.company, ...c });
+          return { ...e, bullets: text };
         }),
       };
       // Always create a NEW tailored copy — never overwrite the Primary or current resume.
@@ -914,9 +918,17 @@ export function Builder() {
       setCurrentId(id);
       setCurrentName(name);
       refreshList();
-      toast.success(primary
+      setVerbChanges(collected);
+      const baseMsg = primary
         ? `Tailored from Primary, saved as "${name}"`
-        : `Tailored resume saved as "${name}"`);
+        : `Tailored resume saved as "${name}"`;
+      if (collected.length > 0) {
+        toast.success(`${baseMsg} · ${collected.length} bullet${collected.length === 1 ? "" : "s"} strengthened`, {
+          action: { label: "View changes", onClick: () => setVerbChangesOpen(true) },
+        });
+      } else {
+        toast.success(baseMsg);
+      }
     } catch {
       toast.error("Network error.");
     } finally {
