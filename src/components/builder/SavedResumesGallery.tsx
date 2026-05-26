@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { ResumeDocument } from "./ResumeDocument";
 import { resumeStore, newId, type SavedResume } from "./resumeStore";
 import { computeScore } from "./atsScore";
+import { importResumeFile } from "@/lib/importResume";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,8 @@ export function SavedResumesGallery({
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const uploadRef = useRef<HTMLInputElement | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const relativeTime = (ts: number) => {
     const diff = Date.now() - ts;
@@ -109,6 +112,29 @@ export function SavedResumesGallery({
       window.dispatchEvent(new Event("resumeforge:refresh"));
     } catch (e) {
       toast.error("Could not import — file is not a valid resume export");
+    }
+  };
+
+  const importResumeUpload = async (file: File) => {
+    setImporting(true);
+    const toastId = toast.loading(`Reading "${file.name}"…`);
+    try {
+      const data = await importResumeFile(file);
+      const baseName = file.name.replace(/\.(pdf|docx|txt)$/i, "").trim() || "Imported resume";
+      const entry: SavedResume = {
+        id: newId(),
+        name: data.name ? `${data.name}'s resume` : baseName,
+        updatedAt: Date.now(),
+        data,
+      };
+      resumeStore.upsert(entry);
+      toast.success("Resume imported — opening editor", { id: toastId });
+      window.dispatchEvent(new Event("resumeforge:refresh"));
+      onOpen(entry.id);
+    } catch (e: any) {
+      toast.error(e?.message || "Could not parse this resume", { id: toastId });
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -207,6 +233,9 @@ export function SavedResumesGallery({
                 </span>
               )}
               <div className="ml-auto flex items-center gap-2">
+                <Button size="sm" variant="accent" onClick={() => uploadRef.current?.click()} disabled={importing} title="Upload a PDF, DOCX, or TXT resume and auto-fill the builder">
+                  <Upload className="h-3.5 w-3.5" /> {importing ? "Importing…" : "Upload Resume"}
+                </Button>
                 <Button size="sm" variant="outline" onClick={exportAll} disabled={saved.length === 0} title="Download all saved resumes as a JSON file">
                   <Download className="h-3.5 w-3.5" /> Export
                 </Button>
@@ -221,6 +250,17 @@ export function SavedResumesGallery({
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) importFile(f);
+                    e.target.value = "";
+                  }}
+                />
+                <input
+                  ref={uploadRef}
+                  type="file"
+                  accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) importResumeUpload(f);
                     e.target.value = "";
                   }}
                 />
