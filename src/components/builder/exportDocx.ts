@@ -255,4 +255,5 @@ export async function exportDocx(data: ResumeData) {
   const blob = await Packer.toBlob(doc);
   const name = (data.name || "resume").replace(/\s+/g, "_");
   saveAs(blob, `${name}.docx`);
+  CURRENT_KW_SET = null;
 }
