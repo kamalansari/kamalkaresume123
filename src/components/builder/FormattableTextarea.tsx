@@ -15,11 +15,12 @@ type Props = {
   rows?: number;
   placeholder?: string;
   className?: string;
+  onBlur?: () => void;
 };
 
 type Apply = (el: HTMLTextAreaElement | null) => { value: string; start: number; end: number } | null;
 
-export function FormattableTextarea({ value, onChange, rows = 4, placeholder, className }: Props) {
+export function FormattableTextarea({ value, onChange, rows = 4, placeholder, className, onBlur }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [hasSelection, setHasSelection] = useState(false);
@@ -83,7 +84,10 @@ export function FormattableTextarea({ value, onChange, rows = 4, placeholder, cl
         onSelect={checkSelection}
         onMouseUp={checkSelection}
         onKeyUp={checkSelection}
-        onBlur={() => setTimeout(checkSelection, 0)}
+        onBlur={() => {
+          setTimeout(checkSelection, 0);
+          onBlur?.();
+        }}
         onKeyDown={e => {
           const mod = e.ctrlKey || e.metaKey;
           const k = e.key.toLowerCase();
