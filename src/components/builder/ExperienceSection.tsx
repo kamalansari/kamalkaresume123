@@ -626,3 +626,131 @@ function AchievementBuilder({ onAdd }: { onAdd: (line: string) => void }) {
     </Popover>
   );
 }
+
+function CustomVerbsMenu({
+  state,
+  onChange,
+}: {
+  state: CustomVerbsState;
+  onChange: (next: CustomVerbsState) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const addVerb = () => {
+    const cleaned = draft
+      .split(/[,\n]/)
+      .map(v => v.trim())
+      .filter(Boolean)
+      .map(v => v.charAt(0).toUpperCase() + v.slice(1));
+    if (!cleaned.length) return;
+    const merged = Array.from(new Set([...state.verbs, ...cleaned]));
+    const nextFallback = state.fallback === "Drove" && !state.verbs.length ? cleaned[0] : state.fallback;
+    onChange({ verbs: merged, fallback: nextFallback });
+    setDraft("");
+    toast.success(`Added ${cleaned.length} verb${cleaned.length > 1 ? "s" : ""}`);
+  };
+
+  const removeVerb = (v: string) => {
+    const verbs = state.verbs.filter(x => x !== v);
+    const fallback = state.fallback === v ? (verbs[0] ?? "Drove") : state.fallback;
+    onChange({ verbs, fallback });
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="ghost">
+          <Settings2 /> My verbs
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80" align="end">
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Add your own verbs</Label>
+            <div className="mt-1 flex gap-2">
+              <Input
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addVerb();
+                  }
+                }}
+                placeholder="Pioneered, Scaled, Crafted"
+              />
+              <Button size="sm" variant="accent" onClick={addVerb} disabled={!draft.trim()}>
+                <Plus />
+              </Button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Comma-separate to add several at once.
+            </p>
+          </div>
+
+          <div>
+            <Label className="text-xs">Your verbs</Label>
+            <div className="mt-1 flex flex-wrap gap-1 min-h-[2rem]">
+              {state.verbs.length === 0 && (
+                <span className="text-xs text-muted-foreground">None yet</span>
+              )}
+              {state.verbs.map(v => (
+                <span
+                  key={v}
+                  className="inline-flex items-center gap-1 text-xs rounded-md border border-border bg-secondary/60 px-2 py-1"
+                >
+                  {v}
+                  <button
+                    type="button"
+                    onClick={() => removeVerb(v)}
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label={`Remove ${v}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">Auto-strengthen fallback</Label>
+            <p className="text-[11px] text-muted-foreground mb-1">
+              Replaces weak openers (e.g. "responsible for", "worked on").
+            </p>
+            <select
+              className="w-full h-9 rounded-md border border-border bg-background px-2 text-sm"
+              value={state.fallback}
+              onChange={e => onChange({ ...state, fallback: e.target.value })}
+            >
+              <optgroup label="My verbs">
+                {state.verbs.length === 0 && <option disabled>— add your own above —</option>}
+                {state.verbs.map(v => (
+                  <option key={`c-${v}`} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </optgroup>
+              {ACTION_VERBS.map(g => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.verbs.map(v => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex justify-end">
+            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+              Done
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
