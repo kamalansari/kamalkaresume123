@@ -110,6 +110,11 @@ export function Builder() {
   const [profileRenameId, setProfileRenameId] = useState<string | null>(null);
   const score = useMemo(() => computeScore(data), [data]);
 
+  // Change log of bullets rewritten by autoActionVerbs after the most recent JD tailoring.
+  type VerbChange = { expId: string; title: string; company: string; before: string; after: string };
+  const [verbChanges, setVerbChanges] = useState<VerbChange[]>([]);
+  const [verbChangesOpen, setVerbChangesOpen] = useState(false);
+
   // ---- Undo/Redo for section ordering & custom section edits ----
   type SectionsSnapshot = { sectionOrder: SectionId[]; customSections: CustomSection[]; sidebarSections: SectionId[] | undefined };
   const [sectionsPast, setSectionsPast] = useState<SectionsSnapshot[]>([]);
