@@ -39,6 +39,33 @@ function AtsCheckerPage() {
     }
   }, []);
 
+  // Live-refresh: re-pull the selected resume + list whenever the underlying
+  // store changes (other tab edits, Builder saves, cloud sync) so the ATS
+  // score auto-updates without a manual Refresh click.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const resync = () => {
+      const list = resumeStore.list();
+      setSaved(list);
+      if (!selectedId) return;
+      const entry = resumeStore.get(selectedId);
+      if (!entry) return;
+      setData(prev => ({ ...defaultResume, ...entry.data, jobDescription: prev.jobDescription }));
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key.startsWith("resumeforge.")) resync();
+    };
+    const onFocus = () => resync();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", onFocus);
+    const interval = window.setInterval(resync, 2000);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(interval);
+    };
+  }, [selectedId]);
+
   const score = useMemo(() => computeScore(data), [data]);
 
   const pickResume = (id: string) => {
