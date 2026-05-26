@@ -82,7 +82,7 @@ function ensureActionVerb(line: string, fallback = "Drove"): string {
 }
 
 /** Auto-strengthen every line with an action verb when missing. */
-function autoActionVerbs(text: string, fallback?: string): string {
+export function autoActionVerbs(text: string, fallback?: string): string {
   const f = fallback && fallback.trim() ? fallback.trim() : "Drove";
   return text
     .split("\n")
@@ -99,7 +99,7 @@ const CUSTOM_VERBS_KEY = "rb.experience.customVerbs.v1";
 
 type CustomVerbsState = { verbs: string[]; fallback: string };
 
-function loadCustomVerbs(): CustomVerbsState {
+export function loadCustomVerbs(): CustomVerbsState {
   if (typeof window === "undefined") return { verbs: [], fallback: "Drove" };
   try {
     const raw = window.localStorage.getItem(CUSTOM_VERBS_KEY);
