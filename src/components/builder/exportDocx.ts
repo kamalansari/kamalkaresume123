@@ -4,6 +4,35 @@ const { saveAs } = FileSaver;
 import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
+import { jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
+
+const KW_WORD_RE = /[A-Za-z][A-Za-z0-9+.#-]{2,}/g;
+let CURRENT_KW_SET: Set<string> | null = null;
+
+function splitByKeywords(text: string, baseBold: boolean, italic?: boolean, underline?: boolean): TextRun[] {
+  const set = CURRENT_KW_SET;
+  if (!set || set.size === 0) {
+    return [new TextRun({ text, size: 21, bold: baseBold, italics: italic, underline: underline ? {} : undefined })];
+  }
+  const runs: TextRun[] = [];
+  const mk = (t: string, bold: boolean) => {
+    if (!t) return;
+    runs.push(new TextRun({ text: t, size: 21, bold: bold || baseBold, italics: italic, underline: underline ? {} : undefined }));
+  };
+  let last = 0;
+  let m: RegExpExecArray | null;
+  KW_WORD_RE.lastIndex = 0;
+  while ((m = KW_WORD_RE.exec(text)) !== null) {
+    if (isJdKeyword(m[0], set)) {
+      if (m.index > last) mk(text.slice(last, m.index), false);
+      mk(m[0], true);
+      last = m.index + m[0].length;
+    }
+  }
+  if (last === 0) return [new TextRun({ text, size: 21, bold: baseBold, italics: italic, underline: underline ? {} : undefined })];
+  if (last < text.length) mk(text.slice(last), false);
+  return runs;
+}
 
 function hex(h: string) { return h.replace("#", "").toUpperCase(); }
 function cleanFont(s: string) { return s.replace(/['"]/g, "").trim(); }
@@ -17,13 +46,15 @@ function heading(text: string, color: string, font?: string) {
 }
 
 function inlineRuns(text: string, baseBold?: boolean) {
-  return parseInline(text).map(r => new TextRun({
-    text: r.text,
-    size: 21,
-    bold: r.bold || baseBold,
-    italics: r.italic,
-    underline: r.underline ? {} : undefined,
-  }));
+  const out: TextRun[] = [];
+  for (const r of parseInline(text)) {
+    if (r.bold) {
+      out.push(new TextRun({ text: r.text, size: 21, bold: true, italics: r.italic, underline: r.underline ? {} : undefined }));
+    } else {
+      out.push(...splitByKeywords(r.text, !!baseBold, r.italic, r.underline));
+    }
+  }
+  return out;
 }
 
 function bullet(text: string, bodyBold?: boolean, justify?: boolean) {
@@ -101,6 +132,11 @@ export async function exportDocx(data: ResumeData) {
   const headingFont = cleanFont(preset.heading);
   const bodyFont = cleanFont(preset.body);
   const baseHalfPt = Math.round((data.fontSize ?? 10.5) * 2);
+  // Build the ATS keyword set so body-text runs auto-bold the same terms the
+  // on-screen preview highlights (common power-words + JD-derived tokens).
+  const kwSet = new Set<string>(COMMON_ATS_KEYWORD_SET);
+  for (const k of jdKeywordSet(data.jobDescription || "")) kwSet.add(k);
+  CURRENT_KW_SET = kwSet;
   const sectionMap = buildSections(data, color, headingFont);
 
   const header: Paragraph[] = [
