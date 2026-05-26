@@ -38,7 +38,7 @@ import { PreviewToolbar } from "./PreviewToolbar";
 import { MonthYearPicker, DateRangePicker } from "./MonthYearPicker";
 import { SavedResumesGallery } from "./SavedResumesGallery";
 import { TemplatesPopover, SectionsPopover, StylePopover } from "./BuilderTopToolbar";
-import { ExperienceSection, autoActionVerbs, loadCustomVerbs } from "./ExperienceSection";
+import { ExperienceSection, autoActionVerbs, autoActionVerbsDetailed, loadCustomVerbs } from "./ExperienceSection";
 import lzString from "lz-string";
 const { decompressFromEncodedURIComponent } = lzString;
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -109,6 +109,11 @@ export function Builder() {
   const [profileNameDraft, setProfileNameDraft] = useState("");
   const [profileRenameId, setProfileRenameId] = useState<string | null>(null);
   const score = useMemo(() => computeScore(data), [data]);
+
+  // Change log of bullets rewritten by autoActionVerbs after the most recent JD tailoring.
+  type VerbChange = { expId: string; title: string; company: string; before: string; after: string };
+  const [verbChanges, setVerbChanges] = useState<VerbChange[]>([]);
+  const [verbChangesOpen, setVerbChangesOpen] = useState(false);
 
   // ---- Undo/Redo for section ordering & custom section edits ----
   type SectionsSnapshot = { sectionOrder: SectionId[]; customSections: CustomSection[]; sidebarSections: SectionId[] | undefined };
@@ -888,6 +893,7 @@ export function Builder() {
       if (!res.ok) { toast.error("AI tailoring failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
       const verbState = loadCustomVerbs();
+      const collected: VerbChange[] = [];
       const tailored: ResumeData = {
         ...source,
         jobDescription: data.jobDescription,
@@ -896,7 +902,10 @@ export function Builder() {
         skills: out.skills || source.skills,
         experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
-          return match ? { ...e, bullets: autoActionVerbs(match.bullets, verbState.fallback) } : e;
+          if (!match) return e;
+          const { text, changes } = autoActionVerbsDetailed(match.bullets, verbState.fallback);
+          for (const c of changes) collected.push({ expId: e.id, title: e.title, company: e.company, ...c });
+          return { ...e, bullets: text };
         }),
       };
       // Always create a NEW tailored copy — never overwrite the Primary or current resume.
@@ -909,9 +918,17 @@ export function Builder() {
       setCurrentId(id);
       setCurrentName(name);
       refreshList();
-      toast.success(primary
+      setVerbChanges(collected);
+      const baseMsg = primary
         ? `Tailored from Primary, saved as "${name}"`
-        : `Tailored resume saved as "${name}"`);
+        : `Tailored resume saved as "${name}"`;
+      if (collected.length > 0) {
+        toast.success(`${baseMsg} · ${collected.length} bullet${collected.length === 1 ? "" : "s"} strengthened`, {
+          action: { label: "View changes", onClick: () => setVerbChangesOpen(true) },
+        });
+      } else {
+        toast.success(baseMsg);
+      }
     } catch {
       toast.error("Network error.");
     } finally {
@@ -946,6 +963,7 @@ export function Builder() {
       if (!res.ok) { toast.error("AI generation failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
       const verbState = loadCustomVerbs();
+      const collected: VerbChange[] = [];
       const tailored: ResumeData = {
         ...source,
         jobDescription: jd,
@@ -954,7 +972,10 @@ export function Builder() {
         skills: out.skills || source.skills,
         experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
-          return match ? { ...e, bullets: autoActionVerbs(match.bullets, verbState.fallback) } : e;
+          if (!match) return e;
+          const { text, changes } = autoActionVerbsDetailed(match.bullets, verbState.fallback);
+          for (const c of changes) collected.push({ expId: e.id, title: e.title, company: e.company, ...c });
+          return { ...e, bullets: text };
         }),
       };
       // Never overwrite the Primary Resume — when primary exists, force save-as-new.
@@ -969,10 +990,25 @@ export function Builder() {
         setCurrentId(id);
         setCurrentName(name);
         refreshList();
-        toast.success(primary ? `Tailored from Primary, saved as "${name}"` : `Tailored resume saved as "${name}"`);
+        const baseMsg = primary ? `Tailored from Primary, saved as "${name}"` : `Tailored resume saved as "${name}"`;
+        setVerbChanges(collected);
+        if (collected.length > 0) {
+          toast.success(`${baseMsg} · ${collected.length} bullet${collected.length === 1 ? "" : "s"} strengthened`, {
+            action: { label: "View changes", onClick: () => setVerbChangesOpen(true) },
+          });
+        } else {
+          toast.success(baseMsg);
+        }
       } else {
         setData(tailored);
-        toast.success("ATS-tailored resume generated");
+        setVerbChanges(collected);
+        if (collected.length > 0) {
+          toast.success(`ATS-tailored resume generated · ${collected.length} bullet${collected.length === 1 ? "" : "s"} strengthened`, {
+            action: { label: "View changes", onClick: () => setVerbChangesOpen(true) },
+          });
+        } else {
+          toast.success("ATS-tailored resume generated");
+        }
       }
       setJdDialogOpen(false);
       setJdDialogText("");
@@ -1007,6 +1043,21 @@ export function Builder() {
               >
                 <CheckCircle2 className="h-3 w-3" /> Profile applied
               </span>
+            )}
+            {verbChanges.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setVerbChangesOpen(true)}
+                title="View bullets strengthened by action-verb auto-fix"
+                className="relative"
+              >
+                <Wand2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Changes</span>
+                <span className="ml-1 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-semibold h-4 min-w-4 px-1">
+                  {verbChanges.length}
+                </span>
+              </Button>
             )}
             <Button variant="accent" onClick={saveCurrent} title={currentId ? `Save "${currentName}"` : "Save resume"}>
               <Save /> <span className="hidden sm:inline">{currentId ? "Save" : "Save…"}</span>
@@ -1823,6 +1874,47 @@ export function Builder() {
         </div>
         )}
       </div>
+      <Dialog open={verbChangesOpen} onOpenChange={setVerbChangesOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4" /> Action-verb changes
+            </DialogTitle>
+          </DialogHeader>
+          {verbChanges.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No bullets were modified.</p>
+          ) : (
+            <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1">
+              <p className="text-xs text-muted-foreground">
+                {verbChanges.length} bullet{verbChanges.length === 1 ? "" : "s"} were rewritten to start with stronger action verbs after JD tailoring.
+              </p>
+              {Object.entries(
+                verbChanges.reduce<Record<string, VerbChange[]>>((acc, c) => {
+                  const key = `${c.title}${c.company ? ` · ${c.company}` : ""}`;
+                  (acc[key] ||= []).push(c);
+                  return acc;
+                }, {}),
+              ).map(([group, items]) => (
+                <div key={group} className="rounded-lg border border-border p-3">
+                  <div className="text-xs font-semibold text-foreground mb-2">{group}</div>
+                  <ul className="space-y-2">
+                    {items.map((c, i) => (
+                      <li key={i} className="text-sm space-y-1">
+                        <div className="text-muted-foreground line-through decoration-destructive/60">{c.before}</div>
+                        <div className="text-foreground">{c.after}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVerbChanges([])}>Clear log</Button>
+            <Button onClick={() => setVerbChangesOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
