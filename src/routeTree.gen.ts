@@ -13,6 +13,7 @@ import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as ResumeLabRouteImport } from './routes/resume-lab'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as InterviewRouteImport } from './routes/interview'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CoverLetterRouteImport } from './routes/cover-letter'
 import { Route as BuilderRouteImport } from './routes/builder'
@@ -49,6 +50,11 @@ const JobsRoute = JobsRouteImport.update({
 const InterviewRoute = InterviewRouteImport.update({
   id: '/interview',
   path: '/interview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/builder': typeof BuilderRoute
   '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
   '/resume-lab': typeof ResumeLabRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/builder': typeof BuilderRoute
   '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
   '/resume-lab': typeof ResumeLabRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/builder': typeof BuilderRoute
   '/cover-letter': typeof CoverLetterRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
   '/resume-lab': typeof ResumeLabRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/builder'
     | '/cover-letter'
     | '/dashboard'
+    | '/forgot-password'
     | '/interview'
     | '/jobs'
     | '/resume-lab'
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/builder'
     | '/cover-letter'
     | '/dashboard'
+    | '/forgot-password'
     | '/interview'
     | '/jobs'
     | '/resume-lab'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/builder'
     | '/cover-letter'
     | '/dashboard'
+    | '/forgot-password'
     | '/interview'
     | '/jobs'
     | '/resume-lab'
@@ -286,6 +298,7 @@ export interface RootRouteChildren {
   BuilderRoute: typeof BuilderRoute
   CoverLetterRoute: typeof CoverLetterRoute
   DashboardRoute: typeof DashboardRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   InterviewRoute: typeof InterviewRoute
   JobsRoute: typeof JobsRoute
   ResumeLabRoute: typeof ResumeLabRoute
@@ -331,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/interview'
       fullPath: '/interview'
       preLoaderRoute: typeof InterviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -462,6 +482,7 @@ const rootRouteChildren: RootRouteChildren = {
   BuilderRoute: BuilderRoute,
   CoverLetterRoute: CoverLetterRoute,
   DashboardRoute: DashboardRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   InterviewRoute: InterviewRoute,
   JobsRoute: JobsRoute,
   ResumeLabRoute: ResumeLabRoute,
@@ -481,3 +502,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
