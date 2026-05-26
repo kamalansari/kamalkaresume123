@@ -887,6 +887,7 @@ export function Builder() {
       if (res.status === 402) { toast.error("AI credits exhausted."); return; }
       if (!res.ok) { toast.error("AI tailoring failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
+      const verbState = loadCustomVerbs();
       const tailored: ResumeData = {
         ...source,
         jobDescription: data.jobDescription,
@@ -895,7 +896,7 @@ export function Builder() {
         skills: out.skills || source.skills,
         experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
-          return match ? { ...e, bullets: match.bullets } : e;
+          return match ? { ...e, bullets: autoActionVerbs(match.bullets, verbState.fallback) } : e;
         }),
       };
       // Always create a NEW tailored copy — never overwrite the Primary or current resume.
@@ -944,6 +945,7 @@ export function Builder() {
       if (res.status === 402) { toast.error("AI credits exhausted."); return; }
       if (!res.ok) { toast.error("AI generation failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
+      const verbState = loadCustomVerbs();
       const tailored: ResumeData = {
         ...source,
         jobDescription: jd,
@@ -952,7 +954,7 @@ export function Builder() {
         skills: out.skills || source.skills,
         experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
-          return match ? { ...e, bullets: match.bullets } : e;
+          return match ? { ...e, bullets: autoActionVerbs(match.bullets, verbState.fallback) } : e;
         }),
       };
       // Never overwrite the Primary Resume — when primary exists, force save-as-new.
