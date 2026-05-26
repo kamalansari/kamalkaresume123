@@ -26,6 +26,8 @@ import {
   History,
   TrendingUp,
   ChevronDown,
+  Settings2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -80,11 +82,45 @@ function ensureActionVerb(line: string, fallback = "Drove"): string {
 }
 
 /** Auto-strengthen every line with an action verb when missing. */
-function autoActionVerbs(text: string): string {
+function autoActionVerbs(text: string, fallback?: string): string {
+  const f = fallback && fallback.trim() ? fallback.trim() : "Drove";
   return text
     .split("\n")
-    .map(l => (l.trim() ? ensureActionVerb(l) : l))
+    .map((l, i) => {
+      if (!l.trim()) return l;
+      // Rotate through custom verbs list if multiple provided (comma list handled by caller)
+      return ensureActionVerb(l, f);
+    })
     .join("\n");
+}
+
+/* ---------------- Custom verbs storage ---------------- */
+const CUSTOM_VERBS_KEY = "rb.experience.customVerbs.v1";
+
+type CustomVerbsState = { verbs: string[]; fallback: string };
+
+function loadCustomVerbs(): CustomVerbsState {
+  if (typeof window === "undefined") return { verbs: [], fallback: "Drove" };
+  try {
+    const raw = window.localStorage.getItem(CUSTOM_VERBS_KEY);
+    if (!raw) return { verbs: [], fallback: "Drove" };
+    const parsed = JSON.parse(raw);
+    return {
+      verbs: Array.isArray(parsed?.verbs) ? parsed.verbs.filter((v: unknown) => typeof v === "string") : [],
+      fallback: typeof parsed?.fallback === "string" && parsed.fallback.trim() ? parsed.fallback : "Drove",
+    };
+  } catch {
+    return { verbs: [], fallback: "Drove" };
+  }
+}
+
+function saveCustomVerbs(s: CustomVerbsState) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(CUSTOM_VERBS_KEY, JSON.stringify(s));
+  } catch {
+    /* ignore */
+  }
 }
 
 const HISTORY_KEY = "rb.experience.history.v1";
@@ -140,6 +176,11 @@ export function ExperienceSection({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const [customVerbs, setCustomVerbs] = useState<CustomVerbsState>(() => loadCustomVerbs());
+  useEffect(() => {
+    saveCustomVerbs(customVerbs);
+  }, [customVerbs]);
+
   // History: snapshot whenever experiences change (debounced).
   const [history, setHistory] = useState<HistorySnapshot[]>(() => loadHistory());
   const lastSnap = useRef<string>("");
@@ -184,6 +225,7 @@ export function ExperienceSection({
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <h3 className="font-display font-semibold">Experience</h3>
         <div className="flex items-center gap-2">
+          <CustomVerbsMenu state={customVerbs} onChange={setCustomVerbs} />
           <HistoryMenu history={history} onRestore={restore} />
           <Button size="sm" variant="outline" onClick={addExp}>
             <Plus /> Add
@@ -205,6 +247,7 @@ export function ExperienceSection({
                 key={e.id}
                 index={idx}
                 exp={e}
+                customVerbs={customVerbs}
                 onChange={patch => updateExp(e.id, patch)}
                 onRemove={() => removeExp(e.id)}
                 onRewrite={async () => {
