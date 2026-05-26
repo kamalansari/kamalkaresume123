@@ -40,6 +40,7 @@ import { resumeStore, newId, type SavedResume } from "@/components/builder/resum
 import { computeScore } from "@/components/builder/atsScore";
 import { defaultResume, type ResumeData, type TemplateId } from "@/components/builder/types";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard")({
   codeSplitGroupings: [["loader", "component"]],
@@ -104,6 +105,17 @@ function DashboardPage() {
   const [q, setQ] = useState("");
   const [tpl, setTpl] = useState<"all" | TemplateId>("all");
   const [sort, setSort] = useState<SortKey>("updated");
+  const [profile, setProfile] = useState<{ name: string | null; email: string | null; lastSignInAt: string | null } | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      if (!u) { setProfile(null); return; }
+      const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
+      const name = (meta.full_name as string) || (meta.name as string) || (u.email ? u.email.split("@")[0] : null);
+      setProfile({ name, email: u.email ?? null, lastSignInAt: u.last_sign_in_at ?? null });
+    });
+  }, []);
 
   const refresh = () => {
     setItems(resumeStore.list());
@@ -233,9 +245,13 @@ function DashboardPage() {
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Workspace
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">My Resumes</h1>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+            {profile?.name ? `Welcome back, ${profile.name}` : "My Resumes"}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage every version, track ATS scores, and pick up editing where you left off.
+            {profile?.lastSignInAt
+              ? `Last sign-in ${relTime(new Date(profile.lastSignInAt).getTime())} · synced across your devices.`
+              : "Manage every version, track ATS scores, and pick up editing where you left off."}
           </p>
         </div>
         <div className="flex items-center gap-2">
