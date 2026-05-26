@@ -185,7 +185,7 @@ export const defaultResume: ResumeData = {
   languages: [],
   extraKeywords: "",
   sectionOrder: ["summary", "experience", "education", "skills"],
-  justifyText: false,
+  justifyText: true,
   boldBody: false,
   customSections: [],
 };
