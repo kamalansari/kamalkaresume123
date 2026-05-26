@@ -15,6 +15,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useEffect } from "react";
 import { initCloudSync } from "@/lib/cloudSync";
+import { AuthGuard } from "@/components/AuthGuard";
 
 function NotFoundComponent() {
   return (
@@ -131,7 +132,7 @@ function RootComponent() {
                 <SidebarTrigger className="ml-2" />
               </header>
               <main className="flex-1 min-w-0">
-                <Outlet />
+                <AuthGuard><Outlet /></AuthGuard>
               </main>
             </div>
           </div>
