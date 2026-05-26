@@ -317,6 +317,7 @@ function SortableExperienceItem({
   onRemove,
   onRewrite,
   isRewriting,
+  customVerbs,
 }: {
   exp: Experience;
   index: number;
@@ -324,6 +325,7 @@ function SortableExperienceItem({
   onRemove: () => void;
   onRewrite: () => void | Promise<void>;
   isRewriting: boolean;
+  customVerbs: CustomVerbsState;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: exp.id,
@@ -346,7 +348,7 @@ function SortableExperienceItem({
   };
 
   const applyActionVerbs = () => {
-    const next = autoActionVerbs(exp.bullets);
+    const next = autoActionVerbs(exp.bullets, customVerbs.fallback);
     if (next === exp.bullets) {
       toast("Bullets already lead with strong verbs");
     } else {
@@ -452,7 +454,7 @@ function SortableExperienceItem({
             onChange={v => onChange({ bullets: v })}
             onBlur={() => {
               if (!exp.bullets.trim()) return;
-              const next = autoActionVerbs(exp.bullets);
+              const next = autoActionVerbs(exp.bullets, customVerbs.fallback);
               if (next !== exp.bullets) {
                 onChange({ bullets: next });
                 toast.success("Bullets auto-strengthened with action verbs");
@@ -466,7 +468,7 @@ function SortableExperienceItem({
   );
 }
 
-function ActionVerbMenu({ onPick }: { onPick: (verb: string) => void }) {
+function ActionVerbMenu({ onPick, customVerbs }: { onPick: (verb: string) => void; customVerbs?: string[] }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -475,6 +477,25 @@ function ActionVerbMenu({ onPick }: { onPick: (verb: string) => void }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72 max-h-80 overflow-auto">
+        {customVerbs && customVerbs.length > 0 && (
+          <div className="py-1">
+            <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              My verbs
+            </DropdownMenuLabel>
+            <div className="flex flex-wrap gap-1 px-2 pb-1">
+              {customVerbs.map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => onPick(v)}
+                  className="text-xs rounded-md border border-[var(--navy-light)] bg-[var(--navy-light)]/10 px-2 py-1 hover:bg-[var(--navy-light)]/20"
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {ACTION_VERBS.map(g => (
           <div key={g.group} className="py-1">
             <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">
