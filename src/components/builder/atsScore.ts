@@ -187,7 +187,14 @@ export function computeScore(r: Partial<ResumeData>): ScoreResult {
   const isMatch = (t: string) => resumeCanonSet.has(canonical(t));
   const matched = jdTokens.filter(isMatch);
   const missing = jdTokens.filter(t => !isMatch(t));
-  const coverage = jdTokens.length ? matched.length / jdTokens.length : 0;
+  let coverage = jdTokens.length ? matched.length / jdTokens.length : 0;
+  // Fallback when no JD is pasted: score the resume against a generic
+  // ATS keyword set so users still see a meaningful number.
+  if (!jdTokens.length) {
+    const common = Array.from(COMMON_ATS_KEYWORD_SET);
+    const hit = common.filter(c => resumeCanonSet.has(c)).length;
+    coverage = common.length ? hit / common.length : 0;
+  }
 
   const experienceBullets = experience.map(e => toText(e.bullets)).join(" ");
   const totalBullets = experience.reduce((n, e) => n + toText(e.bullets).split("\n").filter(Boolean).length, 0);
