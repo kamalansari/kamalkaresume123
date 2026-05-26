@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as ResumeLabRouteImport } from './routes/resume-lab'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -40,6 +41,11 @@ const RoadmapRoute = RoadmapRouteImport.update({
 const ResumeLabRoute = ResumeLabRouteImport.update({
   id: '/resume-lab',
   path: '/resume-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JobsRoute = JobsRouteImport.update({
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/resume-lab': typeof ResumeLabRoute
   '/roadmap': typeof RoadmapRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
@@ -177,6 +184,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/resume-lab': typeof ResumeLabRoute
   '/roadmap': typeof RoadmapRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
@@ -202,6 +210,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/interview': typeof InterviewRoute
   '/jobs': typeof JobsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/resume-lab': typeof ResumeLabRoute
   '/roadmap': typeof RoadmapRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
@@ -228,6 +237,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/interview'
     | '/jobs'
+    | '/reset-password'
     | '/resume-lab'
     | '/roadmap'
     | '/api/align-resume'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/interview'
     | '/jobs'
+    | '/reset-password'
     | '/resume-lab'
     | '/roadmap'
     | '/api/align-resume'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/interview'
     | '/jobs'
+    | '/reset-password'
     | '/resume-lab'
     | '/roadmap'
     | '/api/align-resume'
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   InterviewRoute: typeof InterviewRoute
   JobsRoute: typeof JobsRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ResumeLabRoute: typeof ResumeLabRoute
   RoadmapRoute: typeof RoadmapRoute
   ApiAlignResumeRoute: typeof ApiAlignResumeRoute
@@ -330,6 +343,13 @@ declare module '@tanstack/react-router' {
       path: '/resume-lab'
       fullPath: '/resume-lab'
       preLoaderRoute: typeof ResumeLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/jobs': {
@@ -485,6 +505,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   InterviewRoute: InterviewRoute,
   JobsRoute: JobsRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ResumeLabRoute: ResumeLabRoute,
   RoadmapRoute: RoadmapRoute,
   ApiAlignResumeRoute: ApiAlignResumeRoute,
