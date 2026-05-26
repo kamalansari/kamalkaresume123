@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { computeScore } from "./atsScore";
 import type { ResumeData } from "./types";
+import { AtsDebugPanel } from "./AtsDebugPanel";
 
 type Tab = "resume" | "ats" | "nova";
 
@@ -68,6 +69,7 @@ export function AtsPanel({
         />
       )}
       {tab === "nova" && <NovaChatView data={data} />}
+      {(tab === "resume" || tab === "ats") && <AtsDebugPanel data={data} />}
     </aside>
   );
 }
