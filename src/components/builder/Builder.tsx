@@ -689,6 +689,12 @@ export function Builder() {
     const liveSet = new Set<string>(COMMON_ATS_KEYWORD_SET);
     for (const k of jdKeywordSet(data.jobDescription || "")) liveSet.add(k);
     const isKw = (w: string) => isJdKeyword(w, liveSet);
+    // Initial pass: bold ATS keywords inside every editable preview block
+    // so the highlights are visible immediately (and get captured by PDF
+    // print / share / save flows) without waiting for the user to type.
+    root.querySelectorAll<HTMLElement>("[data-preview-edit]").forEach(el => {
+      try { highlightKeywordsInEditable(el, isKw); } catch { /* ignore */ }
+    });
     const onInput = (e: Event) => {
       const target = e.target as HTMLElement | null;
       const editEl = target?.closest?.("[data-preview-edit]") as HTMLElement | null;
