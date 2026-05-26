@@ -963,6 +963,7 @@ export function Builder() {
       if (!res.ok) { toast.error("AI generation failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
       const verbState = loadCustomVerbs();
+      const collected: VerbChange[] = [];
       const tailored: ResumeData = {
         ...source,
         jobDescription: jd,
@@ -971,7 +972,10 @@ export function Builder() {
         skills: out.skills || source.skills,
         experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
-          return match ? { ...e, bullets: autoActionVerbs(match.bullets, verbState.fallback) } : e;
+          if (!match) return e;
+          const { text, changes } = autoActionVerbsDetailed(match.bullets, verbState.fallback);
+          for (const c of changes) collected.push({ expId: e.id, title: e.title, company: e.company, ...c });
+          return { ...e, bullets: text };
         }),
       };
       // Never overwrite the Primary Resume — when primary exists, force save-as-new.
@@ -986,10 +990,25 @@ export function Builder() {
         setCurrentId(id);
         setCurrentName(name);
         refreshList();
-        toast.success(primary ? `Tailored from Primary, saved as "${name}"` : `Tailored resume saved as "${name}"`);
+        const baseMsg = primary ? `Tailored from Primary, saved as "${name}"` : `Tailored resume saved as "${name}"`;
+        setVerbChanges(collected);
+        if (collected.length > 0) {
+          toast.success(`${baseMsg} · ${collected.length} bullet${collected.length === 1 ? "" : "s"} strengthened`, {
+            action: { label: "View changes", onClick: () => setVerbChangesOpen(true) },
+          });
+        } else {
+          toast.success(baseMsg);
+        }
       } else {
         setData(tailored);
-        toast.success("ATS-tailored resume generated");
+        setVerbChanges(collected);
+        if (collected.length > 0) {
+          toast.success(`ATS-tailored resume generated · ${collected.length} bullet${collected.length === 1 ? "" : "s"} strengthened`, {
+            action: { label: "View changes", onClick: () => setVerbChangesOpen(true) },
+          });
+        } else {
+          toast.success("ATS-tailored resume generated");
+        }
       }
       setJdDialogOpen(false);
       setJdDialogText("");
