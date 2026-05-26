@@ -248,6 +248,22 @@ export function SavedResumesGallery({
                 </span>
               )}
               <div className="ml-auto flex items-center gap-2">
+                <div className="hidden sm:flex items-center rounded-md border bg-background p-0.5">
+                  <button
+                    onClick={() => setView("list")}
+                    className={cn("flex h-7 items-center gap-1 rounded px-2 text-xs transition-colors", view === "list" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="List view"
+                  >
+                    <ListIcon className="h-3.5 w-3.5" /> List
+                  </button>
+                  <button
+                    onClick={() => setView("grid")}
+                    className={cn("flex h-7 items-center gap-1 rounded px-2 text-xs transition-colors", view === "grid" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
+                    title="Grid view"
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" /> Grid
+                  </button>
+                </div>
                 <Button size="sm" variant="accent" onClick={() => uploadRef.current?.click()} disabled={importing} title="Upload a PDF, DOCX, or TXT resume and auto-fill the builder">
                   <Upload className="h-3.5 w-3.5" /> {importing ? "Importing…" : "Upload Resume"}
                 </Button>
