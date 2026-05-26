@@ -358,8 +358,17 @@ function AtsScoreView({
 
   if (!data.jobDescription.trim()) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
-        Paste a target job description in the editor to unlock the ATS keyword breakdown.
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className={cn("text-white p-4 flex items-center gap-3", statusTone)}>
+          <div className="text-3xl font-display font-bold leading-none">{atsPct}%</div>
+          <div className="text-xs leading-tight">
+            <div className="font-semibold">Generic ATS baseline</div>
+            <div className="opacity-90">Scored against common ATS keywords.</div>
+          </div>
+        </div>
+        <div className="p-4 text-sm text-muted-foreground border-t border-border">
+          Paste a target job description in the editor to unlock the full keyword breakdown tailored to that role.
+        </div>
       </div>
     );
   }
