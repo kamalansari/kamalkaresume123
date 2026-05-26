@@ -7,6 +7,7 @@ import { resumeStore, type SavedResume } from "@/components/builder/resumeStore"
 import { defaultResume, type ResumeData } from "@/components/builder/types";
 import { computeScore } from "@/components/builder/atsScore";
 import { AtsPanel } from "@/components/builder/AtsPanel";
+import { AtsDebugPanel } from "@/components/builder/AtsDebugPanel";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -164,6 +165,10 @@ function AtsCheckerPage() {
           onOneClickOptimize={() => toast.message("Open the Builder to run One-Click Optimize.")}
           optimizing={false}
         />
+      </div>
+
+      <div className="mt-6">
+        <AtsDebugPanel data={data} />
       </div>
     </div>
   );
