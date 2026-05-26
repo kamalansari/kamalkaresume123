@@ -26,6 +26,8 @@ import {
   History,
   TrendingUp,
   ChevronDown,
+  Settings2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -80,11 +82,45 @@ function ensureActionVerb(line: string, fallback = "Drove"): string {
 }
 
 /** Auto-strengthen every line with an action verb when missing. */
-function autoActionVerbs(text: string): string {
+function autoActionVerbs(text: string, fallback?: string): string {
+  const f = fallback && fallback.trim() ? fallback.trim() : "Drove";
   return text
     .split("\n")
-    .map(l => (l.trim() ? ensureActionVerb(l) : l))
+    .map((l, i) => {
+      if (!l.trim()) return l;
+      // Rotate through custom verbs list if multiple provided (comma list handled by caller)
+      return ensureActionVerb(l, f);
+    })
     .join("\n");
+}
+
+/* ---------------- Custom verbs storage ---------------- */
+const CUSTOM_VERBS_KEY = "rb.experience.customVerbs.v1";
+
+type CustomVerbsState = { verbs: string[]; fallback: string };
+
+function loadCustomVerbs(): CustomVerbsState {
+  if (typeof window === "undefined") return { verbs: [], fallback: "Drove" };
+  try {
+    const raw = window.localStorage.getItem(CUSTOM_VERBS_KEY);
+    if (!raw) return { verbs: [], fallback: "Drove" };
+    const parsed = JSON.parse(raw);
+    return {
+      verbs: Array.isArray(parsed?.verbs) ? parsed.verbs.filter((v: unknown) => typeof v === "string") : [],
+      fallback: typeof parsed?.fallback === "string" && parsed.fallback.trim() ? parsed.fallback : "Drove",
+    };
+  } catch {
+    return { verbs: [], fallback: "Drove" };
+  }
+}
+
+function saveCustomVerbs(s: CustomVerbsState) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(CUSTOM_VERBS_KEY, JSON.stringify(s));
+  } catch {
+    /* ignore */
+  }
 }
 
 const HISTORY_KEY = "rb.experience.history.v1";
@@ -140,6 +176,11 @@ export function ExperienceSection({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const [customVerbs, setCustomVerbs] = useState<CustomVerbsState>(() => loadCustomVerbs());
+  useEffect(() => {
+    saveCustomVerbs(customVerbs);
+  }, [customVerbs]);
+
   // History: snapshot whenever experiences change (debounced).
   const [history, setHistory] = useState<HistorySnapshot[]>(() => loadHistory());
   const lastSnap = useRef<string>("");
@@ -184,6 +225,7 @@ export function ExperienceSection({
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <h3 className="font-display font-semibold">Experience</h3>
         <div className="flex items-center gap-2">
+          <CustomVerbsMenu state={customVerbs} onChange={setCustomVerbs} />
           <HistoryMenu history={history} onRestore={restore} />
           <Button size="sm" variant="outline" onClick={addExp}>
             <Plus /> Add
@@ -205,6 +247,7 @@ export function ExperienceSection({
                 key={e.id}
                 index={idx}
                 exp={e}
+                customVerbs={customVerbs}
                 onChange={patch => updateExp(e.id, patch)}
                 onRemove={() => removeExp(e.id)}
                 onRewrite={async () => {
@@ -274,6 +317,7 @@ function SortableExperienceItem({
   onRemove,
   onRewrite,
   isRewriting,
+  customVerbs,
 }: {
   exp: Experience;
   index: number;
@@ -281,6 +325,7 @@ function SortableExperienceItem({
   onRemove: () => void;
   onRewrite: () => void | Promise<void>;
   isRewriting: boolean;
+  customVerbs: CustomVerbsState;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: exp.id,
@@ -303,7 +348,7 @@ function SortableExperienceItem({
   };
 
   const applyActionVerbs = () => {
-    const next = autoActionVerbs(exp.bullets);
+    const next = autoActionVerbs(exp.bullets, customVerbs.fallback);
     if (next === exp.bullets) {
       toast("Bullets already lead with strong verbs");
     } else {
@@ -386,7 +431,7 @@ function SortableExperienceItem({
           <div className="flex items-center justify-between flex-wrap gap-2">
             <Label className="text-xs text-muted-foreground">Bullets (one per line)</Label>
             <div className="flex items-center gap-1 flex-wrap">
-              <ActionVerbMenu onPick={insertVerb} />
+              <ActionVerbMenu onPick={insertVerb} customVerbs={customVerbs.verbs} />
               <AchievementBuilder onAdd={appendAchievement} />
               <Button size="sm" variant="ghost" onClick={applyActionVerbs} disabled={!exp.bullets.trim()}>
                 <Wand2 /> Strengthen
@@ -409,7 +454,7 @@ function SortableExperienceItem({
             onChange={v => onChange({ bullets: v })}
             onBlur={() => {
               if (!exp.bullets.trim()) return;
-              const next = autoActionVerbs(exp.bullets);
+              const next = autoActionVerbs(exp.bullets, customVerbs.fallback);
               if (next !== exp.bullets) {
                 onChange({ bullets: next });
                 toast.success("Bullets auto-strengthened with action verbs");
@@ -423,7 +468,7 @@ function SortableExperienceItem({
   );
 }
 
-function ActionVerbMenu({ onPick }: { onPick: (verb: string) => void }) {
+function ActionVerbMenu({ onPick, customVerbs }: { onPick: (verb: string) => void; customVerbs?: string[] }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -432,6 +477,25 @@ function ActionVerbMenu({ onPick }: { onPick: (verb: string) => void }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72 max-h-80 overflow-auto">
+        {customVerbs && customVerbs.length > 0 && (
+          <div className="py-1">
+            <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              My verbs
+            </DropdownMenuLabel>
+            <div className="flex flex-wrap gap-1 px-2 pb-1">
+              {customVerbs.map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => onPick(v)}
+                  className="text-xs rounded-md border border-[var(--navy-light)] bg-[var(--navy-light)]/10 px-2 py-1 hover:bg-[var(--navy-light)]/20"
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {ACTION_VERBS.map(g => (
           <div key={g.group} className="py-1">
             <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -555,6 +619,134 @@ function AchievementBuilder({ onAdd }: { onAdd: (line: string) => void }) {
               }}
             >
               <Plus /> Add bullet
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function CustomVerbsMenu({
+  state,
+  onChange,
+}: {
+  state: CustomVerbsState;
+  onChange: (next: CustomVerbsState) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const addVerb = () => {
+    const cleaned = draft
+      .split(/[,\n]/)
+      .map(v => v.trim())
+      .filter(Boolean)
+      .map(v => v.charAt(0).toUpperCase() + v.slice(1));
+    if (!cleaned.length) return;
+    const merged = Array.from(new Set([...state.verbs, ...cleaned]));
+    const nextFallback = state.fallback === "Drove" && !state.verbs.length ? cleaned[0] : state.fallback;
+    onChange({ verbs: merged, fallback: nextFallback });
+    setDraft("");
+    toast.success(`Added ${cleaned.length} verb${cleaned.length > 1 ? "s" : ""}`);
+  };
+
+  const removeVerb = (v: string) => {
+    const verbs = state.verbs.filter(x => x !== v);
+    const fallback = state.fallback === v ? (verbs[0] ?? "Drove") : state.fallback;
+    onChange({ verbs, fallback });
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="ghost">
+          <Settings2 /> My verbs
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80" align="end">
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Add your own verbs</Label>
+            <div className="mt-1 flex gap-2">
+              <Input
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addVerb();
+                  }
+                }}
+                placeholder="Pioneered, Scaled, Crafted"
+              />
+              <Button size="sm" variant="accent" onClick={addVerb} disabled={!draft.trim()}>
+                <Plus />
+              </Button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Comma-separate to add several at once.
+            </p>
+          </div>
+
+          <div>
+            <Label className="text-xs">Your verbs</Label>
+            <div className="mt-1 flex flex-wrap gap-1 min-h-[2rem]">
+              {state.verbs.length === 0 && (
+                <span className="text-xs text-muted-foreground">None yet</span>
+              )}
+              {state.verbs.map(v => (
+                <span
+                  key={v}
+                  className="inline-flex items-center gap-1 text-xs rounded-md border border-border bg-secondary/60 px-2 py-1"
+                >
+                  {v}
+                  <button
+                    type="button"
+                    onClick={() => removeVerb(v)}
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label={`Remove ${v}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">Auto-strengthen fallback</Label>
+            <p className="text-[11px] text-muted-foreground mb-1">
+              Replaces weak openers (e.g. "responsible for", "worked on").
+            </p>
+            <select
+              className="w-full h-9 rounded-md border border-border bg-background px-2 text-sm"
+              value={state.fallback}
+              onChange={e => onChange({ ...state, fallback: e.target.value })}
+            >
+              <optgroup label="My verbs">
+                {state.verbs.length === 0 && <option disabled>— add your own above —</option>}
+                {state.verbs.map(v => (
+                  <option key={`c-${v}`} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </optgroup>
+              {ACTION_VERBS.map(g => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.verbs.map(v => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex justify-end">
+            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+              Done
             </Button>
           </div>
         </div>
