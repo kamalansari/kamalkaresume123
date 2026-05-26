@@ -1874,6 +1874,47 @@ export function Builder() {
         </div>
         )}
       </div>
+      <Dialog open={verbChangesOpen} onOpenChange={setVerbChangesOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4" /> Action-verb changes
+            </DialogTitle>
+          </DialogHeader>
+          {verbChanges.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No bullets were modified.</p>
+          ) : (
+            <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1">
+              <p className="text-xs text-muted-foreground">
+                {verbChanges.length} bullet{verbChanges.length === 1 ? "" : "s"} were rewritten to start with stronger action verbs after JD tailoring.
+              </p>
+              {Object.entries(
+                verbChanges.reduce<Record<string, VerbChange[]>>((acc, c) => {
+                  const key = `${c.title}${c.company ? ` · ${c.company}` : ""}`;
+                  (acc[key] ||= []).push(c);
+                  return acc;
+                }, {}),
+              ).map(([group, items]) => (
+                <div key={group} className="rounded-lg border border-border p-3">
+                  <div className="text-xs font-semibold text-foreground mb-2">{group}</div>
+                  <ul className="space-y-2">
+                    {items.map((c, i) => (
+                      <li key={i} className="text-sm space-y-1">
+                        <div className="text-muted-foreground line-through decoration-destructive/60">{c.before}</div>
+                        <div className="text-foreground">{c.after}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVerbChanges([])}>Clear log</Button>
+            <Button onClick={() => setVerbChangesOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
