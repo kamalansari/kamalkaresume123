@@ -23,15 +23,54 @@ function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
+  const [status, setStatus] = useState<string>("Verifying reset link…");
 
   useEffect(() => {
-    // Supabase parses the recovery hash and fires PASSWORD_RECOVERY.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
+    let cancelled = false;
+
+    const markReady = () => { if (!cancelled) { setReady(true); setStatus(""); } };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) markReady();
     });
-    // If the user is already in a session (link just consumed), allow update.
-    supabase.auth.getSession().then(({ data }) => { if (data.session) setReady(true); });
-    return () => subscription.unsubscribe();
+
+    // Handle the recovery link. Supabase v2 may put tokens in the URL hash
+    // (#access_token=...&type=recovery) or as ?code=... (PKCE).
+    (async () => {
+      const hash = typeof window !== "undefined" ? window.location.hash : "";
+      const search = typeof window !== "undefined" ? window.location.search : "";
+      try {
+        if (hash.includes("access_token")) {
+          const params = new URLSearchParams(hash.replace(/^#/, ""));
+          const access_token = params.get("access_token");
+          const refresh_token = params.get("refresh_token");
+          if (access_token && refresh_token) {
+            const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+            if (error) throw error;
+            window.history.replaceState(null, "", window.location.pathname);
+            markReady();
+            return;
+          }
+        }
+        if (search.includes("code=")) {
+          const code = new URLSearchParams(search).get("code");
+          if (code) {
+            const { error } = await supabase.auth.exchangeCodeForSession(code);
+            if (error) throw error;
+            window.history.replaceState(null, "", window.location.pathname);
+            markReady();
+            return;
+          }
+        }
+        const { data } = await supabase.auth.getSession();
+        if (data.session) markReady();
+        else if (!cancelled) setStatus("Open this page from the reset link in your email.");
+      } catch (err) {
+        if (!cancelled) setStatus(err instanceof Error ? err.message : "Invalid or expired reset link");
+      }
+    })();
+
+    return () => { cancelled = true; subscription.unsubscribe(); };
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -67,7 +106,7 @@ function ResetPasswordPage() {
           </div>
           <Button type="submit" className="w-full" disabled={busy || !ready}>
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            {ready ? "Update password" : "Waiting for reset link…"}
+            {ready ? "Update password" : (status || "Waiting for reset link…")}
           </Button>
         </form>
       </Card>
