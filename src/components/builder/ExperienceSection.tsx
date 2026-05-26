@@ -431,7 +431,7 @@ function SortableExperienceItem({
           <div className="flex items-center justify-between flex-wrap gap-2">
             <Label className="text-xs text-muted-foreground">Bullets (one per line)</Label>
             <div className="flex items-center gap-1 flex-wrap">
-              <ActionVerbMenu onPick={insertVerb} />
+              <ActionVerbMenu onPick={insertVerb} customVerbs={customVerbs.verbs} />
               <AchievementBuilder onAdd={appendAchievement} />
               <Button size="sm" variant="ghost" onClick={applyActionVerbs} disabled={!exp.bullets.trim()}>
                 <Wand2 /> Strengthen
