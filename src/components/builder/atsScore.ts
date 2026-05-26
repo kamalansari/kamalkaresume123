@@ -3,6 +3,27 @@ import { parseSkills } from "@/lib/parseSkills";
 
 const STOP = new Set([
   "the","a","an","and","or","of","to","in","for","on","with","at","by","from","is","are","be","as","that","this","it","you","we","our","your","their","they","will","have","has","had","not","but","if","than","then","into","over","per","via","up","down","out","about","across","also","more","most","such","including","including:","each","both","any","all","other","its","etc","using","use","used","high","low","new","work","working","strong","ability","able","experience","experiences","skills","skill","preferred","required","plus","years","year"
+  ,
+  // --- Recruiter / JD boilerplate blacklist (never treat as keywords) ---
+  "pvt","ltd","limited","llp","inc","corp","corporation","company","companies",
+  "job","jobs","role","roles","position","positions","opening","openings","vacancy","vacancies",
+  "services","service","solutions","solution","technologies","technology","tech",
+  "talent","corner","placement","placements","consultancy","consultant","consultants","recruiter","recruiters","recruitment","hiring","hire",
+  "client","clients","payroll","third","party","third-party","vendor","vendors",
+  "location","locations","based","onsite","on-site","remote","hybrid","wfh","wfo",
+  "ctc","salary","package","compensation","stipend","lpa","inr","usd",
+  "notice","period","immediate","joiner","joiners","joining",
+  "team","teams","group","groups","department","departments",
+  "good","great","excellent","strong","solid","proven","demonstrated","hands","hands-on","handson",
+  "candidate","candidates","applicant","applicants","profile","profiles","resume","cv",
+  "communication","interpersonal","collaboration","collaborative","teamwork","leadership",
+  "responsibility","responsibilities","requirement","requirements","qualification","qualifications","duty","duties",
+  "must","should","would","could","may","might","shall",
+  "minimum","maximum","min","max","atleast","least",
+  "full","time","part","fulltime","parttime","contract","permanent","temporary","internship","intern",
+  "english","hindi","language","languages",
+  "bachelor","bachelors","master","masters","degree","graduate","graduation","postgraduate","mba","bca","mca","btech","be","bsc","msc",
+  "etc.","eg","ie","i.e","e.g"
 ]);
 
 const toText = (value: unknown) => typeof value === "string" ? value : value == null ? "" : String(value);
