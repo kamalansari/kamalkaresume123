@@ -1,11 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import "@tanstack/react-start";
 
-type Body = { jd: string; jobTitle: string; resume: { headline?: string; summary?: string; skills?: string } };
+type Body = {
+  jd: string;
+  jobTitle: string;
+  resume: { headline?: string; summary?: string; skills?: string };
+  question?: string;
+};
 
-const SYSTEM = `You are "Nova", a concise career coach. Given a job listing and the user's resume snapshot, return:
+const SYSTEM_DEFAULT = `You are "Nova", a concise career coach. Given a job listing and the user's resume snapshot, return:
 - 3-5 bullet tips to improve the application
 - Exact ATS keywords from the JD to add to the resume
+Return ONLY JSON: { "tips": string[], "keywords": string[] }`;
+
+const SYSTEM_QUESTION = `You are "Nova", a concise career coach. The user has asked a SPECIFIC question about a job listing and their resume.
+Answer the question directly in 3-5 short bullet tips (each <= 22 words, actionable). Then list ATS keywords from the JD relevant to the answer.
 Return ONLY JSON: { "tips": string[], "keywords": string[] }`;
 
 export const Route = createFileRoute("/api/job-tip")({
@@ -17,13 +26,15 @@ export const Route = createFileRoute("/api/job-tip")({
         const body = (await request.json()) as Body;
         if (!body?.jd?.trim()) return new Response("Missing jd", { status: 400 });
 
+        const q = body.question?.trim();
         const user = [
+          q ? `User question: ${q}` : null,
           `Job title: ${body.jobTitle}`,
           `Job description:\n${body.jd}`,
           `Resume headline: ${body.resume.headline ?? ""}`,
           `Resume summary: ${body.resume.summary ?? ""}`,
           `Resume skills: ${body.resume.skills ?? ""}`,
-        ].join("\n\n");
+        ].filter(Boolean).join("\n\n");
 
         const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -32,7 +43,7 @@ export const Route = createFileRoute("/api/job-tip")({
             model: "google/gemini-3-flash-preview",
             response_format: { type: "json_object" },
             messages: [
-              { role: "system", content: SYSTEM },
+              { role: "system", content: q ? SYSTEM_QUESTION : SYSTEM_DEFAULT },
               { role: "user", content: user },
             ],
           }),
