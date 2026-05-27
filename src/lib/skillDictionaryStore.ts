@@ -112,3 +112,25 @@ export const skillDictStore = {
     }
   },
 };
+
+// Tiny React hook: returns a counter that bumps whenever the dictionary
+// changes. Include the returned value in a `useMemo` deps array to force a
+// recompute when an admin edits the dictionary in another tab/page.
+import { useEffect, useState } from "react";
+export function useSkillDictVersion(): number {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const bump = () => setV((x) => x + 1);
+    window.addEventListener(SKILL_DICT_EVENT, bump);
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key.startsWith("resumeforge.skillDict.")) bump();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(SKILL_DICT_EVENT, bump);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+  return v;
+}
