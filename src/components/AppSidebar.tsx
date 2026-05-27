@@ -15,6 +15,7 @@ import {
   LogOut,
   Cloud,
   Sparkles,
+  BookOpen,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +58,12 @@ const navGroups = [
       { title: "Interview", url: "/interview", icon: Mic },
       { title: "Roadmap", url: "/roadmap", icon: MapIcon },
       { title: "Resume Lab", url: "/resume-lab", icon: FlaskConical },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { title: "Skill Dictionary", url: "/admin/skill-dictionary", icon: BookOpen },
     ],
   },
 ] as const;
