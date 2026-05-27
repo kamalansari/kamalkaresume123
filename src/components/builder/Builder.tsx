@@ -9,6 +9,7 @@ import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, TEMPLATE_SIDEBAR_DEFAULTS, SIDEBAR_ELIGIBLE, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId, type CustomSection } from "./types";
 import { computeScore, jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
+import { useSkillDictVersion } from "@/lib/skillDictionaryStore";
 import { highlightKeywordsInEditable } from "@/lib/liveKeywordHighlight";
 import { ResumeDocument } from "./ResumeDocument";
 import { exportDocx } from "./exportDocx";
