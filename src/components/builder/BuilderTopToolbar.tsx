@@ -69,10 +69,23 @@ const SECTION_LABELS: Record<SectionId, string> = {
   languages: "Languages",
 };
 
+// Preview-only accent overrides so the template picker thumbnails show
+// each template's signature color even before the user picks one.
+const TEMPLATE_THUMB_ACCENT: Partial<Record<TemplateId, string>> = {
+  minimal: "#1f1f1f",
+  iconic: "#0d8a8a",
+  creative: "#7c3aed",
+  technical: "#334155",
+  academic: "#7a1f3d",
+  startup: "#ea580c",
+  corporate: "#0f2a52",
+};
+
 function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active: boolean }) {
   const id = t.id;
+  accent = TEMPLATE_THUMB_ACCENT[id] ?? accent;
   const inner = (() => {
-    if (id === "two-column" || id === "fresher") {
+    if (id === "two-column" || id === "fresher" || id === "iconic") {
       const cream = id === "fresher";
       return (
         <div className="h-full w-full flex">
@@ -90,7 +103,7 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
         </div>
       );
     }
-    if (id === "sidebar-right" || id === "contemporary") {
+    if (id === "sidebar-right" || id === "contemporary" || id === "creative") {
       return (
         <div className="h-full w-full flex">
           <div className="flex-1 p-1 space-y-1">
@@ -106,7 +119,7 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
         </div>
       );
     }
-    if (id === "compact-two") {
+    if (id === "compact-two" || id === "startup") {
       return (
         <div className="h-full w-full flex">
           <div className="w-1/3 h-full p-1 space-y-1" style={{ background: "#f4f3ef" }}>
@@ -121,8 +134,8 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
         </div>
       );
     }
-    if (id === "modern" || id === "executive" || id === "bold") {
-      const exec = id === "executive" || id === "bold";
+    if (id === "modern" || id === "executive" || id === "bold" || id === "technical") {
+      const exec = id === "executive" || id === "bold" || id === "technical";
       return (
         <div className="h-full w-full">
           <div className="h-1/4 w-full p-1 flex items-end" style={{ background: accent, borderBottom: exec ? "2px solid rgba(0,0,0,0.4)" : undefined }}>
@@ -151,7 +164,7 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
       );
     }
     // classic, professional, elegant
-    const pro = id === "professional";
+    const pro = id === "professional" || id === "corporate" || id === "academic";
     return (
       <div className="h-full w-full p-1.5 flex flex-col items-center">
         <div className={cn("h-1 rounded", pro ? "w-3/4" : "w-2/3")} style={{ background: accent }} />
