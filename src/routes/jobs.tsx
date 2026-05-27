@@ -1,13 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Filter, MapPin, Briefcase, Calendar, Building2, Tag, Bookmark, Sparkles, Loader2, ArrowLeft, ExternalLink, Gauge, ChevronDown, Download, ChevronRight, FileText } from "lucide-react";
+import { Search, Filter, MapPin, Briefcase, Calendar, Building2, Tag, Bookmark, Sparkles, Loader2, ArrowLeft, ExternalLink, Gauge, ChevronDown, Download, ChevronRight, FileText, Wand2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { resumeStore, type SavedResume } from "@/components/builder/resumeStore";
+import { resumeStore, newId, type SavedResume } from "@/components/builder/resumeStore";
 import { defaultResume, type ResumeData } from "@/components/builder/types";
 import { computeScore, canonical } from "@/components/builder/atsScore";
 import { downloadAtsReportPdf } from "@/components/builder/atsReportPdf";
@@ -100,6 +100,11 @@ function JobsPage() {
   const [novaJob, setNovaJob] = useState<Job | null>(null);
   const [novaLoading, setNovaLoading] = useState(false);
   const [novaResp, setNovaResp] = useState<{ tips: string[]; keywords: string[] } | null>(null);
+  const [novaQuestion, setNovaQuestion] = useState<string>("");
+  const [applyJob, setApplyJob] = useState<Job | null>(null);
+  const [applyName, setApplyName] = useState<string>("");
+  const [applyLoading, setApplyLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Client-side filter state for recommended-jobs panel
   const [roleFilter, setRoleFilter] = useState<Set<string>>(new Set());
@@ -167,9 +172,10 @@ function JobsPage() {
     finally { setLoading(false); }
   };
 
-  const askNova = async (job: Job) => {
+  const askNova = async (job: Job, question?: string) => {
     setNovaJob(job);
     setNovaResp(null);
+    setNovaQuestion(question ?? "");
     setNovaLoading(true);
     try {
       const res = await fetch("/api/job-tip", {
@@ -178,12 +184,86 @@ function JobsPage() {
         body: JSON.stringify({
           jd: job.jd, jobTitle: job.title,
           resume: { headline: activeResume.headline, summary: activeResume.summary, skills: activeResume.skills },
+          question: question ?? undefined,
         }),
       });
       if (!res.ok) { toast.error("Nova couldn't respond."); return; }
       setNovaResp(await res.json());
     } catch { toast.error("Network error."); }
     finally { setNovaLoading(false); }
+  };
+
+  // Tailor the active resume against a job's JD via /api/align-resume and save as a new SavedResume.
+  const tailorAndSave = async (job: Job, name: string): Promise<SavedResume | null> => {
+    const base = getLatestResume(activeResumeId, activeResume);
+    try {
+      const res = await fetch("/api/align-resume", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jobDescription: getJobScoringText(job),
+          resume: {
+            name: base.name, headline: base.headline, summary: base.summary, skills: base.skills,
+            experience: (base.experience ?? []).map(e => ({ title: e.title, company: e.company, date: e.date, bullets: e.bullets })),
+          },
+        }),
+      });
+      if (res.status === 429) { toast.error("Rate limit hit. Retry shortly."); return null; }
+      if (res.status === 402) { toast.error("AI credits exhausted."); return null; }
+      if (!res.ok) { toast.error("Tailoring failed."); return null; }
+      const out = (await res.json()) as {
+        headline?: string; summary?: string; skills?: string;
+        experience?: { title?: string; company?: string; date?: string; bullets?: string }[];
+      };
+      const mergedExp = (base.experience ?? []).map((exp, i) => ({
+        ...exp,
+        bullets: out.experience?.[i]?.bullets?.trim() || exp.bullets,
+      }));
+      const tailored: ResumeData = {
+        ...base,
+        headline: out.headline?.trim() || base.headline,
+        summary: out.summary?.trim() || base.summary,
+        skills: out.skills?.trim() || base.skills,
+        experience: mergedExp,
+        jobDescription: getJobScoringText(job),
+      };
+      const entry: SavedResume = { id: newId(), name: name.trim() || `${job.company} - ${job.title}`, updatedAt: Date.now(), data: tailored };
+      resumeStore.upsert(entry);
+      refreshResumes();
+      setActiveResumeId(entry.id);
+      return entry;
+    } catch { toast.error("Network error."); return null; }
+  };
+
+  const openApply = (job: Job) => {
+    setApplyJob(job);
+    setApplyName(`${job.company} - ${job.title}`.slice(0, 80));
+  };
+
+  const confirmTailorAndApply = async () => {
+    if (!applyJob) return;
+    setApplyLoading(true);
+    const saved = await tailorAndSave(applyJob, applyName);
+    setApplyLoading(false);
+    if (saved) {
+      toast.success(`Saved "${saved.name}". Opening Naukri…`, {
+        action: { label: "Open in builder", onClick: () => navigate({ to: "/builder" }) },
+      });
+      window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
+      setApplyJob(null);
+    }
+  };
+
+  const tailorFromNova = async () => {
+    if (!novaJob) return;
+    setApplyLoading(true);
+    const saved = await tailorAndSave(novaJob, `${novaJob.company} - ${novaJob.title}`);
+    setApplyLoading(false);
+    if (saved) {
+      toast.success(`Saved "${saved.name}".`, {
+        action: { label: "Open in builder", onClick: () => navigate({ to: "/builder" }) },
+      });
+    }
   };
 
   const naukriUrl = (title: string) => {
@@ -507,7 +587,7 @@ function JobsPage() {
                 liveScore={score}
                 onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }}
                 onNova={() => askNova(job)}
-                naukriUrl={naukriUrl}
+                onApply={() => openApply(job)}
               />
             ))}
           </div>
@@ -553,9 +633,14 @@ function JobsPage() {
       <Dialog open={!!novaJob} onOpenChange={o => !o && setNovaJob(null)}>
         <DialogContent className="max-w-xl">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-[var(--navy-light)]" /> Nova on {novaJob?.title}</DialogTitle></DialogHeader>
+          {novaQuestion && (
+            <div className="text-xs rounded-md bg-secondary/60 border border-border px-2 py-1.5 text-muted-foreground">
+              <span className="font-medium text-foreground">Q:</span> {novaQuestion}
+            </div>
+          )}
           {novaLoading && <div className="py-6 text-center text-sm text-muted-foreground"><Loader2 className="animate-spin inline mr-2" /> Nova is thinking…</div>}
-          {novaResp && (
-            <div className="space-y-4">
+          {!novaLoading && novaResp && (
+            <div className="space-y-4 max-h-[55vh] overflow-auto">
               <div>
                 <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Tips</div>
                 <ul className="space-y-1.5 text-sm list-disc pl-5">{novaResp.tips.map((t, i) => <li key={i}>{t}</li>)}</ul>
@@ -568,9 +653,73 @@ function JobsPage() {
                   ))}
                 </div>
               </div>
+              {novaJob && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1.5 inline-flex items-center gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5" /> Related questions
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      `What experience should I highlight for ${novaJob.title}?`,
+                      `Which skills are missing from my resume for this role?`,
+                      `How should I rewrite my summary for ${novaJob.company}?`,
+                      `What interview questions should I expect?`,
+                    ].map(q => (
+                      <button
+                        key={q}
+                        onClick={() => askNova(novaJob, q)}
+                        className="text-xs px-2.5 py-1 rounded-full border border-border bg-background hover:border-[var(--navy-light)] hover:text-[var(--navy-light)] transition-colors"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
-          <DialogFooter><Button variant="ghost" onClick={() => setNovaJob(null)}>Close</Button></DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="ghost" onClick={() => setNovaJob(null)}>Close</Button>
+            <Button onClick={tailorFromNova} disabled={applyLoading || !novaJob}>
+              {applyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+              Tailor & Save Resume
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Apply Dialog */}
+      <Dialog open={!!applyJob} onOpenChange={o => { if (!o && !applyLoading) setApplyJob(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Wand2 className="h-4 w-4 text-[var(--navy-light)]" /> Tailor resume for {applyJob?.company}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              We'll rewrite your active resume's headline, summary, skills and bullets to align with this JD, then save it as a new copy you can edit anytime.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] tracking-widest text-muted-foreground font-semibold">SAVE AS</Label>
+              <Input value={applyName} onChange={e => setApplyName(e.target.value)} placeholder={`${applyJob?.company} - ${applyJob?.title}`} />
+            </div>
+            <div className="text-xs text-muted-foreground">Source resume: <span className="font-medium text-foreground">{activeResumeName}</span></div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="ghost"
+              disabled={applyLoading}
+              onClick={() => {
+                if (applyJob) window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
+                setApplyJob(null);
+              }}
+            >
+              Skip & Apply
+            </Button>
+            <Button onClick={confirmTailorAndApply} disabled={applyLoading || !applyName.trim()}>
+              {applyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+              Tailor, Save & Apply
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -628,7 +777,7 @@ function SelectInline({ value, onChange, options, labels }: { value: string; onC
   );
 }
 
-function JobCard({ job, resume, onScore, onNova, naukriUrl, liveScore }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; naukriUrl: (t: string) => string; liveScore?: number }) {
+function JobCard({ job, resume, onScore, onNova, onApply, liveScore }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; onApply: () => void; liveScore?: number }) {
   const scoringText = getJobScoringText(job);
   const computedScore = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
   const score = liveScore ?? computedScore;
@@ -706,10 +855,9 @@ function JobCard({ job, resume, onScore, onNova, naukriUrl, liveScore }: { job: 
           <Button size="sm" variant="outline" onClick={onNova}>
             <Sparkles className="h-3.5 w-3.5" /> Ask Nova
           </Button>
-          <a href={naukriUrl(job.title)} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-md bg-[var(--navy-light)] text-white h-8 px-3 text-sm font-medium hover:opacity-95">
+          <Button size="sm" onClick={onApply} className="bg-[var(--navy-light)] text-white hover:opacity-95">
             Apply Now <ExternalLink className="h-3 w-3" />
-          </a>
+          </Button>
         </div>
       </div>
     </div>
