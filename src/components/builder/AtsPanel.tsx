@@ -30,7 +30,8 @@ export function AtsPanel({
   optimizing: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("ats");
-  const score = useMemo(() => computeScore(data), [data]);
+  const dictVersion = useSkillDictVersion();
+  const score = useMemo(() => computeScore(data), [data, dictVersion]);
 
   const resumeScore = Math.round(
     score.checks.reduce((s, c) => s + (c.pass ? c.weight : 0), 0) -
