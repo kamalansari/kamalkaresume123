@@ -587,7 +587,7 @@ function JobsPage() {
                 liveScore={score}
                 onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }}
                 onNova={() => askNova(job)}
-                naukriUrl={naukriUrl}
+                onApply={() => openApply(job)}
               />
             ))}
           </div>
