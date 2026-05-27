@@ -109,7 +109,8 @@ export function Builder() {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [profileNameDraft, setProfileNameDraft] = useState("");
   const [profileRenameId, setProfileRenameId] = useState<string | null>(null);
-  const score = useMemo(() => computeScore(data), [data]);
+  const dictVersion = useSkillDictVersion();
+  const score = useMemo(() => computeScore(data), [data, dictVersion]);
 
   // Change log of bullets rewritten by autoActionVerbs after the most recent JD tailoring.
   type VerbChange = { expId: string; title: string; company: string; before: string; after: string };
