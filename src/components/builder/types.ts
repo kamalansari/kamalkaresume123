@@ -37,7 +37,13 @@ export type TemplateId =
   | "fresher"
   | "elegant"
   | "contemporary"
-  | "bold";
+  | "bold"
+  | "iconic"
+  | "creative"
+  | "technical"
+  | "academic"
+  | "startup"
+  | "corporate";
 export type SectionId =
   | "summary"
   | "experience"
@@ -67,6 +73,9 @@ export const TEMPLATE_SIDEBAR_DEFAULTS: Partial<Record<TemplateId, SectionId[]>>
   "compact-two":   ["skills", "languages", "certifications"],
   "fresher":       ["skills", "languages", "education"],
   "contemporary":  ["skills", "languages", "education"],
+  "iconic":        ["skills", "languages", "education", "certifications"],
+  "creative":      ["skills", "languages", "education"],
+  "startup":       ["skills", "languages", "certifications"],
 };
 
 // Templates that render a sidebar column at all.

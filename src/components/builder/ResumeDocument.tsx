@@ -93,20 +93,41 @@ export function ResumeDocument({
   const preset = FONT_PRESETS.find(f => f.id === data.fontId) ?? FONT_PRESETS[0];
   const headingFont = `${preset.heading}, system-ui, sans-serif`;
   const bodyFont = `${preset.body}, system-ui, sans-serif`;
-  // Per-template accent overrides (minimal uses near-black for a quiet look).
-  const accent = data.template === "minimal" ? "#1f1f1f" : data.accentHex;
+  // Per-template accent overrides. New templates get a distinct hue so the
+  // user immediately sees a visual difference even when they share a layout.
+  const TEMPLATE_ACCENT: Partial<Record<typeof data.template, string>> = {
+    minimal: "#1f1f1f",
+    iconic: "#0d8a8a",
+    creative: "#7c3aed",
+    technical: "#334155",
+    academic: "#7a1f3d",
+    startup: "#ea580c",
+    corporate: "#0f2a52",
+  };
+  const accent = TEMPLATE_ACCENT[data.template] ?? data.accentHex;
   const fs = data.fontSize ?? 10.5;
   // Map new template ids onto base layouts while preserving distinct vibes.
-  const variant: "classic" | "modern" | "two-column" | "sidebar-right" | "compact-two" =
-    data.template === "professional" || data.template === "minimal" || data.template === "elegant"
-      ? "classic"
-      : data.template === "executive" || data.template === "bold"
-        ? "modern"
-        : data.template === "fresher"
-          ? "compact-two"
-          : data.template === "contemporary"
-            ? "sidebar-right"
-            : data.template;
+  const VARIANT_MAP: Record<typeof data.template, "classic" | "modern" | "two-column" | "sidebar-right" | "compact-two"> = {
+    classic: "classic",
+    "two-column": "two-column",
+    modern: "modern",
+    "sidebar-right": "sidebar-right",
+    "compact-two": "compact-two",
+    professional: "classic",
+    minimal: "classic",
+    elegant: "classic",
+    executive: "modern",
+    bold: "modern",
+    fresher: "compact-two",
+    contemporary: "sidebar-right",
+    iconic: "two-column",
+    creative: "sidebar-right",
+    technical: "modern",
+    academic: "classic",
+    startup: "compact-two",
+    corporate: "classic",
+  };
+  const variant = VARIANT_MAP[data.template] ?? "classic";
 
   const ed = editable && handlers ? handlers : undefined;
   const kwSet = useMemo(() => {
