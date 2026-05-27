@@ -68,7 +68,8 @@ function AtsCheckerPage() {
     };
   }, [selectedId]);
 
-  const score = useMemo(() => computeScore(data), [data]);
+  const dictVersion = useSkillDictVersion();
+  const score = useMemo(() => computeScore(data), [data, dictVersion]);
 
   const pickResume = (id: string) => {
     const entry = resumeStore.get(id);
