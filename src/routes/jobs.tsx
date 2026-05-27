@@ -708,7 +708,7 @@ function SelectInline({ value, onChange, options, labels }: { value: string; onC
   );
 }
 
-function JobCard({ job, resume, onScore, onNova, naukriUrl, liveScore }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; naukriUrl: (t: string) => string; liveScore?: number }) {
+function JobCard({ job, resume, onScore, onNova, onApply, liveScore }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; onApply: () => void; liveScore?: number }) {
   const scoringText = getJobScoringText(job);
   const computedScore = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
   const score = liveScore ?? computedScore;
@@ -786,10 +786,9 @@ function JobCard({ job, resume, onScore, onNova, naukriUrl, liveScore }: { job: 
           <Button size="sm" variant="outline" onClick={onNova}>
             <Sparkles className="h-3.5 w-3.5" /> Ask Nova
           </Button>
-          <a href={naukriUrl(job.title)} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-md bg-[var(--navy-light)] text-white h-8 px-3 text-sm font-medium hover:opacity-95">
+          <Button size="sm" onClick={onApply} className="bg-[var(--navy-light)] text-white hover:opacity-95">
             Apply Now <ExternalLink className="h-3 w-3" />
-          </a>
+          </Button>
         </div>
       </div>
     </div>
