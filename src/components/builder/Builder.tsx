@@ -9,6 +9,7 @@ import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, TEMPLATE_SIDEBAR_DEFAULTS, SIDEBAR_ELIGIBLE, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId, type CustomSection } from "./types";
 import { computeScore, jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
+import { useSkillDictVersion } from "@/lib/skillDictionaryStore";
 import { highlightKeywordsInEditable } from "@/lib/liveKeywordHighlight";
 import { ResumeDocument } from "./ResumeDocument";
 import { exportDocx } from "./exportDocx";
@@ -108,7 +109,8 @@ export function Builder() {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [profileNameDraft, setProfileNameDraft] = useState("");
   const [profileRenameId, setProfileRenameId] = useState<string | null>(null);
-  const score = useMemo(() => computeScore(data), [data]);
+  const dictVersion = useSkillDictVersion();
+  const score = useMemo(() => computeScore(data), [data, dictVersion]);
 
   // Change log of bullets rewritten by autoActionVerbs after the most recent JD tailoring.
   type VerbChange = { expId: string; title: string; company: string; before: string; after: string };

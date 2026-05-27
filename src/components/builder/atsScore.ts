@@ -1,5 +1,6 @@
 import type { ResumeData } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
+import { skillDictStore } from "@/lib/skillDictionaryStore";
 
 const STOP = new Set([
   "the","a","an","and","or","of","to","in","for","on","with","at","by","from","is","are","be","as","that","this","it","you","we","our","your","their","they","will","have","has","had","not","but","if","than","then","into","over","per","via","up","down","out","about","across","also","more","most","such","including","including:","each","both","any","all","other","its","etc","using","use","used","high","low","new","work","working","strong","ability","able","experience","experiences","skills","skill","preferred","required","plus","years","year"
@@ -181,79 +182,6 @@ function canonTokens(text: unknown): string[] {
 // Order matters: longer / multi-word phrases are matched first so that
 // "power bi" is captured as one keyword instead of two singles.
 // =============================================================================
-const HARD_SKILL_PHRASES: string[] = [
-  // BI / reporting platforms
-  "power bi","power query","power pivot","power automate","dax",
-  "tableau","tableau prep","qlikview","qlik sense","looker","looker studio",
-  "google data studio","sap bo","sap businessobjects","sap bw","sap hana",
-  "microstrategy","domo","cognos","ibm cognos","crystal reports","sisense",
-  // Spreadsheets / desktop
-  "advanced excel","ms excel","microsoft excel","excel macros","vba","vlookup",
-  "hlookup","xlookup","pivot tables","pivot table","index match","array formulas",
-  "google sheets","ms access","microsoft access",
-  // Reporting domains
-  "mis reporting","mis report","management reporting","financial reporting",
-  "financial modeling","financial modelling","financial analysis","variance analysis",
-  "ratio analysis","trend analysis","cost analysis","profitability analysis",
-  "budgeting","forecasting","budget forecasting","cash flow","p&l","p & l",
-  "balance sheet","general ledger","accounts payable","accounts receivable",
-  "revenue analysis","kpi reporting","kpi dashboard","kpi tracking",
-  "dashboard development","dashboard design","reporting automation",
-  // Data engineering / databases
-  "sql","t-sql","pl/sql","mysql","postgresql","postgres","oracle","ms sql",
-  "sql server","mssql","mongodb","nosql","snowflake","redshift","bigquery",
-  "databricks","azure synapse","stored procedures","data warehouse",
-  "data warehousing","data modeling","data modelling","data mart","etl",
-  "elt","ssis","ssrs","ssas","informatica","talend","alteryx","airflow",
-  // Programming / scripting
-  "python","pandas","numpy","matplotlib","seaborn","plotly","scipy","scikit-learn",
-  "r programming","r language","sas","spss","stata","matlab","julia",
-  "javascript","typescript",
-  // Cloud / platforms
-  "aws","azure","gcp","google cloud","aws s3","aws redshift","azure data factory",
-  "azure data lake","aws glue",
-  // Data concepts / methods
-  "data analysis","data analytics","data visualization","data visualisation",
-  "data cleansing","data cleaning","data wrangling","data mining","data quality",
-  "data governance","data validation","data extraction","data transformation",
-  "data integration","data migration","data reconciliation","data interpretation",
-  "statistical analysis","statistical modeling","regression analysis",
-  "hypothesis testing","predictive analytics","predictive modeling","time series",
-  "machine learning","deep learning","exploratory data analysis","eda",
-  "ab testing","a/b testing","root cause analysis","gap analysis",
-  // Business / finance domain
-  "gst","tds","ifrs","gaap","us gaap","ind as","sox","sox compliance",
-  "audit","internal audit","statutory audit","taxation","reconciliation",
-  "bank reconciliation","invoicing","accounting","bookkeeping","tally",
-  "sap","sap fico","oracle erp","quickbooks","zoho books","netsuite",
-  // Process / methodology
-  "agile","scrum","jira","confluence","six sigma","lean","kaizen",
-  "business intelligence","business analysis","requirement gathering",
-  "stakeholder management","process improvement","automation",
-];
-
-// Single-word hard skills that don't need a phrase context.
-const HARD_SKILL_SINGLES: string[] = [
-  "sql","python","excel","tableau","powerbi","dax","vba","sas","spss","r",
-  "etl","elt","ssis","ssrs","ssas","snowflake","redshift","bigquery",
-  "databricks","airflow","alteryx","informatica","talend",
-  "mysql","postgresql","postgres","oracle","mssql","mongodb","nosql",
-  "aws","azure","gcp","hana",
-  "forecasting","budgeting","reconciliation","accounting","auditing",
-  "analytics","reporting","dashboards","kpi","kpis","mis","erp","crm",
-  "sap","tally","quickbooks","netsuite",
-  "pandas","numpy","matplotlib","seaborn","plotly","scipy","jupyter",
-  "javascript","typescript","java","scala",
-  "statistics","regression","forecast","modeling","modelling",
-  "agile","scrum","jira","confluence",
-];
-
-const HARD_SKILL_SINGLE_SET = new Set(HARD_SKILL_SINGLES.map(s => s.toLowerCase()));
-// Sort phrases by length desc so multi-word matches win before singles.
-const HARD_SKILL_PHRASES_SORTED = [...HARD_SKILL_PHRASES].sort(
-  (a, b) => b.length - a.length,
-);
-
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -264,12 +192,17 @@ function escapeRegex(s: string): string {
  *  also reported as standalone singles. */
 export function extractHardSkills(text: string, limit = 60): string[] {
   if (!text) return [];
+  // Read dictionary fresh each call so admin edits apply immediately.
+  const phrases = skillDictStore.getPhrases();
+  const singles = skillDictStore.getSingles();
+  const singleSet = new Set(singles.map((s) => s.toLowerCase()));
+  const phrasesSorted = [...phrases].sort((a, b) => b.length - a.length);
   let working = ` ${text.toLowerCase()} `;
   const found: string[] = [];
   const seen = new Set<string>();
 
   // 1) Multi-word & exact phrase pass
-  for (const phrase of HARD_SKILL_PHRASES_SORTED) {
+  for (const phrase of phrasesSorted) {
     const re = new RegExp(`(?<![a-z0-9])${escapeRegex(phrase)}(?![a-z0-9])`, "i");
     if (re.test(working)) {
       const key = phrase.toLowerCase();
@@ -284,9 +217,9 @@ export function extractHardSkills(text: string, limit = 60): string[] {
   }
 
   // 2) Single-token pass (only allowlisted hard skills)
-  const singles = working.match(/[a-z][a-z0-9+.#/-]{1,}/g) || [];
-  for (const tok of singles) {
-    if (!HARD_SKILL_SINGLE_SET.has(tok)) continue;
+  const toks = working.match(/[a-z][a-z0-9+.#/-]{1,}/g) || [];
+  for (const tok of toks) {
+    if (!singleSet.has(tok)) continue;
     if (STOP.has(tok)) continue;
     if (seen.has(tok)) continue;
     seen.add(tok);

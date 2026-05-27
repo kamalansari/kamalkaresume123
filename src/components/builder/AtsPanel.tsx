@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { computeScore } from "./atsScore";
+import { useSkillDictVersion } from "@/lib/skillDictionaryStore";
 import type { ResumeData } from "./types";
 import { AtsDebugPanel } from "./AtsDebugPanel";
 
@@ -29,7 +30,8 @@ export function AtsPanel({
   optimizing: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("ats");
-  const score = useMemo(() => computeScore(data), [data]);
+  const dictVersion = useSkillDictVersion();
+  const score = useMemo(() => computeScore(data), [data, dictVersion]);
 
   const resumeScore = Math.round(
     score.checks.reduce((s, c) => s + (c.pass ? c.weight : 0), 0) -
