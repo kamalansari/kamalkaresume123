@@ -195,7 +195,12 @@ function JobsPage() {
 
   // Tailor the active resume against a job's JD via /api/align-resume and save as a new SavedResume.
   const tailorAndSave = async (job: Job, name: string): Promise<SavedResume | null> => {
-    const base = getLatestResume(activeResumeId, activeResume);
+    const primary = resumeStore.getPrimary();
+    if (!primary) {
+      toast.error("Set a primary resume first in Dashboard.");
+      return null;
+    }
+    const base = primary.data;
     try {
       const res = await fetch("/api/align-resume", {
         method: "POST",
