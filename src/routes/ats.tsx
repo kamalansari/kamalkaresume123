@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { resumeStore, type SavedResume } from "@/components/builder/resumeStore";
 import { defaultResume, type ResumeData } from "@/components/builder/types";
 import { computeScore } from "@/components/builder/atsScore";
+import { useSkillDictVersion } from "@/lib/skillDictionaryStore";
 import { AtsPanel } from "@/components/builder/AtsPanel";
 import { AtsDebugPanel } from "@/components/builder/AtsDebugPanel";
 import { cn } from "@/lib/utils";
