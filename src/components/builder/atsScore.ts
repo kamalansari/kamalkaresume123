@@ -23,7 +23,13 @@ const STOP = new Set([
   "full","time","part","fulltime","parttime","contract","permanent","temporary","internship","intern",
   "english","hindi","language","languages",
   "bachelor","bachelors","master","masters","degree","graduate","graduation","postgraduate","mba","bca","mca","btech","be","bsc","msc",
-  "etc.","eg","ie","i.e","e.g"
+  "etc.","eg","ie","i.e","e.g",
+  // Generic soft skills / behavioral traits (never count as ATS keywords)
+  "hardworking","flexible","proactive","coordination","coordinate","coordinating",
+  "motivated","passionate","dynamic","energetic","reliable","detail","detail-oriented",
+  "oriented","selfstarter","self-starter","selfmotivated","self-motivated","quick","learner",
+  "punctual","sincere","dedicated","enthusiastic","creative","innovative","adaptable",
+  "multitasking","multi-tasking","interpersonal","presentable","gogetter","go-getter"
 ]);
 
 const toText = (value: unknown) => typeof value === "string" ? value : value == null ? "" : String(value);
