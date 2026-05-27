@@ -392,7 +392,14 @@ export function Builder() {
   };
 
   const duplicateSaved = (id: string) => {
-    const copy = resumeStore.duplicate(id);
+    const existing = resumeStore.get(id);
+    if (!existing) { toast.error("Could not duplicate"); return; }
+    const suggested = `${existing.name} (copy)`;
+    const name = typeof window !== "undefined"
+      ? window.prompt("Name for the duplicated resume:", suggested)
+      : suggested;
+    if (name === null) return;
+    const copy = resumeStore.duplicate(id, name);
     if (!copy) { toast.error("Could not duplicate"); return; }
     refreshList();
     toast.success(`Duplicated as "${copy.name}"`);
