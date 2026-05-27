@@ -331,18 +331,16 @@ export function computeScore(r: Partial<ResumeData>): ScoreResult {
   const resumeCanonSet = new Set(resumeTokensRaw.map(canonical));
 
   const jobDescription = toText(r.jobDescription);
-  // Deduplicate JD keywords by canonical form, but keep the original display token.
-  const jdRaw = tokens(jobDescription);
-  const seenCanon = new Set<string>();
-  const jdTokens: string[] = [];
-  for (const t of jdRaw) {
-    const c = canonical(t);
-    if (seenCanon.has(c)) continue;
-    seenCanon.add(c);
-    jdTokens.push(t);
-    if (jdTokens.length >= 60) break;
-  }
-  const isMatch = (t: string) => resumeCanonSet.has(canonical(t));
+  // ATS-grade JD keyword extraction: dictionary-filtered hard skills only.
+  // Recruiter boilerplate, soft skills, and generic verbs never appear here.
+  const jdTokens = extractHardSkills(jobDescription, 60);
+  const resumeLower = resumeText.toLowerCase();
+  const isMatch = (t: string) => {
+    // Multi-word phrase → whole-phrase substring match in resume text.
+    if (/\s/.test(t)) return countPhrase(resumeLower, t) > 0;
+    // Single token → canonical (stem/synonym) match for tolerance.
+    return resumeCanonSet.has(canonical(t));
+  };
   const matched = jdTokens.filter(isMatch);
   const missing = jdTokens.filter(t => !isMatch(t));
   let coverage = jdTokens.length ? matched.length / jdTokens.length : 0;
@@ -374,12 +372,21 @@ export function computeScore(r: Partial<ResumeData>): ScoreResult {
 
   const score = Math.min(100, Math.round(checks.reduce((s, c) => s + (c.pass ? c.weight : 0), 0)));
 
-  // Per-keyword counts in resume vs JD (compared by canonical form so
-  // "managing" in the JD counts hits from "managed" in the resume).
+  // Per-keyword counts in resume vs JD. Phrases use whole-phrase counts;
+  // singles fall back to canonical token counts so "managing" → "managed".
   const resumeCanonList = resumeTokensRaw.map(canonical);
   const jdCanonList = canonTokens(jobDescription);
+  const jdLower = jobDescription.toLowerCase();
   const countIn = (arr: string[], k: string) => arr.filter(t => t === k).length;
   const keywordStats = jdTokens.map(k => {
+    if (/\s/.test(k)) {
+      return {
+        keyword: k,
+        resume: countPhrase(resumeLower, k),
+        jd: countPhrase(jdLower, k),
+        matched: countPhrase(resumeLower, k) > 0,
+      };
+    }
     const c = canonical(k);
     return {
       keyword: k,
