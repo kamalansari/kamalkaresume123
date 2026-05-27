@@ -33,6 +33,7 @@ import { Route as ApiInterviewScoreRouteImport } from './routes/api/interview-sc
 import { Route as ApiInterviewQuestionRouteImport } from './routes/api/interview-question'
 import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-from-jd'
 import { Route as ApiAlignResumeRouteImport } from './routes/api/align-resume'
+import { Route as AdminSkillDictionaryRouteImport } from './routes/admin.skill-dictionary'
 
 const RoadmapRoute = RoadmapRouteImport.update({
   id: '/roadmap',
@@ -154,6 +155,11 @@ const ApiAlignResumeRoute = ApiAlignResumeRouteImport.update({
   path: '/api/align-resume',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSkillDictionaryRoute = AdminSkillDictionaryRouteImport.update({
+  id: '/admin/skill-dictionary',
+  path: '/admin/skill-dictionary',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/resume-lab': typeof ResumeLabRoute
   '/roadmap': typeof RoadmapRoute
+  '/admin/skill-dictionary': typeof AdminSkillDictionaryRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/interview-question': typeof ApiInterviewQuestionRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/resume-lab': typeof ResumeLabRoute
   '/roadmap': typeof RoadmapRoute
+  '/admin/skill-dictionary': typeof AdminSkillDictionaryRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/interview-question': typeof ApiInterviewQuestionRoute
@@ -221,6 +229,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/resume-lab': typeof ResumeLabRoute
   '/roadmap': typeof RoadmapRoute
+  '/admin/skill-dictionary': typeof AdminSkillDictionaryRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/interview-question': typeof ApiInterviewQuestionRoute
@@ -249,6 +258,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/resume-lab'
     | '/roadmap'
+    | '/admin/skill-dictionary'
     | '/api/align-resume'
     | '/api/generate-from-jd'
     | '/api/interview-question'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/resume-lab'
     | '/roadmap'
+    | '/admin/skill-dictionary'
     | '/api/align-resume'
     | '/api/generate-from-jd'
     | '/api/interview-question'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/resume-lab'
     | '/roadmap'
+    | '/admin/skill-dictionary'
     | '/api/align-resume'
     | '/api/generate-from-jd'
     | '/api/interview-question'
@@ -328,6 +340,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ResumeLabRoute: typeof ResumeLabRoute
   RoadmapRoute: typeof RoadmapRoute
+  AdminSkillDictionaryRoute: typeof AdminSkillDictionaryRoute
   ApiAlignResumeRoute: typeof ApiAlignResumeRoute
   ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
   ApiInterviewQuestionRoute: typeof ApiInterviewQuestionRoute
@@ -512,6 +525,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAlignResumeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/skill-dictionary': {
+      id: '/admin/skill-dictionary'
+      path: '/admin/skill-dictionary'
+      fullPath: '/admin/skill-dictionary'
+      preLoaderRoute: typeof AdminSkillDictionaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -528,6 +548,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ResumeLabRoute: ResumeLabRoute,
   RoadmapRoute: RoadmapRoute,
+  AdminSkillDictionaryRoute: AdminSkillDictionaryRoute,
   ApiAlignResumeRoute: ApiAlignResumeRoute,
   ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
   ApiInterviewQuestionRoute: ApiInterviewQuestionRoute,
