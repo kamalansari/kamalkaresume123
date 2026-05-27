@@ -42,6 +42,12 @@ export const ALL_TEMPLATES: TemplateMeta[] = [
   { id: "compact-two", label: "Compact two", desc: "Tight two-col", cols: 2 },
   { id: "fresher", label: "Fresher", desc: "Cream sidebar", cols: 2 },
   { id: "contemporary", label: "Contemporary", desc: "Modern sidebar", cols: 2 },
+  { id: "iconic", label: "Iconic", desc: "Teal sidebar, icon labels", cols: 2 },
+  { id: "creative", label: "Creative", desc: "Violet right rail", cols: 2 },
+  { id: "startup", label: "Startup", desc: "Orange compact two-col", cols: 2 },
+  { id: "technical", label: "Technical", desc: "Slate engineering band", cols: 1 },
+  { id: "academic", label: "Academic", desc: "Burgundy scholarly", cols: 1 },
+  { id: "corporate", label: "Corporate", desc: "Navy formal", cols: 1 },
 ];
 
 const BG_PRESETS = [
