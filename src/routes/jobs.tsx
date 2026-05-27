@@ -100,6 +100,11 @@ function JobsPage() {
   const [novaJob, setNovaJob] = useState<Job | null>(null);
   const [novaLoading, setNovaLoading] = useState(false);
   const [novaResp, setNovaResp] = useState<{ tips: string[]; keywords: string[] } | null>(null);
+  const [novaQuestion, setNovaQuestion] = useState<string>("");
+  const [applyJob, setApplyJob] = useState<Job | null>(null);
+  const [applyName, setApplyName] = useState<string>("");
+  const [applyLoading, setApplyLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Client-side filter state for recommended-jobs panel
   const [roleFilter, setRoleFilter] = useState<Set<string>>(new Set());
@@ -167,9 +172,10 @@ function JobsPage() {
     finally { setLoading(false); }
   };
 
-  const askNova = async (job: Job) => {
+  const askNova = async (job: Job, question?: string) => {
     setNovaJob(job);
     setNovaResp(null);
+    setNovaQuestion(question ?? "");
     setNovaLoading(true);
     try {
       const res = await fetch("/api/job-tip", {
@@ -178,12 +184,86 @@ function JobsPage() {
         body: JSON.stringify({
           jd: job.jd, jobTitle: job.title,
           resume: { headline: activeResume.headline, summary: activeResume.summary, skills: activeResume.skills },
+          question: question ?? undefined,
         }),
       });
       if (!res.ok) { toast.error("Nova couldn't respond."); return; }
       setNovaResp(await res.json());
     } catch { toast.error("Network error."); }
     finally { setNovaLoading(false); }
+  };
+
+  // Tailor the active resume against a job's JD via /api/align-resume and save as a new SavedResume.
+  const tailorAndSave = async (job: Job, name: string): Promise<SavedResume | null> => {
+    const base = getLatestResume(activeResumeId, activeResume);
+    try {
+      const res = await fetch("/api/align-resume", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jobDescription: getJobScoringText(job),
+          resume: {
+            name: base.name, headline: base.headline, summary: base.summary, skills: base.skills,
+            experience: (base.experience ?? []).map(e => ({ title: e.title, company: e.company, date: e.date, bullets: e.bullets })),
+          },
+        }),
+      });
+      if (res.status === 429) { toast.error("Rate limit hit. Retry shortly."); return null; }
+      if (res.status === 402) { toast.error("AI credits exhausted."); return null; }
+      if (!res.ok) { toast.error("Tailoring failed."); return null; }
+      const out = (await res.json()) as {
+        headline?: string; summary?: string; skills?: string;
+        experience?: { title?: string; company?: string; date?: string; bullets?: string }[];
+      };
+      const mergedExp = (base.experience ?? []).map((exp, i) => ({
+        ...exp,
+        bullets: out.experience?.[i]?.bullets?.trim() || exp.bullets,
+      }));
+      const tailored: ResumeData = {
+        ...base,
+        headline: out.headline?.trim() || base.headline,
+        summary: out.summary?.trim() || base.summary,
+        skills: out.skills?.trim() || base.skills,
+        experience: mergedExp,
+        jobDescription: getJobScoringText(job),
+      };
+      const entry: SavedResume = { id: newId(), name: name.trim() || `${job.company} - ${job.title}`, updatedAt: Date.now(), data: tailored };
+      resumeStore.upsert(entry);
+      refreshResumes();
+      setActiveResumeId(entry.id);
+      return entry;
+    } catch { toast.error("Network error."); return null; }
+  };
+
+  const openApply = (job: Job) => {
+    setApplyJob(job);
+    setApplyName(`${job.company} - ${job.title}`.slice(0, 80));
+  };
+
+  const confirmTailorAndApply = async () => {
+    if (!applyJob) return;
+    setApplyLoading(true);
+    const saved = await tailorAndSave(applyJob, applyName);
+    setApplyLoading(false);
+    if (saved) {
+      toast.success(`Saved "${saved.name}". Opening Naukri…`, {
+        action: { label: "Open in builder", onClick: () => navigate({ to: "/builder" }) },
+      });
+      window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
+      setApplyJob(null);
+    }
+  };
+
+  const tailorFromNova = async () => {
+    if (!novaJob) return;
+    setApplyLoading(true);
+    const saved = await tailorAndSave(novaJob, `${novaJob.company} - ${novaJob.title}`);
+    setApplyLoading(false);
+    if (saved) {
+      toast.success(`Saved "${saved.name}".`, {
+        action: { label: "Open in builder", onClick: () => navigate({ to: "/builder" }) },
+      });
+    }
   };
 
   const naukriUrl = (title: string) => {
