@@ -633,9 +633,14 @@ function JobsPage() {
       <Dialog open={!!novaJob} onOpenChange={o => !o && setNovaJob(null)}>
         <DialogContent className="max-w-xl">
           <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-[var(--navy-light)]" /> Nova on {novaJob?.title}</DialogTitle></DialogHeader>
+          {novaQuestion && (
+            <div className="text-xs rounded-md bg-secondary/60 border border-border px-2 py-1.5 text-muted-foreground">
+              <span className="font-medium text-foreground">Q:</span> {novaQuestion}
+            </div>
+          )}
           {novaLoading && <div className="py-6 text-center text-sm text-muted-foreground"><Loader2 className="animate-spin inline mr-2" /> Nova is thinking…</div>}
-          {novaResp && (
-            <div className="space-y-4">
+          {!novaLoading && novaResp && (
+            <div className="space-y-4 max-h-[55vh] overflow-auto">
               <div>
                 <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Tips</div>
                 <ul className="space-y-1.5 text-sm list-disc pl-5">{novaResp.tips.map((t, i) => <li key={i}>{t}</li>)}</ul>
@@ -648,9 +653,73 @@ function JobsPage() {
                   ))}
                 </div>
               </div>
+              {novaJob && (
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1.5 inline-flex items-center gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5" /> Related questions
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      `What experience should I highlight for ${novaJob.title}?`,
+                      `Which skills are missing from my resume for this role?`,
+                      `How should I rewrite my summary for ${novaJob.company}?`,
+                      `What interview questions should I expect?`,
+                    ].map(q => (
+                      <button
+                        key={q}
+                        onClick={() => askNova(novaJob, q)}
+                        className="text-xs px-2.5 py-1 rounded-full border border-border bg-background hover:border-[var(--navy-light)] hover:text-[var(--navy-light)] transition-colors"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
-          <DialogFooter><Button variant="ghost" onClick={() => setNovaJob(null)}>Close</Button></DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="ghost" onClick={() => setNovaJob(null)}>Close</Button>
+            <Button onClick={tailorFromNova} disabled={applyLoading || !novaJob}>
+              {applyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+              Tailor & Save Resume
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Apply Dialog */}
+      <Dialog open={!!applyJob} onOpenChange={o => { if (!o && !applyLoading) setApplyJob(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Wand2 className="h-4 w-4 text-[var(--navy-light)]" /> Tailor resume for {applyJob?.company}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              We'll rewrite your active resume's headline, summary, skills and bullets to align with this JD, then save it as a new copy you can edit anytime.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] tracking-widest text-muted-foreground font-semibold">SAVE AS</Label>
+              <Input value={applyName} onChange={e => setApplyName(e.target.value)} placeholder={`${applyJob?.company} - ${applyJob?.title}`} />
+            </div>
+            <div className="text-xs text-muted-foreground">Source resume: <span className="font-medium text-foreground">{activeResumeName}</span></div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="ghost"
+              disabled={applyLoading}
+              onClick={() => {
+                if (applyJob) window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
+                setApplyJob(null);
+              }}
+            >
+              Skip & Apply
+            </Button>
+            <Button onClick={confirmTailorAndApply} disabled={applyLoading || !applyName.trim()}>
+              {applyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+              Tailor, Save & Apply
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
