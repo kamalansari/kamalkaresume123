@@ -23,7 +23,13 @@ const STOP = new Set([
   "full","time","part","fulltime","parttime","contract","permanent","temporary","internship","intern",
   "english","hindi","language","languages",
   "bachelor","bachelors","master","masters","degree","graduate","graduation","postgraduate","mba","bca","mca","btech","be","bsc","msc",
-  "etc.","eg","ie","i.e","e.g"
+  "etc.","eg","ie","i.e","e.g",
+  // Generic soft skills / behavioral traits (never count as ATS keywords)
+  "hardworking","flexible","proactive","coordination","coordinate","coordinating",
+  "motivated","passionate","dynamic","energetic","reliable","detail","detail-oriented",
+  "oriented","selfstarter","self-starter","selfmotivated","self-motivated","quick","learner",
+  "punctual","sincere","dedicated","enthusiastic","creative","innovative","adaptable",
+  "multitasking","multi-tasking","interpersonal","presentable","gogetter","go-getter"
 ]);
 
 const toText = (value: unknown) => typeof value === "string" ? value : value == null ? "" : String(value);
@@ -167,6 +173,137 @@ function canonTokens(text: unknown): string[] {
   return tokens(text).map(canonical);
 }
 
+// =============================================================================
+// Hard-skill dictionary — ATS-grade keywords for Reporting / Data / MIS /
+// Financial Analyst roles. Used to filter JD extraction so we never surface
+// recruiter boilerplate, soft skills, or generic verbs as "keywords".
+//
+// Order matters: longer / multi-word phrases are matched first so that
+// "power bi" is captured as one keyword instead of two singles.
+// =============================================================================
+const HARD_SKILL_PHRASES: string[] = [
+  // BI / reporting platforms
+  "power bi","power query","power pivot","power automate","dax",
+  "tableau","tableau prep","qlikview","qlik sense","looker","looker studio",
+  "google data studio","sap bo","sap businessobjects","sap bw","sap hana",
+  "microstrategy","domo","cognos","ibm cognos","crystal reports","sisense",
+  // Spreadsheets / desktop
+  "advanced excel","ms excel","microsoft excel","excel macros","vba","vlookup",
+  "hlookup","xlookup","pivot tables","pivot table","index match","array formulas",
+  "google sheets","ms access","microsoft access",
+  // Reporting domains
+  "mis reporting","mis report","management reporting","financial reporting",
+  "financial modeling","financial modelling","financial analysis","variance analysis",
+  "ratio analysis","trend analysis","cost analysis","profitability analysis",
+  "budgeting","forecasting","budget forecasting","cash flow","p&l","p & l",
+  "balance sheet","general ledger","accounts payable","accounts receivable",
+  "revenue analysis","kpi reporting","kpi dashboard","kpi tracking",
+  "dashboard development","dashboard design","reporting automation",
+  // Data engineering / databases
+  "sql","t-sql","pl/sql","mysql","postgresql","postgres","oracle","ms sql",
+  "sql server","mssql","mongodb","nosql","snowflake","redshift","bigquery",
+  "databricks","azure synapse","stored procedures","data warehouse",
+  "data warehousing","data modeling","data modelling","data mart","etl",
+  "elt","ssis","ssrs","ssas","informatica","talend","alteryx","airflow",
+  // Programming / scripting
+  "python","pandas","numpy","matplotlib","seaborn","plotly","scipy","scikit-learn",
+  "r programming","r language","sas","spss","stata","matlab","julia",
+  "javascript","typescript",
+  // Cloud / platforms
+  "aws","azure","gcp","google cloud","aws s3","aws redshift","azure data factory",
+  "azure data lake","aws glue",
+  // Data concepts / methods
+  "data analysis","data analytics","data visualization","data visualisation",
+  "data cleansing","data cleaning","data wrangling","data mining","data quality",
+  "data governance","data validation","data extraction","data transformation",
+  "data integration","data migration","data reconciliation","data interpretation",
+  "statistical analysis","statistical modeling","regression analysis",
+  "hypothesis testing","predictive analytics","predictive modeling","time series",
+  "machine learning","deep learning","exploratory data analysis","eda",
+  "ab testing","a/b testing","root cause analysis","gap analysis",
+  // Business / finance domain
+  "gst","tds","ifrs","gaap","us gaap","ind as","sox","sox compliance",
+  "audit","internal audit","statutory audit","taxation","reconciliation",
+  "bank reconciliation","invoicing","accounting","bookkeeping","tally",
+  "sap","sap fico","oracle erp","quickbooks","zoho books","netsuite",
+  // Process / methodology
+  "agile","scrum","jira","confluence","six sigma","lean","kaizen",
+  "business intelligence","business analysis","requirement gathering",
+  "stakeholder management","process improvement","automation",
+];
+
+// Single-word hard skills that don't need a phrase context.
+const HARD_SKILL_SINGLES: string[] = [
+  "sql","python","excel","tableau","powerbi","dax","vba","sas","spss","r",
+  "etl","elt","ssis","ssrs","ssas","snowflake","redshift","bigquery",
+  "databricks","airflow","alteryx","informatica","talend",
+  "mysql","postgresql","postgres","oracle","mssql","mongodb","nosql",
+  "aws","azure","gcp","hana",
+  "forecasting","budgeting","reconciliation","accounting","auditing",
+  "analytics","reporting","dashboards","kpi","kpis","mis","erp","crm",
+  "sap","tally","quickbooks","netsuite",
+  "pandas","numpy","matplotlib","seaborn","plotly","scipy","jupyter",
+  "javascript","typescript","java","scala",
+  "statistics","regression","forecast","modeling","modelling",
+  "agile","scrum","jira","confluence",
+];
+
+const HARD_SKILL_SINGLE_SET = new Set(HARD_SKILL_SINGLES.map(s => s.toLowerCase()));
+// Sort phrases by length desc so multi-word matches win before singles.
+const HARD_SKILL_PHRASES_SORTED = [...HARD_SKILL_PHRASES].sort(
+  (a, b) => b.length - a.length,
+);
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Extract ATS-grade hard skills from a body of text, in first-occurrence
+ *  order, deduplicated case-insensitively. Multi-word phrases match first
+ *  and are removed from the working text so their constituent words aren't
+ *  also reported as standalone singles. */
+export function extractHardSkills(text: string, limit = 60): string[] {
+  if (!text) return [];
+  let working = ` ${text.toLowerCase()} `;
+  const found: string[] = [];
+  const seen = new Set<string>();
+
+  // 1) Multi-word & exact phrase pass
+  for (const phrase of HARD_SKILL_PHRASES_SORTED) {
+    const re = new RegExp(`(?<![a-z0-9])${escapeRegex(phrase)}(?![a-z0-9])`, "i");
+    if (re.test(working)) {
+      const key = phrase.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        found.push(phrase);
+      }
+      // Blank out matches so single-word pass doesn't re-pick "power" / "bi".
+      working = working.replace(new RegExp(re.source, "gi"), " ");
+    }
+    if (found.length >= limit) return found;
+  }
+
+  // 2) Single-token pass (only allowlisted hard skills)
+  const singles = working.match(/[a-z][a-z0-9+.#/-]{1,}/g) || [];
+  for (const tok of singles) {
+    if (!HARD_SKILL_SINGLE_SET.has(tok)) continue;
+    if (STOP.has(tok)) continue;
+    if (seen.has(tok)) continue;
+    seen.add(tok);
+    found.push(tok);
+    if (found.length >= limit) break;
+  }
+
+  return found;
+}
+
+/** Count case-insensitive whole-phrase occurrences of `phrase` in `text`. */
+function countPhrase(text: string, phrase: string): number {
+  if (!text || !phrase) return 0;
+  const re = new RegExp(`(?<![a-z0-9])${escapeRegex(phrase)}(?![a-z0-9])`, "gi");
+  return (text.match(re) || []).length;
+}
+
 export type ScoreResult = {
   score: number;
   checks: { label: string; pass: boolean; weight: number; hint?: string }[];
@@ -194,18 +331,16 @@ export function computeScore(r: Partial<ResumeData>): ScoreResult {
   const resumeCanonSet = new Set(resumeTokensRaw.map(canonical));
 
   const jobDescription = toText(r.jobDescription);
-  // Deduplicate JD keywords by canonical form, but keep the original display token.
-  const jdRaw = tokens(jobDescription);
-  const seenCanon = new Set<string>();
-  const jdTokens: string[] = [];
-  for (const t of jdRaw) {
-    const c = canonical(t);
-    if (seenCanon.has(c)) continue;
-    seenCanon.add(c);
-    jdTokens.push(t);
-    if (jdTokens.length >= 60) break;
-  }
-  const isMatch = (t: string) => resumeCanonSet.has(canonical(t));
+  // ATS-grade JD keyword extraction: dictionary-filtered hard skills only.
+  // Recruiter boilerplate, soft skills, and generic verbs never appear here.
+  const jdTokens = extractHardSkills(jobDescription, 60);
+  const resumeLower = resumeText.toLowerCase();
+  const isMatch = (t: string) => {
+    // Multi-word phrase → whole-phrase substring match in resume text.
+    if (/\s/.test(t)) return countPhrase(resumeLower, t) > 0;
+    // Single token → canonical (stem/synonym) match for tolerance.
+    return resumeCanonSet.has(canonical(t));
+  };
   const matched = jdTokens.filter(isMatch);
   const missing = jdTokens.filter(t => !isMatch(t));
   let coverage = jdTokens.length ? matched.length / jdTokens.length : 0;
@@ -237,12 +372,21 @@ export function computeScore(r: Partial<ResumeData>): ScoreResult {
 
   const score = Math.min(100, Math.round(checks.reduce((s, c) => s + (c.pass ? c.weight : 0), 0)));
 
-  // Per-keyword counts in resume vs JD (compared by canonical form so
-  // "managing" in the JD counts hits from "managed" in the resume).
+  // Per-keyword counts in resume vs JD. Phrases use whole-phrase counts;
+  // singles fall back to canonical token counts so "managing" → "managed".
   const resumeCanonList = resumeTokensRaw.map(canonical);
   const jdCanonList = canonTokens(jobDescription);
+  const jdLower = jobDescription.toLowerCase();
   const countIn = (arr: string[], k: string) => arr.filter(t => t === k).length;
   const keywordStats = jdTokens.map(k => {
+    if (/\s/.test(k)) {
+      return {
+        keyword: k,
+        resume: countPhrase(resumeLower, k),
+        jd: countPhrase(jdLower, k),
+        matched: countPhrase(resumeLower, k) > 0,
+      };
+    }
     const c = canonical(k);
     return {
       keyword: k,
