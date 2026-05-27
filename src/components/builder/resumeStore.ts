@@ -222,13 +222,13 @@ export const resumeStore = {
     write(list);
     void syncUpsert(item);
   },
-  duplicate(id: string): SavedResume | undefined {
+  duplicate(id: string, name?: string): SavedResume | undefined {
     const list = read();
     const item = list.find((r) => r.id === id);
     if (!item) return undefined;
     const copy: SavedResume = {
       id: newId(),
-      name: `${item.name} (copy)`,
+      name: (name && name.trim()) || `${item.name} (copy)`,
       updatedAt: Date.now(),
       data: JSON.parse(JSON.stringify(item.data)),
     };
