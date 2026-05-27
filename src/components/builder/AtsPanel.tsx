@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { computeScore } from "./atsScore";
+import { useSkillDictVersion } from "@/lib/skillDictionaryStore";
 import type { ResumeData } from "./types";
 import { AtsDebugPanel } from "./AtsDebugPanel";
 
