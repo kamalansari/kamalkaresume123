@@ -23,6 +23,7 @@ import { Route as AtsRouteImport } from './routes/ats'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRoadmapRouteImport } from './routes/api/roadmap'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
+import { Route as ApiRewriteSnippetRouteImport } from './routes/api/rewrite-snippet'
 import { Route as ApiRewriteSectionRouteImport } from './routes/api/rewrite-section'
 import { Route as ApiRecommendJobsRouteImport } from './routes/api/recommend-jobs'
 import { Route as ApiParseResumeRouteImport } from './routes/api/parse-resume'
@@ -105,6 +106,11 @@ const ApiRewriteSummaryRoute = ApiRewriteSummaryRouteImport.update({
   path: '/api/rewrite-summary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRewriteSnippetRoute = ApiRewriteSnippetRouteImport.update({
+  id: '/api/rewrite-snippet',
+  path: '/api/rewrite-snippet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRewriteSectionRoute = ApiRewriteSectionRouteImport.update({
   id: '/api/rewrite-section',
   path: '/api/rewrite-section',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/api/parse-resume': typeof ApiParseResumeRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
+  '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
   '/api/roadmap': typeof ApiRoadmapRoute
 }
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/api/parse-resume': typeof ApiParseResumeRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
+  '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
   '/api/roadmap': typeof ApiRoadmapRoute
 }
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/api/parse-resume': typeof ApiParseResumeRoute
   '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
+  '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
   '/api/roadmap': typeof ApiRoadmapRoute
 }
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/api/parse-resume'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
+    | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
     | '/api/roadmap'
   fileRoutesByTo: FileRoutesByTo
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/api/parse-resume'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
+    | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
     | '/api/roadmap'
   id:
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/api/parse-resume'
     | '/api/recommend-jobs'
     | '/api/rewrite-section'
+    | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
     | '/api/roadmap'
   fileRoutesById: FileRoutesById
@@ -351,6 +363,7 @@ export interface RootRouteChildren {
   ApiParseResumeRoute: typeof ApiParseResumeRoute
   ApiRecommendJobsRoute: typeof ApiRecommendJobsRoute
   ApiRewriteSectionRoute: typeof ApiRewriteSectionRoute
+  ApiRewriteSnippetRoute: typeof ApiRewriteSnippetRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
   ApiRoadmapRoute: typeof ApiRoadmapRoute
 }
@@ -453,6 +466,13 @@ declare module '@tanstack/react-router' {
       path: '/api/rewrite-summary'
       fullPath: '/api/rewrite-summary'
       preLoaderRoute: typeof ApiRewriteSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rewrite-snippet': {
+      id: '/api/rewrite-snippet'
+      path: '/api/rewrite-snippet'
+      fullPath: '/api/rewrite-snippet'
+      preLoaderRoute: typeof ApiRewriteSnippetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rewrite-section': {
@@ -559,6 +579,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiParseResumeRoute: ApiParseResumeRoute,
   ApiRecommendJobsRoute: ApiRecommendJobsRoute,
   ApiRewriteSectionRoute: ApiRewriteSectionRoute,
+  ApiRewriteSnippetRoute: ApiRewriteSnippetRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
   ApiRoadmapRoute: ApiRoadmapRoute,
 }
