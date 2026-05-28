@@ -393,9 +393,10 @@ function SummarySection({ data, accent, headingFont, ed }: { data: ResumeData; a
           className="preview-editable"
           onClick={e => e.stopPropagation()}
           onBlur={e => ed.onUpdate({ summary: e.currentTarget.innerText })}
+          style={{ textAlign: "justify" }}
         >{data.summary}</p>
       ) : (
-        <p><InlineText text={data.summary} /></p>
+        <p style={{ textAlign: "justify" }}><InlineText text={data.summary} /></p>
       )}
     </Section>
   );
@@ -423,7 +424,7 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
               data-preview-edit="experience-bullets"
               data-preview-exp-id={e.id}
               className="preview-editable"
-              style={{ marginTop: 4, marginLeft: 18, whiteSpace: "pre-wrap" }}
+              style={{ marginTop: 4, marginLeft: 18, whiteSpace: "pre-wrap", textAlign: "justify" }}
               onClick={ev => ev.stopPropagation()}
               onBlur={ev => ed.onUpdateExperienceBullets(e.id, ev.currentTarget.innerText.replace(/^•\s*/gm, ""))}
             >
@@ -432,7 +433,7 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
               ))}
             </div>
           ) : (
-            <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
+            <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc", textAlign: "justify" }}>
               {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
             </ul>
           )}
