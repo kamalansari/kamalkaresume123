@@ -577,9 +577,10 @@ function AwardsSection({ data, accent, headingFont }: { data: ResumeData; accent
 
 function LanguagesSection({ data, accent, headingFont, template }: { data: ResumeData; accent: string; headingFont: string; template: string }) {
   if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
+  const sep = data.skillSeparator === "," ? ", " : " | ";
   return (
     <Section title="Languages" accent={accent} headingFont={headingFont}>
-      <p>{data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(" · ")}</p>
+      <p>{data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(sep)}</p>
     </Section>
   );
 }
