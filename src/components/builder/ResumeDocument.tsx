@@ -196,11 +196,14 @@ export function ResumeDocument({
     const sidebarRenderers: Partial<Record<SectionId, React.ReactNode>> = {
       skills: data.skills ? (
         <SidebarFlashWrap key="skills" flash={flashSection === "skills"}><SidebarBlock title="Skills" headingFont={headingFont} dark={!compact}>
-          <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-            {parseSkills(data.skills).map((s, i) => (
-              <li key={i} style={{ marginBottom: 3 }}>• {s}</li>
-            ))}
-          </ul>
+          {parseSkillGroups(data.skills).map((g, gi) => (
+            <div key={gi} style={{ marginBottom: 6 }}>
+              {g.heading && (
+                <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>
+              )}
+              <div style={{ wordSpacing: 0 }}>{g.items.join("  |  ")}</div>
+            </div>
+          ))}
         </SidebarBlock></SidebarFlashWrap>
       ) : null,
       languages: data.languages?.length ? (
