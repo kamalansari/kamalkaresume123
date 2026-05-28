@@ -332,6 +332,12 @@ function SidebarFlashWrap({ flash, children }: { flash: boolean; children: React
   return <div key="flash-on" className="preview-flash">{children}</div>;
 }
 
+// Insert zero-width spaces so long unbroken tokens (emails, URLs) can wrap
+// at sensible boundaries (@, ., /, -, _) instead of mid-word.
+function insertSoftBreaks(text: string): string {
+  return text.replace(/([@./\-_])/g, "$1\u200B");
+}
+
 function ContactRow({ data, color }: { data: ResumeData; color: string }) {
   const iconSize = 11;
   const items: { icon: React.ReactNode; text: string }[] = [];
