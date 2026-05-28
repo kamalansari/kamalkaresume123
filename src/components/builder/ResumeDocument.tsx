@@ -212,10 +212,10 @@ export function ResumeDocument({
                   .filter(Boolean);
                 ed.onUpdate({ skills: lines.join(", ") });
               }}
-              style={{ margin: 0, paddingLeft: 14, listStyle: "disc", listStylePosition: "outside" }}
+              style={{ margin: 0, paddingLeft: 12, listStyle: "disc", listStylePosition: "outside", textIndent: 0 }}
             >
               {parseSkills(data.skills).map((s, i) => (
-                <li key={i} style={{ marginBottom: 2, paddingLeft: 0 }}>{s}</li>
+                <li key={i} style={{ marginBottom: 2, paddingLeft: 2 }}>{s}</li>
               ))}
             </ul>
           ) : (
@@ -224,9 +224,9 @@ export function ResumeDocument({
                 {g.heading && (
                   <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>
                 )}
-                <ul style={{ margin: 0, paddingLeft: 14, listStyle: "disc", listStylePosition: "outside" }}>
+                <ul style={{ margin: 0, paddingLeft: 12, listStyle: "disc", listStylePosition: "outside", textIndent: 0 }}>
                   {g.items.map((s, i) => (
-                    <li key={i} style={{ marginBottom: 2, paddingLeft: 0 }}>{s}</li>
+                    <li key={i} style={{ marginBottom: 2, paddingLeft: 2 }}>{s}</li>
                   ))}
                 </ul>
               </div>
@@ -236,9 +236,9 @@ export function ResumeDocument({
       ) : null,
       languages: data.languages?.length ? (
         <SidebarFlashWrap key="languages" flash={flashSection === "languages"}><SidebarBlock title="Languages" headingFont={headingFont} dark={!compact}>
-          <ul style={{ margin: 0, paddingLeft: 14, listStyle: "disc", listStylePosition: "outside" }}>
+          <ul style={{ margin: 0, paddingLeft: 12, listStyle: "disc", listStylePosition: "outside", textIndent: 0 }}>
             {data.languages.map(l => (
-              <li key={l.id} style={{ marginBottom: 2, paddingLeft: 0 }}>
+              <li key={l.id} style={{ marginBottom: 2, paddingLeft: 2 }}>
                 {l.name}{l.level ? ` (${l.level})` : ""}
               </li>
             ))}
