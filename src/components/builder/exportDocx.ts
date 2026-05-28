@@ -102,7 +102,17 @@ function buildSections(data: ResumeData, color: string, headingFont?: string): R
     education: data.education.length
       ? [h("Education"), ...data.education.map(ed => line(`${ed.degree} · ${ed.school}`, { right: ed.date, bodyBold: bb }))]
       : [],
-    skills: data.skills ? [h("Skills"), para(parseSkills(data.skills).join(" · "))] : [],
+    skills: data.skills
+      ? [
+          h("Skills"),
+          ...parseSkills(data.skills).map(s =>
+            new Paragraph({
+              bullet: { level: 0 },
+              children: [new TextRun({ text: s, size: 21 })],
+            })
+          ),
+        ]
+      : [],
     projects: data.projects?.length
       ? [
           h("Projects"),
