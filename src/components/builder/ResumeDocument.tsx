@@ -442,7 +442,7 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
               data-preview-edit="experience-bullets"
               data-preview-exp-id={e.id}
               className="preview-editable"
-              style={{ marginTop: 4, marginLeft: 18, whiteSpace: "pre-wrap", textAlign: "justify" }}
+              style={{ marginTop: 4, marginLeft: 14, whiteSpace: "pre-wrap", textAlign: "justify" }}
               onClick={ev => ev.stopPropagation()}
               onBlur={ev => ed.onUpdateExperienceBullets(e.id, ev.currentTarget.innerText.replace(/^•\s*/gm, ""))}
             >
@@ -451,7 +451,7 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
               ))}
             </div>
           ) : (
-            <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc", textAlign: "justify" }}>
+            <ul style={{ marginTop: 4, marginLeft: 14, paddingLeft: 0, listStyle: "disc", listStylePosition: "outside", textAlign: "justify" }}>
               {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
             </ul>
           )}
@@ -528,7 +528,7 @@ function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; acce
             <div style={{ color: "#666", whiteSpace: "nowrap" }}>{p.date}</div>
           </div>
           {p.bullets && (
-            <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
+            <ul style={{ marginTop: 4, marginLeft: 14, paddingLeft: 0, listStyle: "disc", listStylePosition: "outside" }}>
               {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
             </ul>
           )}
