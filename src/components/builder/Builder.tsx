@@ -39,6 +39,7 @@ import { PreviewToolbar } from "./PreviewToolbar";
 import { MonthYearPicker, DateRangePicker } from "./MonthYearPicker";
 import { SavedResumesGallery } from "./SavedResumesGallery";
 import { TemplatesPopover, SectionsPopover, StylePopover } from "./BuilderTopToolbar";
+import { SelectionFormatToolbar } from "./SelectionFormatToolbar";
 import { ExperienceSection, autoActionVerbs, autoActionVerbsDetailed, loadCustomVerbs } from "./ExperienceSection";
 import lzString from "lz-string";
 const { decompressFromEncodedURIComponent } = lzString;
@@ -1852,6 +1853,7 @@ export function Builder() {
             </div>
           </div>
         </div>
+        {inlineEdit && <SelectionFormatToolbar data={data} />}
 
         {/* ATS panel */}
         {atsOpen && (
