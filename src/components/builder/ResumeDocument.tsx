@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo } from "react";
 import { Mail, Phone, MapPin, Link as LinkIcon, Sparkles, Loader2 } from "lucide-react";
 import { FONT_PRESETS, getSidebarSectionIds, type ResumeData, type SectionId } from "./types";
-import { parseSkills } from "@/lib/parseSkills";
+import { parseSkills, parseSkillGroups } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
 import { jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
 
