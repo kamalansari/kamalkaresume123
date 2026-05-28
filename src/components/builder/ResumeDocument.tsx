@@ -196,23 +196,52 @@ export function ResumeDocument({
     const sidebarRenderers: Partial<Record<SectionId, React.ReactNode>> = {
       skills: data.skills ? (
         <SidebarFlashWrap key="skills" flash={flashSection === "skills"}><SidebarBlock title="Skills" headingFont={headingFont} dark={!compact}>
-          {parseSkillGroups(data.skills).map((g, gi) => (
-            <div key={gi} style={{ marginBottom: 6 }}>
-              {g.heading && (
-                <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>
-              )}
-              <div style={{ wordSpacing: 0 }}>{g.items.join(data.skillSeparator === "," ? ", " : "  |  ")}</div>
-            </div>
-          ))}
+          {ed ? (
+            <ul
+              key={`sb-skills-${data.skills}`}
+              contentEditable
+              suppressContentEditableWarning
+              data-preview-edit="skills"
+              className="preview-editable"
+              onClick={e => e.stopPropagation()}
+              onBlur={e => {
+                const lines = e.currentTarget.innerText
+                  .split("\n")
+                  .map(s => s.replace(/^[•\-\u2022]\s*/, "").trim())
+                  .filter(Boolean);
+                ed.onUpdate({ skills: lines.join(", ") });
+              }}
+              style={{ margin: 0, paddingLeft: 16, listStyle: "disc" }}
+            >
+              {parseSkills(data.skills).map((s, i) => (
+                <li key={i} style={{ marginBottom: 2 }}>{s}</li>
+              ))}
+            </ul>
+          ) : (
+            parseSkillGroups(data.skills).map((g, gi) => (
+              <div key={gi} style={{ marginBottom: 6 }}>
+                {g.heading && (
+                  <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>
+                )}
+                <ul style={{ margin: 0, paddingLeft: 16, listStyle: "disc" }}>
+                  {g.items.map((s, i) => (
+                    <li key={i} style={{ marginBottom: 2 }}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
         </SidebarBlock></SidebarFlashWrap>
       ) : null,
       languages: data.languages?.length ? (
         <SidebarFlashWrap key="languages" flash={flashSection === "languages"}><SidebarBlock title="Languages" headingFont={headingFont} dark={!compact}>
-          <div style={{ wordSpacing: 0 }}>
-            {data.languages
-              .map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`)
-              .join(data.skillSeparator === "," ? ", " : "  |  ")}
-          </div>
+          <ul style={{ margin: 0, paddingLeft: 16, listStyle: "disc" }}>
+            {data.languages.map(l => (
+              <li key={l.id} style={{ marginBottom: 2 }}>
+                {l.name}{l.level ? ` (${l.level})` : ""}
+              </li>
+            ))}
+          </ul>
         </SidebarBlock></SidebarFlashWrap>
       ) : null,
       education: data.education.length ? (
