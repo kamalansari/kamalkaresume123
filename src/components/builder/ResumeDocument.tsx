@@ -433,10 +433,43 @@ function ContactRow({ data, color }: { data: ResumeData; color: string }) {
   if (data.location) items.push({ icon: <MapPin size={iconSize} />, text: data.location });
   splitLinks(data.links).forEach(l => items.push({ icon: <LinkIcon size={iconSize} />, text: l }));
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px", color, fontSize: "9.5pt", alignItems: "center" }}>
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "4px 16px",
+        color,
+        fontSize: "9.5pt",
+        alignItems: "center",
+        lineHeight: 1.3,
+        minWidth: 0,
+        width: "100%",
+      }}
+    >
       {items.map((it, i) => (
-        <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-          <span style={{ display: "inline-flex" }}>{it.icon}</span>{it.text}
+        <span
+          key={i}
+          title={it.text}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            minWidth: 0,
+            maxWidth: "100%",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span style={{ display: "inline-flex", flexShrink: 0 }}>{it.icon}</span>
+          <span
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              minWidth: 0,
+            }}
+          >
+            {it.text}
+          </span>
         </span>
       ))}
     </div>
