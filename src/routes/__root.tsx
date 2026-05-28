@@ -81,14 +81,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ResumeForge — ATS Resume Builder" },
+      { title: "Spark Resume" },
       { name: "description", content: "Build an ATS-optimized resume with live preview, real-time scoring, and clean PDF export." },
       { name: "author", content: "ResumeForge" },
-      { property: "og:title", content: "ResumeForge — ATS Resume Builder" },
-      { property: "og:description", content: "Beat the bots. Land the interview." },
+      { property: "og:title", content: "Spark Resume" },
+      { property: "og:description", content: "Build an ATS-optimized resume with live preview, real-time scoring, and clean PDF export." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Spark Resume" },
+      { name: "twitter:description", content: "Build an ATS-optimized resume with live preview, real-time scoring, and clean PDF export." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/665bab68-620a-4b08-b296-d31b9ce1fe66/id-preview-2f77fa0e--67d7fd0b-9cea-4007-9ed8-dda704ec4f54.lovable.app-1779971109309.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/665bab68-620a-4b08-b296-d31b9ce1fe66/id-preview-2f77fa0e--67d7fd0b-9cea-4007-9ed8-dda704ec4f54.lovable.app-1779971109309.png" },
     ],
     links: [
       {
