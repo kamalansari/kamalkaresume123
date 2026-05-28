@@ -1853,6 +1853,7 @@ export function Builder() {
             </div>
           </div>
         </div>
+        {inlineEdit && <SelectionFormatToolbar data={data} />}
 
         {/* ATS panel */}
         {atsOpen && (
