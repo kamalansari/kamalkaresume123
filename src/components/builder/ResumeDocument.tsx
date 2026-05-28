@@ -559,30 +559,62 @@ function SkillsSection({ data, accent, headingFont, template, ed }: { data: Resu
   if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
   const groups = parseSkillGroups(data.skills);
   const hasHeadings = groups.some(g => g.heading);
-  const sep = data.skillSeparator === "," ? ", " : " | ";
+  const listStyle: React.CSSProperties = {
+    margin: 0,
+    paddingLeft: 16,
+    listStyle: "disc",
+    listStylePosition: "outside",
+    columnCount: 2,
+    columnGap: 24,
+  };
+  const liStyle: React.CSSProperties = {
+    paddingLeft: 0,
+    marginBottom: 2,
+    breakInside: "avoid",
+    WebkitColumnBreakInside: "avoid",
+  };
   return (
     <Section title="Skills" accent={accent} headingFont={headingFont} ed={ed} kind="skills">
       {ed ? (
-        <p
+        <ul
           key={`skills-${data.skills}`}
           contentEditable
           suppressContentEditableWarning
           data-preview-edit="skills"
           className="preview-editable"
           onClick={e => e.stopPropagation()}
-          onBlur={e => ed.onUpdate({ skills: e.currentTarget.innerText })}
-        >{parseSkills(data.skills).join(sep)}</p>
+          onBlur={e => {
+            const lines = e.currentTarget.innerText
+              .split("\n")
+              .map(s => s.replace(/^[•\-\u2022]\s*/, "").trim())
+              .filter(Boolean);
+            ed.onUpdate({ skills: lines.join(", ") });
+          }}
+          style={listStyle}
+        >
+          {parseSkills(data.skills).map((s, i) => (
+            <li key={i} style={liStyle}>{s}</li>
+          ))}
+        </ul>
       ) : hasHeadings ? (
         <div>
           {groups.map((g, gi) => (
-            <div key={gi} style={{ marginBottom: 4 }}>
-              {g.heading && <span style={{ fontWeight: 700 }}>{g.heading}: </span>}
-              <span>{g.items.join(sep)}</span>
+            <div key={gi} style={{ marginBottom: 6 }}>
+              {g.heading && <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>}
+              <ul style={listStyle}>
+                {g.items.map((s, i) => (
+                  <li key={i} style={liStyle}>{s}</li>
+                ))}
+              </ul>
             </div>
           ))}
         </div>
       ) : (
-        <p>{parseSkills(data.skills).join(sep)}</p>
+        <ul style={listStyle}>
+          {parseSkills(data.skills).map((s, i) => (
+            <li key={i} style={liStyle}>{s}</li>
+          ))}
+        </ul>
       )}
     </Section>
   );
