@@ -625,6 +625,20 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
           <Slider className="mt-2" min={9} max={13} step={0.5} value={[data.fontSize]} onValueChange={([v]) => onPatch({ fontSize: v })} />
         </div>
         <div>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Line height</Label>
+            <span className="text-xs tabular-nums text-muted-foreground">{(data.lineHeight ?? 1.45).toFixed(2)}</span>
+          </div>
+          <Slider className="mt-2" min={1.1} max={1.8} step={0.05} value={[data.lineHeight ?? 1.45]} onValueChange={([v]) => onPatch({ lineHeight: v })} />
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Section spacing</Label>
+            <span className="text-xs tabular-nums text-muted-foreground">{data.sectionSpacing ?? 16} px</span>
+          </div>
+          <Slider className="mt-2" min={6} max={28} step={1} value={[data.sectionSpacing ?? 16]} onValueChange={([v]) => onPatch({ sectionSpacing: v })} />
+        </div>
+        <div>
           <Label className="text-xs text-muted-foreground">Text style</Label>
           <div className="mt-2 flex gap-2">
             <button onClick={() => onPatch({ justifyText: !data.justifyText })}
