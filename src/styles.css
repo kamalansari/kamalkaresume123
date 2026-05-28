@@ -173,6 +173,8 @@
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
+    zoom: var(--print-scale, 1);
+    transform-origin: top left;
   }
   .resume-preview-scale { transform: none !important; width: auto !important; }
   .no-print { display: none !important; }

@@ -177,6 +177,7 @@ export function ResumeDocument({
     msHyphens: "auto",
     textJustify: "inter-word",
     ["--rd-section-gap" as string]: `${sectionGap}px`,
+    ["--print-scale" as string]: `${data.printScale ?? 1}`,
   } as React.CSSProperties;
 
   const contactLine = (
