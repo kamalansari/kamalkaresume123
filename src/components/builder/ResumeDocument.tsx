@@ -393,20 +393,41 @@ function ContactRow({ data, color }: { data: ResumeData; color: string }) {
   );
 }
 
-function SidebarContact({ data, dark }: { data: ResumeData; dark: boolean }) {
-  const items: { icon: React.ReactNode; text: string }[] = [];
-  if (data.email) items.push({ icon: <Mail size={11} />, text: data.email });
-  if (data.phone) items.push({ icon: <Phone size={11} />, text: data.phone });
-  if (data.location) items.push({ icon: <MapPin size={11} />, text: data.location });
-  splitLinks(data.links).forEach(l => items.push({ icon: <LinkIcon size={11} />, text: l }));
+function SidebarContact({ data, dark, ed }: { data: ResumeData; dark: boolean; ed?: EditableHandlers }) {
+  type Field = "email" | "phone" | "location" | "links";
+  const items: { icon: React.ReactNode; text: string; field: Field }[] = [];
+  if (data.email) items.push({ icon: <Mail size={11} />, text: data.email, field: "email" });
+  if (data.phone) items.push({ icon: <Phone size={11} />, text: data.phone, field: "phone" });
+  if (data.location) items.push({ icon: <MapPin size={11} />, text: data.location, field: "location" });
+  splitLinks(data.links).forEach(l => items.push({ icon: <LinkIcon size={11} />, text: l, field: "links" }));
+  const linksOrder = splitLinks(data.links);
   return (
     <div>
-      {items.map((it, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 4, overflowWrap: "anywhere", wordBreak: "normal", opacity: dark ? 0.95 : 1 }}>
-          <span style={{ display: "inline-flex", marginTop: 2 }}>{it.icon}</span>
-          <span style={{ flex: 1 }}>{insertSoftBreaks(it.text)}</span>
-        </div>
-      ))}
+      {items.map((it, i) => {
+        const linkIndex = it.field === "links" ? linksOrder.indexOf(it.text) : -1;
+        const onBlur = ed
+          ? (e: React.FocusEvent<HTMLSpanElement>) => {
+              const v = e.currentTarget.innerText.trim();
+              if (it.field === "links") {
+                const next = [...linksOrder];
+                if (linkIndex >= 0) next[linkIndex] = v;
+                ed.onUpdate({ links: next.filter(Boolean).join(" · ") });
+              } else {
+                ed.onUpdate({ [it.field]: v } as Partial<ResumeData>);
+              }
+            }
+          : undefined;
+        return (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, opacity: dark ? 0.95 : 1, minWidth: 0 }}>
+            <span style={{ display: "inline-flex", flexShrink: 0 }}>{it.icon}</span>
+            <span
+              {...(ed ? { contentEditable: true, suppressContentEditableWarning: true, "data-preview-edit": `contact-${it.field}`, className: "preview-editable", onClick: (e: React.MouseEvent) => e.stopPropagation(), onBlur } : {})}
+              style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+              title={it.text}
+            >{it.text}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
