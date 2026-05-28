@@ -202,8 +202,8 @@ export const defaultResume: ResumeData = {
   sectionOrder: ["summary", "experience", "education", "skills"],
   justifyText: true,
   boldBody: false,
-  lineHeight: 1.45,
-  sectionSpacing: 16,
+  lineHeight: 1.5,
+  sectionSpacing: 20,
   customSections: [],
 };
 

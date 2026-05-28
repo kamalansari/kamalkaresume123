@@ -349,14 +349,50 @@ export function ResumeDocument({
   const isMinimal = data.template === "minimal";
   return (
     <KeywordContext.Provider value={kwSet}>
-    <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: "0.4in 0.45in" }}>
-      <header {...headerClickProps} style={{ textAlign: isMinimal ? "left" : "center", borderBottom: isMinimal ? `1px solid #d4d4d4` : `2px solid ${accent}`, paddingBottom: 10, cursor: onSectionClick ? "pointer" : undefined }}>
-        <h1 style={{ fontFamily: headingFont, fontSize: `${fs * (isMinimal ? 2.1 : 2.45)}pt`, fontWeight: isMinimal ? 600 : 700, letterSpacing: isProfessional ? "0.12em" : "-0.01em", textTransform: isProfessional ? "uppercase" : undefined, color: isMinimal ? "#1a1a1a" : accent }}>{data.name || "Your Name"}</h1>
-        <div style={{ fontSize: `${fs + 0.5}pt`, color: "#4a4a4a", marginTop: 2 }}>{data.headline}</div>
-        <div style={{ marginTop: 6, display: "flex", justifyContent: isMinimal ? "flex-start" : "center" }}>{contactLine}</div>
-      </header>
-      {ordered}
-      {customBlocks}
+    <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: 0 }}>
+      {isMinimal ? (
+        <header {...headerClickProps} style={{ padding: "0.7in 0.75in 0.25in", borderBottom: "1px solid #d4d4d4", cursor: onSectionClick ? "pointer" : undefined }}>
+          <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.4}pt`, fontWeight: 600, letterSpacing: "-0.01em", color: "#1a1a1a" }}>{data.name || "Your Name"}</h1>
+          <div style={{ fontSize: `${fs + 1}pt`, color: "#4a4a4a", marginTop: 4 }}>{data.headline}</div>
+          <div style={{ marginTop: 10 }}>{contactLine}</div>
+        </header>
+      ) : (
+        <header
+          {...headerClickProps}
+          style={{
+            background: accent,
+            color: "#fff",
+            padding: "0.5in 0.75in",
+            cursor: onSectionClick ? "pointer" : undefined,
+          }}
+        >
+          <h1
+            style={{
+              fontFamily: headingFont,
+              fontSize: `${fs * 2.8}pt`,
+              fontWeight: 700,
+              letterSpacing: isProfessional ? "0.14em" : "0.02em",
+              textTransform: "uppercase",
+              lineHeight: 1.1,
+              color: "#fff",
+            }}
+          >
+            {data.name || "Your Name"}
+          </h1>
+          {data.headline && (
+            <div style={{ fontSize: `${fs + 1.5}pt`, opacity: 0.9, marginTop: 6, letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 400 }}>
+              {data.headline}
+            </div>
+          )}
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.25)" }}>
+            <ContactRow data={data} color="#ffffff" />
+          </div>
+        </header>
+      )}
+      <div style={{ padding: "0.35in 0.75in 0.6in", maxWidth: "8.5in" }}>
+        {ordered}
+        {customBlocks}
+      </div>
     </div>
     </KeywordContext.Provider>
   );
@@ -457,8 +493,8 @@ function SidebarBlock({ title, headingFont, children, dark }: { title: string; h
 
 function Section({ title, accent, headingFont, children, ed, kind }: { title: string; accent: string; headingFont: string; children: React.ReactNode; ed?: EditableHandlers; kind?: EditableRewriteKind }) {
   return (
-    <section style={{ marginTop: "var(--rd-section-gap, 16px)" }}>
-      <h2 style={{ fontFamily: headingFont, fontSize: "10.5pt", fontWeight: 700, letterSpacing: "0.18em", color: accent, textTransform: "uppercase", borderBottom: `1px solid ${accent}33`, paddingBottom: 4, marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <section style={{ marginTop: "var(--rd-section-gap, 20px)" }}>
+      <h2 style={{ fontFamily: headingFont, fontSize: "11pt", fontWeight: 700, letterSpacing: "0.22em", color: accent, textTransform: "uppercase", borderBottom: `1px solid ${accent}55`, paddingBottom: 6, marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span>{title}</span>
         {ed && kind && kind !== "experience-bullets" && (
           <RewriteButton busy={ed.rewritingKey === kind} onClick={() => ed.onRewrite(kind)} />
@@ -494,16 +530,19 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
   return (
     <Section title="Experience" accent={accent} headingFont={headingFont}>
       {data.experience.map(e => (
-        <div key={e.id} style={{ marginBottom: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ fontWeight: 600 }}>
-              {e.title || "Role"} <span style={{ fontWeight: 400, color: "#4a4a4a" }}>· {e.company}</span>
+        <div key={e.id} style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
+            <div style={{ fontWeight: 700, fontSize: "1.02em" }}>
+              {e.title || "Role"}
             </div>
-            <div style={{ color: "#666", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ color: "#555", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6, fontSize: "0.95em", fontStyle: "italic" }}>
               <span>{e.date}</span>
               {ed && <RewriteButton busy={ed.rewritingKey === `exp-${e.id}`} onClick={() => ed.onRewrite("experience-bullets", e.id)} />}
             </div>
           </div>
+          {e.company && (
+            <div style={{ color: "#4a4a4a", marginTop: 2, fontWeight: 500 }}>{e.company}</div>
+          )}
           {ed ? (
             <div
               key={`exp-${e.id}-${e.bullets}`}
@@ -512,17 +551,17 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
               data-preview-edit="experience-bullets"
               data-preview-exp-id={e.id}
               className="preview-editable"
-              style={{ marginTop: 4, marginLeft: 14, whiteSpace: "pre-wrap", textAlign: "justify" }}
+              style={{ marginTop: 8, marginLeft: 16, whiteSpace: "pre-wrap", textAlign: "left" }}
               onClick={ev => ev.stopPropagation()}
               onBlur={ev => ed.onUpdateExperienceBullets(e.id, ev.currentTarget.innerText.replace(/^•\s*/gm, ""))}
             >
               {e.bullets.split("\n").filter(Boolean).map((b, i) => (
-                <div key={i}>• {b}</div>
+                <div key={i} style={{ marginBottom: 4 }}>• {b}</div>
               ))}
             </div>
           ) : (
-            <ul style={{ marginTop: 4, marginLeft: 0, paddingLeft: 16, listStyle: "disc", listStylePosition: "outside", textAlign: "justify" }}>
-              {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i} style={{ paddingLeft: 0 }}><InlineText text={b} /></li>)}
+            <ul style={{ marginTop: 8, marginLeft: 0, paddingLeft: 18, listStyle: "disc", listStylePosition: "outside", textAlign: "left" }}>
+              {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i} style={{ paddingLeft: 0, marginBottom: 6 }}><InlineText text={b} /></li>)}
             </ul>
           )}
         </div>
