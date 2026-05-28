@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo } from "react";
 import { Mail, Phone, MapPin, Link as LinkIcon, Sparkles, Loader2 } from "lucide-react";
 import { FONT_PRESETS, getSidebarSectionIds, type ResumeData, type SectionId } from "./types";
-import { parseSkills } from "@/lib/parseSkills";
+import { parseSkills, parseSkillGroups } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
 import { jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
 
@@ -196,11 +196,14 @@ export function ResumeDocument({
     const sidebarRenderers: Partial<Record<SectionId, React.ReactNode>> = {
       skills: data.skills ? (
         <SidebarFlashWrap key="skills" flash={flashSection === "skills"}><SidebarBlock title="Skills" headingFont={headingFont} dark={!compact}>
-          <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-            {parseSkills(data.skills).map((s, i) => (
-              <li key={i} style={{ marginBottom: 3 }}>• {s}</li>
-            ))}
-          </ul>
+          {parseSkillGroups(data.skills).map((g, gi) => (
+            <div key={gi} style={{ marginBottom: 6 }}>
+              {g.heading && (
+                <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>
+              )}
+              <div style={{ wordSpacing: 0 }}>{g.items.join("  |  ")}</div>
+            </div>
+          ))}
         </SidebarBlock></SidebarFlashWrap>
       ) : null,
       languages: data.languages?.length ? (
@@ -476,6 +479,8 @@ function EducationSection({ data, accent, headingFont }: { data: ResumeData; acc
 
 function SkillsSection({ data, accent, headingFont, template, ed }: { data: ResumeData; accent: string; headingFont: string; template: string; ed?: EditableHandlers }) {
   if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
+  const groups = parseSkillGroups(data.skills);
+  const hasHeadings = groups.some(g => g.heading);
   return (
     <Section title="Skills" accent={accent} headingFont={headingFont} ed={ed} kind="skills">
       {ed ? (
@@ -488,6 +493,15 @@ function SkillsSection({ data, accent, headingFont, template, ed }: { data: Resu
           onClick={e => e.stopPropagation()}
           onBlur={e => ed.onUpdate({ skills: e.currentTarget.innerText })}
         >{parseSkills(data.skills).join(" | ")}</p>
+      ) : hasHeadings ? (
+        <div>
+          {groups.map((g, gi) => (
+            <div key={gi} style={{ marginBottom: 4 }}>
+              {g.heading && <span style={{ fontWeight: 700 }}>{g.heading}: </span>}
+              <span>{g.items.join("  |  ")}</span>
+            </div>
+          ))}
+        </div>
       ) : (
         <p>{parseSkills(data.skills).join(" | ")}</p>
       )}
