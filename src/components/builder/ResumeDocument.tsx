@@ -293,7 +293,7 @@ export function ResumeDocument({
       ) : null,
     };
     const sidebar = (
-      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.5in 0.3in", cursor: onSectionClick ? "pointer" : undefined }}>
+      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.4in 0.25in", cursor: onSectionClick ? "pointer" : undefined }}>
         <h1
           {...(ed ? { contentEditable: true, suppressContentEditableWarning: true, "data-preview-edit": "name", className: "preview-editable", onClick: (e: React.MouseEvent) => e.stopPropagation(), onBlur: (e: React.FocusEvent<HTMLHeadingElement>) => ed.onUpdate({ name: e.currentTarget.innerText }) } : {})}
           style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}
@@ -310,7 +310,7 @@ export function ResumeDocument({
       </aside>
     );
     const main = (
-      <main style={{ padding: "0.5in 0.45in" }}>
+      <main style={{ padding: "0.4in 0.35in" }}>
         {data.sectionOrder.filter(id => !sidebarSectionIds.includes(id)).map(id => sections[id])}
         {customBlocks}
       </main>
@@ -318,7 +318,7 @@ export function ResumeDocument({
     return (
       <KeywordContext.Provider value={kwSet}>
       <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
-        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.3in" : "2.3in 1fr", minHeight: "11in" }}>
+        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.2in" : "2.2in 1fr", minHeight: "11in" }}>
           {sidebarRight ? main : sidebar}
           {sidebarRight ? sidebar : main}
         </div>
@@ -332,13 +332,13 @@ export function ResumeDocument({
     return (
       <KeywordContext.Provider value={kwSet}>
       <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
-        <header {...headerClickProps} style={{ padding: "0.5in 0.6in", background: accent, color: "#fff", cursor: onSectionClick ? "pointer" : undefined, borderBottom: exec ? "4px solid rgba(0,0,0,0.35)" : undefined }}>
+        <header {...headerClickProps} style={{ padding: "0.4in 0.45in", background: accent, color: "#fff", cursor: onSectionClick ? "pointer" : undefined, borderBottom: exec ? "4px solid rgba(0,0,0,0.35)" : undefined }}>
           <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.6}pt`, fontWeight: 800, letterSpacing: exec ? "0.08em" : "-0.01em", textTransform: exec ? "uppercase" : undefined }}>{data.name || "Your Name"}</h1>
           <div style={{ fontSize: `${fs + 1.5}pt`, opacity: 0.92, marginTop: 2 }}>{data.headline}</div>
           <div style={{ marginTop: 8, color: "#fff", opacity: 0.92 }}><ContactRow data={data} color="#ffffff" /></div>
         </header>
-        <div style={{ padding: "0.35in 0.6in 0.6in" }}>{ordered}</div>
-        <div style={{ padding: "0 0.6in 0.6in" }}>{customBlocks}</div>
+        <div style={{ padding: "0.25in 0.45in 0.4in" }}>{ordered}</div>
+        <div style={{ padding: "0 0.45in 0.4in" }}>{customBlocks}</div>
       </div>
       </KeywordContext.Provider>
     );
@@ -349,7 +349,7 @@ export function ResumeDocument({
   const isMinimal = data.template === "minimal";
   return (
     <KeywordContext.Provider value={kwSet}>
-    <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: "0.6in" }}>
+    <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: "0.4in 0.45in" }}>
       <header {...headerClickProps} style={{ textAlign: isMinimal ? "left" : "center", borderBottom: isMinimal ? `1px solid #d4d4d4` : `2px solid ${accent}`, paddingBottom: 10, cursor: onSectionClick ? "pointer" : undefined }}>
         <h1 style={{ fontFamily: headingFont, fontSize: `${fs * (isMinimal ? 2.1 : 2.45)}pt`, fontWeight: isMinimal ? 600 : 700, letterSpacing: isProfessional ? "0.12em" : "-0.01em", textTransform: isProfessional ? "uppercase" : undefined, color: isMinimal ? "#1a1a1a" : accent }}>{data.name || "Your Name"}</h1>
         <div style={{ fontSize: `${fs + 0.5}pt`, color: "#4a4a4a", marginTop: 2 }}>{data.headline}</div>
