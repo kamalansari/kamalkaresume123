@@ -640,8 +640,7 @@ function SkillsSection({ data, accent, headingFont, template, ed }: { data: Resu
     paddingLeft: 16,
     listStyle: "disc",
     listStylePosition: "outside",
-    columnCount: 2,
-    columnGap: 24,
+    columnCount: 1,
   };
   const liStyle: React.CSSProperties = {
     paddingLeft: 0,
