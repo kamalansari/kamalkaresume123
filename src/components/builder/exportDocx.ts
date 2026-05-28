@@ -206,22 +206,22 @@ export async function exportDocx(data: ResumeData) {
 
     const sideCell = new TableCell({
       borders,
-      width: { size: 3120, type: WidthType.DXA },
+      width: { size: 3600, type: WidthType.DXA },
       shading: { fill: sidebarFill, type: ShadingType.CLEAR, color: "auto" },
-      margins: { top: 400, bottom: 400, left: 300, right: 300 },
+      margins: { top: 432, bottom: 432, left: 360, right: 360 },
       children: leftChildren,
     });
     const mainCell = new TableCell({
       borders,
-      width: { size: 6240, type: WidthType.DXA },
-      margins: { top: 400, bottom: 400, left: 300, right: 300 },
+      width: { size: 5760, type: WidthType.DXA },
+      margins: { top: 432, bottom: 432, left: 432, right: 432 },
       children: rightChildren.length ? rightChildren : [new Paragraph({ children: [new TextRun({ text: "" })] })],
     });
     const sidebarRight = data.template === "sidebar-right";
     body = [
       new Table({
         width: { size: 9360, type: WidthType.DXA },
-        columnWidths: sidebarRight ? [6240, 3120] : [3120, 6240],
+        columnWidths: sidebarRight ? [5760, 3600] : [3600, 5760],
         borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder, insideHorizontal: noBorder, insideVertical: noBorder },
         rows: [
           new TableRow({
