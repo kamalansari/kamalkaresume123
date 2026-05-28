@@ -208,9 +208,11 @@ export function ResumeDocument({
       ) : null,
       languages: data.languages?.length ? (
         <SidebarFlashWrap key="languages" flash={flashSection === "languages"}><SidebarBlock title="Languages" headingFont={headingFont} dark={!compact}>
-          {data.languages.map(l => (
-            <div key={l.id} style={{ marginBottom: 3 }}>{l.name}{l.level ? ` — ${l.level}` : ""}</div>
-          ))}
+          <div style={{ wordSpacing: 0 }}>
+            {data.languages
+              .map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`)
+              .join(data.skillSeparator === "," ? ", " : "  |  ")}
+          </div>
         </SidebarBlock></SidebarFlashWrap>
       ) : null,
       education: data.education.length ? (
@@ -575,9 +577,10 @@ function AwardsSection({ data, accent, headingFont }: { data: ResumeData; accent
 
 function LanguagesSection({ data, accent, headingFont, template }: { data: ResumeData; accent: string; headingFont: string; template: string }) {
   if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
+  const sep = data.skillSeparator === "," ? ", " : " | ";
   return (
     <Section title="Languages" accent={accent} headingFont={headingFont}>
-      <p>{data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(" · ")}</p>
+      <p>{data.languages.map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`).join(sep)}</p>
     </Section>
   );
 }
