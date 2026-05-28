@@ -170,6 +170,10 @@ export function ResumeDocument({
     background: data.bgHex || "#ffffff",
     textAlign: data.justifyText ? "justify" : "left",
     fontWeight: data.boldBody ? 600 : 400,
+    hyphens: "auto",
+    WebkitHyphens: "auto",
+    msHyphens: "auto",
+    textJustify: "inter-word",
   } as React.CSSProperties;
 
   const contactLine = (
@@ -256,7 +260,7 @@ export function ResumeDocument({
     );
     return (
       <KeywordContext.Provider value={kwSet}>
-      <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
+      <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
         <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.6in" : "2.6in 1fr", minHeight: "11in" }}>
           {sidebarRight ? main : sidebar}
           {sidebarRight ? sidebar : main}
@@ -270,7 +274,7 @@ export function ResumeDocument({
     const exec = data.template === "executive" || data.template === "bold";
     return (
       <KeywordContext.Provider value={kwSet}>
-      <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
+      <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
         <header {...headerClickProps} style={{ padding: "0.5in 0.6in", background: accent, color: "#fff", cursor: onSectionClick ? "pointer" : undefined, borderBottom: exec ? "4px solid rgba(0,0,0,0.35)" : undefined }}>
           <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.6}pt`, fontWeight: 800, letterSpacing: exec ? "0.08em" : "-0.01em", textTransform: exec ? "uppercase" : undefined }}>{data.name || "Your Name"}</h1>
           <div style={{ fontSize: `${fs + 1.5}pt`, opacity: 0.92, marginTop: 2 }}>{data.headline}</div>
@@ -288,7 +292,7 @@ export function ResumeDocument({
   const isMinimal = data.template === "minimal";
   return (
     <KeywordContext.Provider value={kwSet}>
-    <div className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: "0.6in" }}>
+    <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: "0.6in" }}>
       <header {...headerClickProps} style={{ textAlign: isMinimal ? "left" : "center", borderBottom: isMinimal ? `1px solid #d4d4d4` : `2px solid ${accent}`, paddingBottom: 10, cursor: onSectionClick ? "pointer" : undefined }}>
         <h1 style={{ fontFamily: headingFont, fontSize: `${fs * (isMinimal ? 2.1 : 2.45)}pt`, fontWeight: isMinimal ? 600 : 700, letterSpacing: isProfessional ? "0.12em" : "-0.01em", textTransform: isProfessional ? "uppercase" : undefined, color: isMinimal ? "#1a1a1a" : accent }}>{data.name || "Your Name"}</h1>
         <div style={{ fontSize: `${fs + 0.5}pt`, color: "#4a4a4a", marginTop: 2 }}>{data.headline}</div>
