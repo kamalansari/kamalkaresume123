@@ -1,6 +1,6 @@
 export function parseSkills(input: string): string[] {
   return input
-    .split(/[|,\n]/g)
+    .split(/[|,\n\u2022•·]/g)
     .map(s => s.trim())
     .filter(Boolean);
 }
@@ -33,9 +33,9 @@ export function parseSkillGroups(input: string): SkillGroup[] {
       if (current && current.items.length) groups.push(current);
       const heading = line.slice(0, colon).trim();
       const rest = line.slice(colon + 1);
-      current = { heading, items: rest.split(/[|,]/g).map(s => s.trim()).filter(Boolean) };
+      current = { heading, items: rest.split(/[|,\u2022•·]/g).map(s => s.trim()).filter(Boolean) };
     } else {
-      const items = line.split(/[|,]/g).map(s => s.trim()).filter(Boolean);
+      const items = line.split(/[|,\u2022•·]/g).map(s => s.trim()).filter(Boolean);
       if (!current) current = { items: [] };
       current.items.push(...items);
     }
