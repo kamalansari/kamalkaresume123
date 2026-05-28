@@ -218,7 +218,7 @@ export function ResumeDocument({
               style={{ margin: 0, paddingLeft: 12, listStyle: "disc", listStylePosition: "outside", textIndent: 0 }}
             >
               {parseSkills(data.skills).map((s, i) => (
-                <li key={i} style={{ marginBottom: 2, paddingLeft: 2 }}>{s}</li>
+                <li key={i} style={{ marginBottom: 2, paddingLeft: 2, fontWeight: 400 }}>{s}</li>
               ))}
             </ul>
           ) : (
@@ -229,7 +229,7 @@ export function ResumeDocument({
                 )}
                 <ul style={{ margin: 0, paddingLeft: 12, listStyle: "disc", listStylePosition: "outside", textIndent: 0 }}>
                   {g.items.map((s, i) => (
-                    <li key={i} style={{ marginBottom: 2, paddingLeft: 2 }}>{s}</li>
+                    <li key={i} style={{ marginBottom: 2, paddingLeft: 2, fontWeight: 400 }}>{s}</li>
                   ))}
                 </ul>
               </div>
@@ -647,6 +647,7 @@ function SkillsSection({ data, accent, headingFont, template, ed }: { data: Resu
     paddingLeft: 0,
     marginBottom: 2,
     breakInside: "avoid",
+    fontWeight: 400,
   };
   return (
     <Section title="Skills" accent={accent} headingFont={headingFont} ed={ed} kind="skills">
