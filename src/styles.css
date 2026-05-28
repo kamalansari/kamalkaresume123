@@ -164,7 +164,16 @@
 @media print {
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 8.5in !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
   .resume-preview-scale { transform: none !important; width: auto !important; }
   .no-print { display: none !important; }
   .print-area, .print-area * {
@@ -172,7 +181,7 @@
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
-  @page { margin: 0; size: auto; }
+  @page { size: 8.5in 11in; margin: 0; }
   html, body { background: #ffffff; }
 }
 

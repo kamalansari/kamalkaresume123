@@ -246,7 +246,10 @@ export async function exportDocx(data: ResumeData) {
     },
     sections: [{
       properties: {
-        page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } },
+        page: {
+          size: { width: 12240, height: 15840 },
+          margin: { top: 576, right: 576, bottom: 576, left: 576 },
+        },
       },
       children: body as never,
     }],
