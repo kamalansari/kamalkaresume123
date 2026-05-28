@@ -293,7 +293,7 @@ export function ResumeDocument({
       ) : null,
     };
     const sidebar = (
-      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.4in 0.25in", cursor: onSectionClick ? "pointer" : undefined }}>
+      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.45in 0.3in", cursor: onSectionClick ? "pointer" : undefined, wordBreak: "break-word", overflowWrap: "anywhere" }}>
         <h1
           {...(ed ? { contentEditable: true, suppressContentEditableWarning: true, "data-preview-edit": "name", className: "preview-editable", onClick: (e: React.MouseEvent) => e.stopPropagation(), onBlur: (e: React.FocusEvent<HTMLHeadingElement>) => ed.onUpdate({ name: e.currentTarget.innerText }) } : {})}
           style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}
@@ -310,7 +310,7 @@ export function ResumeDocument({
       </aside>
     );
     const main = (
-      <main style={{ padding: "0.4in 0.35in" }}>
+      <main style={{ padding: "0.45in 0.45in 0.45in 0.4in", minWidth: 0 }}>
         {data.sectionOrder.filter(id => !sidebarSectionIds.includes(id)).map(id => sections[id])}
         {customBlocks}
       </main>
@@ -318,7 +318,7 @@ export function ResumeDocument({
     return (
       <KeywordContext.Provider value={kwSet}>
       <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
-        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.2in" : "2.2in 1fr", minHeight: "11in" }}>
+        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.55in" : "2.55in 1fr", minHeight: "11in" }}>
           {sidebarRight ? main : sidebar}
           {sidebarRight ? sidebar : main}
         </div>
@@ -501,11 +501,11 @@ function SidebarContact({ data, dark, ed }: { data: ResumeData; dark: boolean; e
             }
           : undefined;
         return (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, opacity: dark ? 0.95 : 1, minWidth: 0 }}>
-            <span style={{ display: "inline-flex", flexShrink: 0 }}>{it.icon}</span>
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 6, opacity: dark ? 0.95 : 1, minWidth: 0, lineHeight: 1.35 }}>
+            <span style={{ display: "inline-flex", flexShrink: 0, marginTop: 3 }}>{it.icon}</span>
             <span
               {...(ed ? { contentEditable: true, suppressContentEditableWarning: true, "data-preview-edit": `contact-${it.field}`, className: "preview-editable", onClick: (e: React.MouseEvent) => e.stopPropagation(), onBlur } : {})}
-              style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+              style={{ flex: 1, minWidth: 0, wordBreak: "break-word", overflowWrap: "anywhere" }}
               title={it.text}
             >{it.text}</span>
           </div>
