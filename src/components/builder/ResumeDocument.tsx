@@ -196,34 +196,77 @@ export function ResumeDocument({
     const sidebarRenderers: Partial<Record<SectionId, React.ReactNode>> = {
       skills: data.skills ? (
         <SidebarFlashWrap key="skills" flash={flashSection === "skills"}><SidebarBlock title="Skills" headingFont={headingFont} dark={!compact}>
-          {parseSkillGroups(data.skills).map((g, gi) => (
-            <div key={gi} style={{ marginBottom: 6 }}>
-              {g.heading && (
-                <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>
-              )}
-              <div style={{ wordSpacing: 0 }}>{g.items.join(data.skillSeparator === "," ? ", " : "  |  ")}</div>
-            </div>
-          ))}
+          {ed ? (
+            <ul
+              key={`sb-skills-${data.skills}`}
+              contentEditable
+              suppressContentEditableWarning
+              data-preview-edit="skills"
+              className="preview-editable"
+              onClick={e => e.stopPropagation()}
+              onBlur={e => {
+                const lines = e.currentTarget.innerText
+                  .split("\n")
+                  .map(s => s.replace(/^[•\-\u2022]\s*/, "").trim())
+                  .filter(Boolean);
+                ed.onUpdate({ skills: lines.join(", ") });
+              }}
+              style={{ margin: 0, paddingLeft: 16, listStyle: "disc" }}
+            >
+              {parseSkills(data.skills).map((s, i) => (
+                <li key={i} style={{ marginBottom: 2 }}>{s}</li>
+              ))}
+            </ul>
+          ) : (
+            parseSkillGroups(data.skills).map((g, gi) => (
+              <div key={gi} style={{ marginBottom: 6 }}>
+                {g.heading && (
+                  <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>
+                )}
+                <ul style={{ margin: 0, paddingLeft: 16, listStyle: "disc" }}>
+                  {g.items.map((s, i) => (
+                    <li key={i} style={{ marginBottom: 2 }}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
         </SidebarBlock></SidebarFlashWrap>
       ) : null,
       languages: data.languages?.length ? (
         <SidebarFlashWrap key="languages" flash={flashSection === "languages"}><SidebarBlock title="Languages" headingFont={headingFont} dark={!compact}>
-          <div style={{ wordSpacing: 0 }}>
-            {data.languages
-              .map(l => `${l.name}${l.level ? ` (${l.level})` : ""}`)
-              .join(data.skillSeparator === "," ? ", " : "  |  ")}
-          </div>
+          <ul style={{ margin: 0, paddingLeft: 16, listStyle: "disc" }}>
+            {data.languages.map(l => (
+              <li key={l.id} style={{ marginBottom: 2 }}>
+                {l.name}{l.level ? ` (${l.level})` : ""}
+              </li>
+            ))}
+          </ul>
         </SidebarBlock></SidebarFlashWrap>
       ) : null,
       education: data.education.length ? (
         <SidebarFlashWrap key="education" flash={flashSection === "education"}><SidebarBlock title="Education" headingFont={headingFont} dark={!compact}>
-          {data.education.map(ed => (
-            <div key={ed.id} style={{ marginBottom: 6 }}>
-              <div style={{ fontWeight: 600 }}>{ed.degree}</div>
-              <div style={{ opacity: 0.9 }}>{ed.school}</div>
-              <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{ed.date}</div>
-            </div>
-          ))}
+          {data.education.map(edu => {
+            const updateField = (field: "degree" | "school" | "date") => (e: React.FocusEvent<HTMLDivElement>) => {
+              if (!ed) return;
+              const v = e.currentTarget.innerText.trim();
+              ed.onUpdate({ education: data.education.map(x => x.id === edu.id ? { ...x, [field]: v } : x) });
+            };
+            const editProps = (field: "degree" | "school" | "date") => ed ? {
+              contentEditable: true,
+              suppressContentEditableWarning: true,
+              className: "preview-editable",
+              onClick: (e: React.MouseEvent) => e.stopPropagation(),
+              onBlur: updateField(field),
+            } : {};
+            return (
+              <div key={edu.id} style={{ marginBottom: 6 }}>
+                <div {...editProps("degree")} style={{ fontWeight: 600 }}>{edu.degree}</div>
+                <div {...editProps("school")} style={{ opacity: 0.9 }}>{edu.school}</div>
+                <div {...editProps("date")} style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{edu.date}</div>
+              </div>
+            );
+          })}
         </SidebarBlock></SidebarFlashWrap>
       ) : null,
       certifications: data.certifications?.length ? (
@@ -251,11 +294,17 @@ export function ResumeDocument({
     };
     const sidebar = (
       <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.5in 0.3in", cursor: onSectionClick ? "pointer" : undefined }}>
-        <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}>{data.name || "Your Name"}</h1>
-        <div style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}>{data.headline}</div>
+        <h1
+          {...(ed ? { contentEditable: true, suppressContentEditableWarning: true, "data-preview-edit": "name", className: "preview-editable", onClick: (e: React.MouseEvent) => e.stopPropagation(), onBlur: (e: React.FocusEvent<HTMLHeadingElement>) => ed.onUpdate({ name: e.currentTarget.innerText }) } : {})}
+          style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}
+        >{data.name || "Your Name"}</h1>
+        <div
+          {...(ed ? { contentEditable: true, suppressContentEditableWarning: true, "data-preview-edit": "headline", className: "preview-editable", onClick: (e: React.MouseEvent) => e.stopPropagation(), onBlur: (e: React.FocusEvent<HTMLDivElement>) => ed.onUpdate({ headline: e.currentTarget.innerText }) } : {})}
+          style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}
+        >{data.headline}</div>
         <div style={{ height: 1, background: compact ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.3)", margin: "16px 0" }} />
         <SidebarBlock title="Contact" headingFont={headingFont} dark={!compact}>
-          <SidebarContact data={data} dark={!compact} />
+          <SidebarContact data={data} dark={!compact} ed={ed} />
         </SidebarBlock>
         {data.sectionOrder.filter(id => sidebarSectionIds.includes(id)).map(id => sidebarRenderers[id])}
       </aside>
@@ -358,20 +407,41 @@ function ContactRow({ data, color }: { data: ResumeData; color: string }) {
   );
 }
 
-function SidebarContact({ data, dark }: { data: ResumeData; dark: boolean }) {
-  const items: { icon: React.ReactNode; text: string }[] = [];
-  if (data.email) items.push({ icon: <Mail size={11} />, text: data.email });
-  if (data.phone) items.push({ icon: <Phone size={11} />, text: data.phone });
-  if (data.location) items.push({ icon: <MapPin size={11} />, text: data.location });
-  splitLinks(data.links).forEach(l => items.push({ icon: <LinkIcon size={11} />, text: l }));
+function SidebarContact({ data, dark, ed }: { data: ResumeData; dark: boolean; ed?: EditableHandlers }) {
+  type Field = "email" | "phone" | "location" | "links";
+  const items: { icon: React.ReactNode; text: string; field: Field }[] = [];
+  if (data.email) items.push({ icon: <Mail size={11} />, text: data.email, field: "email" });
+  if (data.phone) items.push({ icon: <Phone size={11} />, text: data.phone, field: "phone" });
+  if (data.location) items.push({ icon: <MapPin size={11} />, text: data.location, field: "location" });
+  splitLinks(data.links).forEach(l => items.push({ icon: <LinkIcon size={11} />, text: l, field: "links" }));
+  const linksOrder = splitLinks(data.links);
   return (
     <div>
-      {items.map((it, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 4, overflowWrap: "anywhere", wordBreak: "normal", opacity: dark ? 0.95 : 1 }}>
-          <span style={{ display: "inline-flex", marginTop: 2 }}>{it.icon}</span>
-          <span style={{ flex: 1 }}>{insertSoftBreaks(it.text)}</span>
-        </div>
-      ))}
+      {items.map((it, i) => {
+        const linkIndex = it.field === "links" ? linksOrder.indexOf(it.text) : -1;
+        const onBlur = ed
+          ? (e: React.FocusEvent<HTMLSpanElement>) => {
+              const v = e.currentTarget.innerText.trim();
+              if (it.field === "links") {
+                const next = [...linksOrder];
+                if (linkIndex >= 0) next[linkIndex] = v;
+                ed.onUpdate({ links: next.filter(Boolean).join(" · ") });
+              } else {
+                ed.onUpdate({ [it.field]: v } as Partial<ResumeData>);
+              }
+            }
+          : undefined;
+        return (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, opacity: dark ? 0.95 : 1, minWidth: 0 }}>
+            <span style={{ display: "inline-flex", flexShrink: 0 }}>{it.icon}</span>
+            <span
+              {...(ed ? { contentEditable: true, suppressContentEditableWarning: true, "data-preview-edit": `contact-${it.field}`, className: "preview-editable", onClick: (e: React.MouseEvent) => e.stopPropagation(), onBlur } : {})}
+              style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+              title={it.text}
+            >{it.text}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
