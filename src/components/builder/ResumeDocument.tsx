@@ -106,6 +106,8 @@ export function ResumeDocument({
   };
   const accent = TEMPLATE_ACCENT[data.template] ?? data.accentHex;
   const fs = data.fontSize ?? 10.5;
+  const lh = data.lineHeight ?? 1.45;
+  const sectionGap = data.sectionSpacing ?? 16;
   // Map new template ids onto base layouts while preserving distinct vibes.
   const VARIANT_MAP: Record<typeof data.template, "classic" | "modern" | "two-column" | "sidebar-right" | "compact-two"> = {
     classic: "classic",
