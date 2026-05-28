@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown } from "lucide-react";
+import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,9 +18,12 @@ type Props = {
   onDocx: () => void;
   docxBusy?: boolean;
   extras?: React.ReactNode;
+  onUpdate?: (patch: Partial<ResumeData>) => void;
 };
 
-export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras }: Props) {
+const SCALE_OPTIONS = [0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15];
+
+export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras, onUpdate }: Props) {
   const share = async () => {
     try {
       const payload = compressToEncodedURIComponent(JSON.stringify(getData?.() ?? data));
@@ -31,10 +34,33 @@ export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras 
       toast.error("Could not generate share link");
     }
   };
+  const scale = data.printScale ?? 1;
   return (
     <div className="no-print flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-background/80 backdrop-blur p-1.5 sticky top-16 z-10 mb-3 shadow-[var(--shadow-soft)]">
       {extras && <div className="flex items-center gap-1.5">{extras}</div>}
       <div className="ml-auto flex items-center gap-1.5">
+        {onUpdate && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" title="Print / PDF scale — applied only to exports">
+                <Maximize2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Print {Math.round(scale * 100)}%</span>
+                <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {SCALE_OPTIONS.map(s => (
+                <DropdownMenuItem
+                  key={s}
+                  onClick={() => onUpdate({ printScale: s })}
+                  className={s === scale ? "font-semibold" : ""}
+                >
+                  {Math.round(s * 100)}% {s === 1 ? "· match preview" : ""}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <Button size="sm" variant="outline" onClick={share} title="Copy shareable link">
           <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share</span>
         </Button>
