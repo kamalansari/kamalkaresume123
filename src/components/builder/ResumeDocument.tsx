@@ -201,7 +201,7 @@ export function ResumeDocument({
               {g.heading && (
                 <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>
               )}
-              <div style={{ wordSpacing: 0 }}>{g.items.join("  |  ")}</div>
+              <div style={{ wordSpacing: 0 }}>{g.items.join(data.skillSeparator === "," ? ", " : "  |  ")}</div>
             </div>
           ))}
         </SidebarBlock></SidebarFlashWrap>
