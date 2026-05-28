@@ -359,9 +359,9 @@ function SidebarContact({ data, dark }: { data: ResumeData; dark: boolean }) {
   return (
     <div>
       {items.map((it, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 4, wordBreak: "break-word", opacity: dark ? 0.95 : 1 }}>
+        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 4, overflowWrap: "anywhere", wordBreak: "normal", opacity: dark ? 0.95 : 1 }}>
           <span style={{ display: "inline-flex", marginTop: 2 }}>{it.icon}</span>
-          <span style={{ flex: 1 }}>{it.text}</span>
+          <span style={{ flex: 1 }}>{insertSoftBreaks(it.text)}</span>
         </div>
       ))}
     </div>
