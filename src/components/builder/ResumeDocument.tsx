@@ -250,7 +250,7 @@ export function ResumeDocument({
       ) : null,
     };
     const sidebar = (
-      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.55in 0.4in", cursor: onSectionClick ? "pointer" : undefined }}>
+      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.5in 0.3in", cursor: onSectionClick ? "pointer" : undefined }}>
         <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}>{data.name || "Your Name"}</h1>
         <div style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}>{data.headline}</div>
         <div style={{ height: 1, background: compact ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.3)", margin: "16px 0" }} />
@@ -261,7 +261,7 @@ export function ResumeDocument({
       </aside>
     );
     const main = (
-      <main style={{ padding: "0.55in 0.5in" }}>
+      <main style={{ padding: "0.5in 0.45in" }}>
         {data.sectionOrder.filter(id => !sidebarSectionIds.includes(id)).map(id => sections[id])}
         {customBlocks}
       </main>
@@ -269,7 +269,7 @@ export function ResumeDocument({
     return (
       <KeywordContext.Provider value={kwSet}>
       <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
-        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.6in" : "2.6in 1fr", minHeight: "11in" }}>
+        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.3in" : "2.3in 1fr", minHeight: "11in" }}>
           {sidebarRight ? main : sidebar}
           {sidebarRight ? sidebar : main}
         </div>
@@ -378,8 +378,8 @@ function SidebarContact({ data, dark }: { data: ResumeData; dark: boolean }) {
 
 function SidebarBlock({ title, headingFont, children, dark }: { title: string; headingFont: string; children: React.ReactNode; dark: boolean }) {
   return (
-    <div style={{ marginBottom: 18, fontSize: "9.5pt" }}>
-      <div style={{ fontFamily: headingFont, fontSize: "9pt", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 6, opacity: dark ? 0.95 : 0.7 }}>{title}</div>
+    <div style={{ marginBottom: 14, fontSize: "9.5pt" }}>
+      <div style={{ fontFamily: headingFont, fontSize: "9pt", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 5, opacity: dark ? 0.95 : 0.7 }}>{title}</div>
       {children}
     </div>
   );
@@ -442,7 +442,7 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
               data-preview-edit="experience-bullets"
               data-preview-exp-id={e.id}
               className="preview-editable"
-              style={{ marginTop: 4, marginLeft: 18, whiteSpace: "pre-wrap", textAlign: "justify" }}
+              style={{ marginTop: 4, marginLeft: 14, whiteSpace: "pre-wrap", textAlign: "justify" }}
               onClick={ev => ev.stopPropagation()}
               onBlur={ev => ed.onUpdateExperienceBullets(e.id, ev.currentTarget.innerText.replace(/^•\s*/gm, ""))}
             >
@@ -451,7 +451,7 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
               ))}
             </div>
           ) : (
-            <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc", textAlign: "justify" }}>
+            <ul style={{ marginTop: 4, marginLeft: 14, paddingLeft: 0, listStyle: "disc", listStylePosition: "outside", textAlign: "justify" }}>
               {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
             </ul>
           )}
@@ -528,7 +528,7 @@ function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; acce
             <div style={{ color: "#666", whiteSpace: "nowrap" }}>{p.date}</div>
           </div>
           {p.bullets && (
-            <ul style={{ marginTop: 4, marginLeft: 18, listStyle: "disc" }}>
+            <ul style={{ marginTop: 4, marginLeft: 14, paddingLeft: 0, listStyle: "disc", listStylePosition: "outside" }}>
               {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
             </ul>
           )}
