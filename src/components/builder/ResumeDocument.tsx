@@ -310,7 +310,7 @@ export function ResumeDocument({
       </aside>
     );
     const main = (
-      <main style={{ padding: "0.45in 0.45in 0.45in 0.4in", minWidth: 0 }}>
+      <main style={{ padding: "0.4in 0.35in 0.4in 0.28in", minWidth: 0 }}>
         {data.sectionOrder.filter(id => !sidebarSectionIds.includes(id)).map(id => sections[id])}
         {customBlocks}
       </main>
@@ -584,7 +584,7 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
               data-preview-edit="experience-bullets"
               data-preview-exp-id={e.id}
               className="preview-editable"
-              style={{ marginTop: 8, marginLeft: 16, whiteSpace: "pre-wrap", textAlign: "left" }}
+              style={{ marginTop: 8, marginLeft: 0, paddingLeft: 14, whiteSpace: "pre-wrap", textAlign: "left" }}
               onClick={ev => ev.stopPropagation()}
               onBlur={ev => ed.onUpdateExperienceBullets(e.id, ev.currentTarget.innerText.replace(/^•\s*/gm, ""))}
             >
@@ -593,7 +593,7 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
               ))}
             </div>
           ) : (
-            <ul style={{ marginTop: 8, marginLeft: 0, paddingLeft: 18, listStyle: "disc", listStylePosition: "outside", textAlign: "left" }}>
+            <ul style={{ marginTop: 8, marginLeft: 0, paddingLeft: 14, listStyle: "disc", listStylePosition: "outside", textAlign: "left" }}>
               {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i} style={{ paddingLeft: 0, marginBottom: 6 }}><InlineText text={b} /></li>)}
             </ul>
           )}
@@ -701,7 +701,7 @@ function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; acce
             <div style={{ color: "#666", whiteSpace: "nowrap" }}>{p.date}</div>
           </div>
           {p.bullets && (
-            <ul style={{ marginTop: 4, marginLeft: 0, paddingLeft: 16, listStyle: "disc", listStylePosition: "outside" }}>
+            <ul style={{ marginTop: 4, marginLeft: 0, paddingLeft: 14, listStyle: "disc", listStylePosition: "outside" }}>
               {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i} style={{ paddingLeft: 0 }}><InlineText text={b} /></li>)}
             </ul>
           )}
