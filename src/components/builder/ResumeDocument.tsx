@@ -170,6 +170,10 @@ export function ResumeDocument({
     background: data.bgHex || "#ffffff",
     textAlign: data.justifyText ? "justify" : "left",
     fontWeight: data.boldBody ? 600 : 400,
+    hyphens: "auto",
+    WebkitHyphens: "auto",
+    msHyphens: "auto",
+    textJustify: "inter-word",
   } as React.CSSProperties;
 
   const contactLine = (
