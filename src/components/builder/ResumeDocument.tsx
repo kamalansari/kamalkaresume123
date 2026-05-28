@@ -481,6 +481,7 @@ function SkillsSection({ data, accent, headingFont, template, ed }: { data: Resu
   if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
   const groups = parseSkillGroups(data.skills);
   const hasHeadings = groups.some(g => g.heading);
+  const sep = data.skillSeparator === "," ? ", " : " | ";
   return (
     <Section title="Skills" accent={accent} headingFont={headingFont} ed={ed} kind="skills">
       {ed ? (
@@ -492,18 +493,18 @@ function SkillsSection({ data, accent, headingFont, template, ed }: { data: Resu
           className="preview-editable"
           onClick={e => e.stopPropagation()}
           onBlur={e => ed.onUpdate({ skills: e.currentTarget.innerText })}
-        >{parseSkills(data.skills).join(" | ")}</p>
+        >{parseSkills(data.skills).join(sep)}</p>
       ) : hasHeadings ? (
         <div>
           {groups.map((g, gi) => (
             <div key={gi} style={{ marginBottom: 4 }}>
               {g.heading && <span style={{ fontWeight: 700 }}>{g.heading}: </span>}
-              <span>{g.items.join("  |  ")}</span>
+              <span>{g.items.join(sep)}</span>
             </div>
           ))}
         </div>
       ) : (
-        <p>{parseSkills(data.skills).join(" | ")}</p>
+        <p>{parseSkills(data.skills).join(sep)}</p>
       )}
     </Section>
   );
