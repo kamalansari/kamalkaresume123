@@ -280,11 +280,17 @@ export function ResumeDocument({
     };
     const sidebar = (
       <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.5in 0.3in", cursor: onSectionClick ? "pointer" : undefined }}>
-        <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}>{data.name || "Your Name"}</h1>
-        <div style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}>{data.headline}</div>
+        <h1
+          {...(ed ? { contentEditable: true, suppressContentEditableWarning: true, "data-preview-edit": "name", className: "preview-editable", onClick: (e: React.MouseEvent) => e.stopPropagation(), onBlur: (e: React.FocusEvent<HTMLHeadingElement>) => ed.onUpdate({ name: e.currentTarget.innerText }) } : {})}
+          style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}
+        >{data.name || "Your Name"}</h1>
+        <div
+          {...(ed ? { contentEditable: true, suppressContentEditableWarning: true, "data-preview-edit": "headline", className: "preview-editable", onClick: (e: React.MouseEvent) => e.stopPropagation(), onBlur: (e: React.FocusEvent<HTMLDivElement>) => ed.onUpdate({ headline: e.currentTarget.innerText }) } : {})}
+          style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}
+        >{data.headline}</div>
         <div style={{ height: 1, background: compact ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.3)", margin: "16px 0" }} />
         <SidebarBlock title="Contact" headingFont={headingFont} dark={!compact}>
-          <SidebarContact data={data} dark={!compact} />
+          <SidebarContact data={data} dark={!compact} ed={ed} />
         </SidebarBlock>
         {data.sectionOrder.filter(id => sidebarSectionIds.includes(id)).map(id => sidebarRenderers[id])}
       </aside>
