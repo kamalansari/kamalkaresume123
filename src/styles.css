@@ -200,6 +200,19 @@
   .preview-clickable { outline: none !important; background: transparent !important; }
 }
 
+/* Restore list bullets inside the rendered resume (Tailwind preflight
+   resets ul/ol to list-style: none, which hides the disc markers used
+   in sidebar skills, languages, and experience bullets). */
+.print-area ul {
+  list-style: disc outside;
+}
+.print-area ol {
+  list-style: decimal outside;
+}
+.print-area li::marker {
+  color: currentColor;
+}
+
 .preview-editable {
   outline: 1px dashed transparent;
   outline-offset: 3px;
