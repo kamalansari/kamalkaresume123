@@ -376,7 +376,7 @@ function SidebarBlock({ title, headingFont, children, dark }: { title: string; h
 
 function Section({ title, accent, headingFont, children, ed, kind }: { title: string; accent: string; headingFont: string; children: React.ReactNode; ed?: EditableHandlers; kind?: EditableRewriteKind }) {
   return (
-    <section style={{ marginTop: 16 }}>
+    <section style={{ marginTop: "var(--rd-section-gap, 16px)" }}>
       <h2 style={{ fontFamily: headingFont, fontSize: "10.5pt", fontWeight: 700, letterSpacing: "0.18em", color: accent, textTransform: "uppercase", borderBottom: `1px solid ${accent}33`, paddingBottom: 4, marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span>{title}</span>
         {ed && kind && kind !== "experience-bullets" && (
