@@ -639,6 +639,21 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
           <Slider className="mt-2" min={6} max={28} step={1} value={[data.sectionSpacing ?? 16]} onValueChange={([v]) => onPatch({ sectionSpacing: v })} />
         </div>
         <div>
+          <Label className="text-xs text-muted-foreground">Skill separator</Label>
+          <div className="mt-2 flex gap-2">
+            <button onClick={() => onPatch({ skillSeparator: "|" })}
+              className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium",
+                (data.skillSeparator ?? "|") === "|" ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40")}>
+              Pipe&nbsp;|
+            </button>
+            <button onClick={() => onPatch({ skillSeparator: "," })}
+              className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium",
+                data.skillSeparator === "," ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40")}>
+              Comma&nbsp;,
+            </button>
+          </div>
+        </div>
+        <div>
           <Label className="text-xs text-muted-foreground">Text style</Label>
           <div className="mt-2 flex gap-2">
             <button onClick={() => onPatch({ justifyText: !data.justifyText })}

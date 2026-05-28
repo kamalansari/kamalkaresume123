@@ -149,6 +149,8 @@ export type ResumeData = {
   // Controls both the on-screen preview and printed PDF/DOCX output.
   lineHeight?: number;
   sectionSpacing?: number;
+  // Separator between skills when rendered inline. Defaults to "|".
+  skillSeparator?: "|" | ",";
   // Optional per-resume override of which section ids appear in the sidebar.
   // When undefined, the template default (TEMPLATE_SIDEBAR_DEFAULTS) is used.
   sidebarSections?: SectionId[];
