@@ -378,8 +378,8 @@ function SidebarContact({ data, dark }: { data: ResumeData; dark: boolean }) {
 
 function SidebarBlock({ title, headingFont, children, dark }: { title: string; headingFont: string; children: React.ReactNode; dark: boolean }) {
   return (
-    <div style={{ marginBottom: 18, fontSize: "9.5pt" }}>
-      <div style={{ fontFamily: headingFont, fontSize: "9pt", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 6, opacity: dark ? 0.95 : 0.7 }}>{title}</div>
+    <div style={{ marginBottom: 14, fontSize: "9.5pt" }}>
+      <div style={{ fontFamily: headingFont, fontSize: "9pt", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 5, opacity: dark ? 0.95 : 0.7 }}>{title}</div>
       {children}
     </div>
   );
