@@ -13,6 +13,7 @@ import { computeScore, canonical } from "@/components/builder/atsScore";
 import { downloadAtsReportPdf } from "@/components/builder/atsReportPdf";
 import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/jobs")({
   head: () => ({
@@ -103,6 +104,7 @@ function JobsPage() {
   const [novaQuestion, setNovaQuestion] = useState<string>("");
   const [applyJob, setApplyJob] = useState<Job | null>(null);
   const [applyName, setApplyName] = useState<string>("");
+  const [applyResumeId, setApplyResumeId] = useState<string>("");
   const [applyLoading, setApplyLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -193,14 +195,15 @@ function JobsPage() {
     finally { setNovaLoading(false); }
   };
 
-  // Tailor the active resume against a job's JD via /api/align-resume and save as a new SavedResume.
-  const tailorAndSave = async (job: Job, name: string): Promise<SavedResume | null> => {
-    const primary = resumeStore.getPrimary();
-    if (!primary) {
+  // Tailor a chosen resume against a job's JD via /api/align-resume and save as a new SavedResume.
+  const tailorAndSave = async (job: Job, name: string, sourceId?: string): Promise<SavedResume | null> => {
+    const id = sourceId || resumeStore.getPrimaryId() || "";
+    const source = resumeStore.list().find(r => r.id === id) || resumeStore.getPrimary();
+    if (!source) {
       toast.error("Set a primary resume first in Dashboard.");
       return null;
     }
-    const base = primary.data;
+    const base = source.data;
     try {
       const res = await fetch("/api/align-resume", {
         method: "POST",
@@ -243,12 +246,13 @@ function JobsPage() {
   const openApply = (job: Job) => {
     setApplyJob(job);
     setApplyName(`${job.company} - ${job.title}`.slice(0, 80));
+    setApplyResumeId(resumeStore.getPrimaryId() || resumes[0]?.id || "");
   };
 
   const confirmTailorAndApply = async () => {
     if (!applyJob) return;
     setApplyLoading(true);
-    const saved = await tailorAndSave(applyJob, applyName);
+    const saved = await tailorAndSave(applyJob, applyName, applyResumeId);
     setApplyLoading(false);
     if (saved) {
       toast.success(`Saved "${saved.name}". Opening Naukri…`, {
@@ -707,7 +711,22 @@ function JobsPage() {
               <Label className="text-[10px] tracking-widest text-muted-foreground font-semibold">SAVE AS</Label>
               <Input value={applyName} onChange={e => setApplyName(e.target.value)} placeholder={`${applyJob?.company} - ${applyJob?.title}`} />
             </div>
-            <div className="text-xs text-muted-foreground">Source resume: <span className="font-medium text-foreground">{activeResumeName}</span></div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] tracking-widest text-muted-foreground font-semibold">SOURCE RESUME</Label>
+              <Select value={applyResumeId} onValueChange={setApplyResumeId}>
+                <SelectTrigger><SelectValue placeholder="Choose resume" /></SelectTrigger>
+                <SelectContent>
+                  {resumes.map(r => {
+                    const isPrimary = r.id === resumeStore.getPrimaryId();
+                    return (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.name}{isPrimary ? " · Primary" : ""}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button
