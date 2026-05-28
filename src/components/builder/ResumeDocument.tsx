@@ -106,6 +106,8 @@ export function ResumeDocument({
   };
   const accent = TEMPLATE_ACCENT[data.template] ?? data.accentHex;
   const fs = data.fontSize ?? 10.5;
+  const lh = data.lineHeight ?? 1.45;
+  const sectionGap = data.sectionSpacing ?? 16;
   // Map new template ids onto base layouts while preserving distinct vibes.
   const VARIANT_MAP: Record<typeof data.template, "classic" | "modern" | "two-column" | "sidebar-right" | "compact-two"> = {
     classic: "classic",
@@ -154,7 +156,7 @@ export function ResumeDocument({
   const ordered = data.sectionOrder.map(id => sections[id]);
 
   const customBlocks = (data.customSections ?? []).filter(c => (c.title?.trim() || c.content?.trim())).map(c => (
-    <section key={c.id} style={{ marginTop: 14 }}>
+    <section key={c.id} style={{ marginTop: "var(--rd-section-gap, 16px)" }}>
       <h2 style={{ fontFamily: headingFont, fontSize: `${fs + 1.5}pt`, fontWeight: 700, color: accent, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${accent}33`, paddingBottom: 4, marginBottom: 6 }}>{c.title || "Custom section"}</h2>
       <div style={{ whiteSpace: "pre-wrap" }}><InlineText text={c.content || ""} /></div>
     </section>
@@ -165,7 +167,7 @@ export function ResumeDocument({
     minHeight: "11in",
     fontFamily: bodyFont,
     fontSize: `${fs}pt`,
-    lineHeight: 1.45,
+    lineHeight: lh,
     color: "#1a1a1a",
     background: data.bgHex || "#ffffff",
     textAlign: data.justifyText ? "justify" : "left",
@@ -174,6 +176,7 @@ export function ResumeDocument({
     WebkitHyphens: "auto",
     msHyphens: "auto",
     textJustify: "inter-word",
+    ["--rd-section-gap" as string]: `${sectionGap}px`,
   } as React.CSSProperties;
 
   const contactLine = (
@@ -373,7 +376,7 @@ function SidebarBlock({ title, headingFont, children, dark }: { title: string; h
 
 function Section({ title, accent, headingFont, children, ed, kind }: { title: string; accent: string; headingFont: string; children: React.ReactNode; ed?: EditableHandlers; kind?: EditableRewriteKind }) {
   return (
-    <section style={{ marginTop: 16 }}>
+    <section style={{ marginTop: "var(--rd-section-gap, 16px)" }}>
       <h2 style={{ fontFamily: headingFont, fontSize: "10.5pt", fontWeight: 700, letterSpacing: "0.18em", color: accent, textTransform: "uppercase", borderBottom: `1px solid ${accent}33`, paddingBottom: 4, marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span>{title}</span>
         {ed && kind && kind !== "experience-bullets" && (

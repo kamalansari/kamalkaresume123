@@ -145,6 +145,10 @@ export type ResumeData = {
   justifyText: boolean;
   boldBody: boolean;
   customSections: CustomSection[];
+  // Body line-height (unitless) and gap (px) between top-level sections.
+  // Controls both the on-screen preview and printed PDF/DOCX output.
+  lineHeight?: number;
+  sectionSpacing?: number;
   // Optional per-resume override of which section ids appear in the sidebar.
   // When undefined, the template default (TEMPLATE_SIDEBAR_DEFAULTS) is used.
   sidebarSections?: SectionId[];
@@ -196,6 +200,8 @@ export const defaultResume: ResumeData = {
   sectionOrder: ["summary", "experience", "education", "skills"],
   justifyText: true,
   boldBody: false,
+  lineHeight: 1.45,
+  sectionSpacing: 16,
   customSections: [],
 };
 
