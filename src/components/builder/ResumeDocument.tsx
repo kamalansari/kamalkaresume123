@@ -246,13 +246,27 @@ export function ResumeDocument({
       ) : null,
       education: data.education.length ? (
         <SidebarFlashWrap key="education" flash={flashSection === "education"}><SidebarBlock title="Education" headingFont={headingFont} dark={!compact}>
-          {data.education.map(ed => (
-            <div key={ed.id} style={{ marginBottom: 6 }}>
-              <div style={{ fontWeight: 600 }}>{ed.degree}</div>
-              <div style={{ opacity: 0.9 }}>{ed.school}</div>
-              <div style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{ed.date}</div>
-            </div>
-          ))}
+          {data.education.map(edu => {
+            const updateField = (field: "degree" | "school" | "date") => (e: React.FocusEvent<HTMLDivElement>) => {
+              if (!ed) return;
+              const v = e.currentTarget.innerText.trim();
+              ed.onUpdate({ education: data.education.map(x => x.id === edu.id ? { ...x, [field]: v } : x) });
+            };
+            const editProps = (field: "degree" | "school" | "date") => ed ? {
+              contentEditable: true,
+              suppressContentEditableWarning: true,
+              className: "preview-editable",
+              onClick: (e: React.MouseEvent) => e.stopPropagation(),
+              onBlur: updateField(field),
+            } : {};
+            return (
+              <div key={edu.id} style={{ marginBottom: 6 }}>
+                <div {...editProps("degree")} style={{ fontWeight: 600 }}>{edu.degree}</div>
+                <div {...editProps("school")} style={{ opacity: 0.9 }}>{edu.school}</div>
+                <div {...editProps("date")} style={{ opacity: 0.75, fontSize: `${fs - 1.5}pt` }}>{edu.date}</div>
+              </div>
+            );
+          })}
         </SidebarBlock></SidebarFlashWrap>
       ) : null,
       certifications: data.certifications?.length ? (
