@@ -1755,6 +1755,7 @@ export function Builder() {
             onPdf={printCurrentResume}
             onDocx={handleDocx}
             docxBusy={exporting}
+            onUpdate={(patch) => setData(d => ({ ...d, ...patch }))}
             extras={
               <>
                 <TemplatesPopover data={data} onPick={(id) => update("template", id)} />
