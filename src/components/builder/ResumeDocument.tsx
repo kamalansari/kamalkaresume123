@@ -250,7 +250,7 @@ export function ResumeDocument({
       ) : null,
     };
     const sidebar = (
-      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.55in 0.4in", cursor: onSectionClick ? "pointer" : undefined }}>
+      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.5in 0.3in", cursor: onSectionClick ? "pointer" : undefined }}>
         <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}>{data.name || "Your Name"}</h1>
         <div style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}>{data.headline}</div>
         <div style={{ height: 1, background: compact ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.3)", margin: "16px 0" }} />
@@ -261,7 +261,7 @@ export function ResumeDocument({
       </aside>
     );
     const main = (
-      <main style={{ padding: "0.55in 0.5in" }}>
+      <main style={{ padding: "0.5in 0.45in" }}>
         {data.sectionOrder.filter(id => !sidebarSectionIds.includes(id)).map(id => sections[id])}
         {customBlocks}
       </main>
@@ -269,7 +269,7 @@ export function ResumeDocument({
     return (
       <KeywordContext.Provider value={kwSet}>
       <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
-        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.6in" : "2.6in 1fr", minHeight: "11in" }}>
+        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.3in" : "2.3in 1fr", minHeight: "11in" }}>
           {sidebarRight ? main : sidebar}
           {sidebarRight ? sidebar : main}
         </div>
