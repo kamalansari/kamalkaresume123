@@ -178,6 +178,9 @@ export function ResumeDocument({
     textJustify: "inter-word",
     ["--rd-section-gap" as string]: `${sectionGap}px`,
     ["--print-scale" as string]: `${data.printScale ?? 1}`,
+    overflow: "hidden",
+    padding: 0,
+    margin: 0,
   } as React.CSSProperties;
 
   const contactLine = (
@@ -319,7 +322,7 @@ export function ResumeDocument({
     return (
       <KeywordContext.Provider value={kwSet}>
       <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
-        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.55in" : "2.55in 1fr", minHeight: "11in" }}>
+        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.55in" : "2.55in 1fr", minHeight: "11in", alignItems: "stretch" }}>
           {sidebarRight ? main : sidebar}
           {sidebarRight ? sidebar : main}
         </div>
