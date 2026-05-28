@@ -571,7 +571,6 @@ function SkillsSection({ data, accent, headingFont, template, ed }: { data: Resu
     paddingLeft: 0,
     marginBottom: 2,
     breakInside: "avoid",
-    WebkitColumnBreakInside: "avoid",
   };
   return (
     <Section title="Skills" accent={accent} headingFont={headingFont} ed={ed} kind="skills">
