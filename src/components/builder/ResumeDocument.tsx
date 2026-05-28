@@ -598,8 +598,8 @@ function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; acce
             <div style={{ color: "#666", whiteSpace: "nowrap" }}>{p.date}</div>
           </div>
           {p.bullets && (
-            <ul style={{ marginTop: 4, marginLeft: 14, paddingLeft: 0, listStyle: "disc", listStylePosition: "outside" }}>
-              {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
+            <ul style={{ marginTop: 4, marginLeft: 0, paddingLeft: 16, listStyle: "disc", listStylePosition: "outside" }}>
+              {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i} style={{ paddingLeft: 0 }}><InlineText text={b} /></li>)}
             </ul>
           )}
         </div>
