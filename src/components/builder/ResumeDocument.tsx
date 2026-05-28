@@ -294,7 +294,7 @@ export function ResumeDocument({
       ) : null,
     };
     const sidebar = (
-      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.45in 0.3in", cursor: onSectionClick ? "pointer" : undefined, wordBreak: "break-word", overflowWrap: "anywhere" }}>
+      <aside {...headerClickProps} style={{ background: sidebarBg, color: sidebarText, padding: "0.45in 0.32in", cursor: onSectionClick ? "pointer" : undefined, wordBreak: "break-word", overflowWrap: "anywhere", height: "100%" }}>
         <h1
           {...(ed ? { contentEditable: true, suppressContentEditableWarning: true, "data-preview-edit": "name", className: "preview-editable", onClick: (e: React.MouseEvent) => e.stopPropagation(), onBlur: (e: React.FocusEvent<HTMLHeadingElement>) => ed.onUpdate({ name: e.currentTarget.innerText }) } : {})}
           style={{ fontFamily: headingFont, fontSize: `${fs * 2}pt`, lineHeight: 1.1, fontWeight: 700, color: compact ? accent : sidebarText }}
