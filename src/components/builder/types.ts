@@ -154,6 +154,10 @@ export type ResumeData = {
   // Optional per-resume override of which section ids appear in the sidebar.
   // When undefined, the template default (TEMPLATE_SIDEBAR_DEFAULTS) is used.
   sidebarSections?: SectionId[];
+  // Print/PDF zoom multiplier applied only when printing. 1 = match preview.
+  // Range typically 0.85–1.15. Lets users tighten/expand the printed page
+  // without changing on-screen layout.
+  printScale?: number;
 };
 
 export const defaultResume: ResumeData = {
