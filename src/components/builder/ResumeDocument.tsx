@@ -211,10 +211,10 @@ export function ResumeDocument({
                   .filter(Boolean);
                 ed.onUpdate({ skills: lines.join(", ") });
               }}
-              style={{ margin: 0, paddingLeft: 16, listStyle: "disc" }}
+              style={{ margin: 0, paddingLeft: 14, listStyle: "disc", listStylePosition: "outside" }}
             >
               {parseSkills(data.skills).map((s, i) => (
-                <li key={i} style={{ marginBottom: 2 }}>{s}</li>
+                <li key={i} style={{ marginBottom: 2, paddingLeft: 0 }}>{s}</li>
               ))}
             </ul>
           ) : (
@@ -223,9 +223,9 @@ export function ResumeDocument({
                 {g.heading && (
                   <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>
                 )}
-                <ul style={{ margin: 0, paddingLeft: 16, listStyle: "disc" }}>
+                <ul style={{ margin: 0, paddingLeft: 14, listStyle: "disc", listStylePosition: "outside" }}>
                   {g.items.map((s, i) => (
-                    <li key={i} style={{ marginBottom: 2 }}>{s}</li>
+                    <li key={i} style={{ marginBottom: 2, paddingLeft: 0 }}>{s}</li>
                   ))}
                 </ul>
               </div>
@@ -235,9 +235,9 @@ export function ResumeDocument({
       ) : null,
       languages: data.languages?.length ? (
         <SidebarFlashWrap key="languages" flash={flashSection === "languages"}><SidebarBlock title="Languages" headingFont={headingFont} dark={!compact}>
-          <ul style={{ margin: 0, paddingLeft: 16, listStyle: "disc" }}>
+          <ul style={{ margin: 0, paddingLeft: 14, listStyle: "disc", listStylePosition: "outside" }}>
             {data.languages.map(l => (
-              <li key={l.id} style={{ marginBottom: 2 }}>
+              <li key={l.id} style={{ marginBottom: 2, paddingLeft: 0 }}>
                 {l.name}{l.level ? ` (${l.level})` : ""}
               </li>
             ))}
@@ -521,8 +521,8 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
               ))}
             </div>
           ) : (
-            <ul style={{ marginTop: 4, marginLeft: 14, paddingLeft: 0, listStyle: "disc", listStylePosition: "outside", textAlign: "justify" }}>
-              {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
+            <ul style={{ marginTop: 4, marginLeft: 0, paddingLeft: 16, listStyle: "disc", listStylePosition: "outside", textAlign: "justify" }}>
+              {e.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i} style={{ paddingLeft: 0 }}><InlineText text={b} /></li>)}
             </ul>
           )}
         </div>
@@ -598,8 +598,8 @@ function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; acce
             <div style={{ color: "#666", whiteSpace: "nowrap" }}>{p.date}</div>
           </div>
           {p.bullets && (
-            <ul style={{ marginTop: 4, marginLeft: 14, paddingLeft: 0, listStyle: "disc", listStylePosition: "outside" }}>
-              {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i}><InlineText text={b} /></li>)}
+            <ul style={{ marginTop: 4, marginLeft: 0, paddingLeft: 16, listStyle: "disc", listStylePosition: "outside" }}>
+              {p.bullets.split("\n").filter(Boolean).map((b, i) => <li key={i} style={{ paddingLeft: 0 }}><InlineText text={b} /></li>)}
             </ul>
           )}
         </div>
