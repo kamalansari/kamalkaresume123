@@ -389,7 +389,7 @@ export function ResumeDocument({
           </div>
         </header>
       )}
-      <div style={{ padding: "0.35in 0.75in 0.6in", maxWidth: "8.5in" }}>
+      <div style={{ padding: "0.35in 0.5in 0.6in", maxWidth: "8.5in" }}>
         {ordered}
         {customBlocks}
       </div>
