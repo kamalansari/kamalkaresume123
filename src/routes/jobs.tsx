@@ -856,7 +856,7 @@ function SelectInline({ value, onChange, options, labels }: { value: string; onC
   );
 }
 
-function JobCard({ job, resume, onScore, onNova, onApply, liveScore }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; onApply: () => void; liveScore?: number }) {
+function JobCard({ job, resume, onScore, onNova, onApply, liveScore, isSaved, onToggleSave }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; onApply: () => void; liveScore?: number; isSaved: boolean; onToggleSave: () => void }) {
   const scoringText = getJobScoringText(job);
   const computedScore = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
   const score = liveScore ?? computedScore;
@@ -881,8 +881,17 @@ function JobCard({ job, resume, onScore, onNova, onApply, liveScore }: { job: Jo
           <button type="button" onClick={onScore} className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold", tone)} title="Open live ATS match against selected resume">
             <Gauge className="h-3 w-3" /> {score}
           </button>
-          <button className="text-muted-foreground hover:text-foreground" title="Save">
-            <Bookmark className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={onToggleSave}
+            aria-pressed={isSaved}
+            title={isSaved ? "Saved — click to remove" : "Save job"}
+            className={cn(
+              "hover:text-foreground transition-colors",
+              isSaved ? "text-[var(--navy-light)]" : "text-muted-foreground",
+            )}
+          >
+            <Bookmark className={cn("h-4 w-4", isSaved && "fill-current")} />
           </button>
         </div>
       </div>
