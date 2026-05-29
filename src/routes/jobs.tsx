@@ -727,8 +727,12 @@ function JobsPage() {
       <Dialog open={!!applyJob} onOpenChange={o => { if (!o && !applyLoading) setApplyJob(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Wand2 className="h-4 w-4 text-[var(--navy-light)]" /> Tailor resume for {applyJob?.company}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-[var(--navy-light)]" />
+              {applyStep === "tailor" ? `Tailor resume for ${applyJob?.company}` : `Ready to apply at ${applyJob?.company}?`}
+            </DialogTitle>
           </DialogHeader>
+          {applyStep === "tailor" ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               We'll rewrite your active resume's headline, summary, skills and bullets to align with this JD, then save it as a new copy you can edit anytime.
@@ -754,7 +758,20 @@ function JobsPage() {
               </Select>
             </div>
           </div>
+          ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Your tailored resume <b className="text-foreground">"{applySavedResume?.name}"</b> is saved. Open Naukri now to submit your application?
+            </p>
+            <div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs space-y-1">
+              <div><span className="text-muted-foreground">Role:</span> <b>{applyJob?.title}</b></div>
+              <div><span className="text-muted-foreground">Company:</span> {applyJob?.company}</div>
+              <div><span className="text-muted-foreground">Location:</span> {applyJob?.location}</div>
+            </div>
+          </div>
+          )}
           <DialogFooter className="gap-2 sm:gap-2">
+          {applyStep === "tailor" ? (<>
             <Button
               variant="ghost"
               disabled={applyLoading}
@@ -767,8 +784,17 @@ function JobsPage() {
             </Button>
             <Button onClick={confirmTailorAndApply} disabled={applyLoading || !applyName.trim()}>
               {applyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-              Tailor, Save & Apply
+              Tailor & Save Resume
             </Button>
+          </>) : (<>
+            <Button variant="ghost" onClick={() => setApplyJob(null)}>Not now</Button>
+            <Button variant="outline" onClick={() => { navigate({ to: "/builder" }); setApplyJob(null); }}>
+              Edit in builder
+            </Button>
+            <Button onClick={openNaukriAndClose} className="bg-[var(--navy-light)] text-white hover:opacity-95">
+              <ExternalLink className="h-3.5 w-3.5" /> Yes, apply on Naukri
+            </Button>
+          </>)}
           </DialogFooter>
         </DialogContent>
       </Dialog>
