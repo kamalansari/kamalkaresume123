@@ -621,6 +621,8 @@ function JobsPage() {
                 onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }}
                 onNova={() => askNova(job)}
                 onApply={() => openApply(job)}
+                isSaved={savedJobIds.has(job.id)}
+                onToggleSave={() => toggleSaveJob(job)}
               />
             ))}
           </div>
