@@ -106,6 +106,9 @@ function JobsPage() {
   const [applyName, setApplyName] = useState<string>("");
   const [applyResumeId, setApplyResumeId] = useState<string>("");
   const [applyLoading, setApplyLoading] = useState(false);
+  const [applyStep, setApplyStep] = useState<"tailor" | "confirm">("tailor");
+  const [applySavedResume, setApplySavedResume] = useState<SavedResume | null>(null);
+  const [savedJobIds, setSavedJobIds] = useState<Set<string>>(() => loadSavedJobIds());
   const navigate = useNavigate();
 
   // Client-side filter state for recommended-jobs panel
@@ -247,6 +250,8 @@ function JobsPage() {
     setApplyJob(job);
     setApplyName(`${job.company} - ${job.title}`.slice(0, 80));
     setApplyResumeId(resumeStore.getPrimaryId() || resumes[0]?.id || "");
+    setApplyStep("tailor");
+    setApplySavedResume(null);
   };
 
   const confirmTailorAndApply = async () => {
@@ -255,12 +260,31 @@ function JobsPage() {
     const saved = await tailorAndSave(applyJob, applyName, applyResumeId);
     setApplyLoading(false);
     if (saved) {
-      toast.success(`Saved "${saved.name}". Opening Naukri…`, {
-        action: { label: "Open in builder", onClick: () => navigate({ to: "/builder" }) },
-      });
-      window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
-      setApplyJob(null);
+      toast.success(`Tailored resume saved as "${saved.name}".`);
+      setApplySavedResume(saved);
+      setApplyStep("confirm");
     }
+  };
+
+  const openNaukriAndClose = () => {
+    if (applyJob) window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
+    setApplyJob(null);
+  };
+
+  const toggleSaveJob = (job: Job) => {
+    setSavedJobIds(prev => {
+      const next = new Set(prev);
+      if (next.has(job.id)) {
+        next.delete(job.id);
+        toast.success("Removed from saved jobs");
+      } else {
+        next.add(job.id);
+        toast.success(`Saved "${job.title}" at ${job.company}`);
+      }
+      persistSavedJobIds(next);
+      persistSavedJob(job, next.has(job.id));
+      return next;
+    });
   };
 
   const tailorFromNova = async () => {
@@ -597,6 +621,8 @@ function JobsPage() {
                 onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }}
                 onNova={() => askNova(job)}
                 onApply={() => openApply(job)}
+                isSaved={savedJobIds.has(job.id)}
+                onToggleSave={() => toggleSaveJob(job)}
               />
             ))}
           </div>
@@ -701,8 +727,12 @@ function JobsPage() {
       <Dialog open={!!applyJob} onOpenChange={o => { if (!o && !applyLoading) setApplyJob(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Wand2 className="h-4 w-4 text-[var(--navy-light)]" /> Tailor resume for {applyJob?.company}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-[var(--navy-light)]" />
+              {applyStep === "tailor" ? `Tailor resume for ${applyJob?.company}` : `Ready to apply at ${applyJob?.company}?`}
+            </DialogTitle>
           </DialogHeader>
+          {applyStep === "tailor" ? (
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               We'll rewrite your active resume's headline, summary, skills and bullets to align with this JD, then save it as a new copy you can edit anytime.
@@ -728,7 +758,20 @@ function JobsPage() {
               </Select>
             </div>
           </div>
+          ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Your tailored resume <b className="text-foreground">"{applySavedResume?.name}"</b> is saved. Open Naukri now to submit your application?
+            </p>
+            <div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs space-y-1">
+              <div><span className="text-muted-foreground">Role:</span> <b>{applyJob?.title}</b></div>
+              <div><span className="text-muted-foreground">Company:</span> {applyJob?.company}</div>
+              <div><span className="text-muted-foreground">Location:</span> {applyJob?.location}</div>
+            </div>
+          </div>
+          )}
           <DialogFooter className="gap-2 sm:gap-2">
+          {applyStep === "tailor" ? (<>
             <Button
               variant="ghost"
               disabled={applyLoading}
@@ -741,8 +784,17 @@ function JobsPage() {
             </Button>
             <Button onClick={confirmTailorAndApply} disabled={applyLoading || !applyName.trim()}>
               {applyLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-              Tailor, Save & Apply
+              Tailor & Save Resume
             </Button>
+          </>) : (<>
+            <Button variant="ghost" onClick={() => setApplyJob(null)}>Not now</Button>
+            <Button variant="outline" onClick={() => { navigate({ to: "/builder" }); setApplyJob(null); }}>
+              Edit in builder
+            </Button>
+            <Button onClick={openNaukriAndClose} className="bg-[var(--navy-light)] text-white hover:opacity-95">
+              <ExternalLink className="h-3.5 w-3.5" /> Yes, apply on Naukri
+            </Button>
+          </>)}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -754,6 +806,35 @@ function getLatestResume(activeResumeId: string, fallback: ResumeData): ResumeDa
   if (activeResumeId === DRAFT_RESUME_ID) return resumeStore.getDraft() ?? fallback;
   const selected = activeResumeId ? resumeStore.get(activeResumeId)?.data : null;
   return selected ?? resumeStore.getDraft() ?? fallback;
+}
+
+const SAVED_JOBS_IDS_KEY = "rf:savedJobIds";
+const SAVED_JOBS_KEY = "rf:savedJobs";
+
+function loadSavedJobIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(SAVED_JOBS_IDS_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? new Set(arr.filter((x): x is string => typeof x === "string")) : new Set();
+  } catch { return new Set(); }
+}
+
+function persistSavedJobIds(ids: Set<string>) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(SAVED_JOBS_IDS_KEY, JSON.stringify(Array.from(ids))); } catch { /* ignore */ }
+}
+
+function persistSavedJob(job: Job, isSaved: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(SAVED_JOBS_KEY);
+    const list: Job[] = raw ? JSON.parse(raw) : [];
+    const next = list.filter(j => j.id !== job.id);
+    if (isSaved) next.unshift(job);
+    window.localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(next.slice(0, 200)));
+  } catch { /* ignore */ }
 }
 
 function text(value: unknown, fallback = ""): string {
@@ -801,7 +882,7 @@ function SelectInline({ value, onChange, options, labels }: { value: string; onC
   );
 }
 
-function JobCard({ job, resume, onScore, onNova, onApply, liveScore }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; onApply: () => void; liveScore?: number }) {
+function JobCard({ job, resume, onScore, onNova, onApply, liveScore, isSaved, onToggleSave }: { job: Job; resume: ResumeData; onScore: () => void; onNova: () => void; onApply: () => void; liveScore?: number; isSaved: boolean; onToggleSave: () => void }) {
   const scoringText = getJobScoringText(job);
   const computedScore = useMemo(() => computeScore({ ...resume, jobDescription: scoringText }).score, [resume, scoringText]);
   const score = liveScore ?? computedScore;
@@ -826,8 +907,17 @@ function JobCard({ job, resume, onScore, onNova, onApply, liveScore }: { job: Jo
           <button type="button" onClick={onScore} className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold", tone)} title="Open live ATS match against selected resume">
             <Gauge className="h-3 w-3" /> {score}
           </button>
-          <button className="text-muted-foreground hover:text-foreground" title="Save">
-            <Bookmark className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={onToggleSave}
+            aria-pressed={isSaved}
+            title={isSaved ? "Saved — click to remove" : "Save job"}
+            className={cn(
+              "hover:text-foreground transition-colors",
+              isSaved ? "text-[var(--navy-light)]" : "text-muted-foreground",
+            )}
+          >
+            <Bookmark className={cn("h-4 w-4", isSaved && "fill-current")} />
           </button>
         </div>
       </div>
