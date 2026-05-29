@@ -782,6 +782,35 @@ function getLatestResume(activeResumeId: string, fallback: ResumeData): ResumeDa
   return selected ?? resumeStore.getDraft() ?? fallback;
 }
 
+const SAVED_JOBS_IDS_KEY = "rf:savedJobIds";
+const SAVED_JOBS_KEY = "rf:savedJobs";
+
+function loadSavedJobIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(SAVED_JOBS_IDS_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? new Set(arr.filter((x): x is string => typeof x === "string")) : new Set();
+  } catch { return new Set(); }
+}
+
+function persistSavedJobIds(ids: Set<string>) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(SAVED_JOBS_IDS_KEY, JSON.stringify(Array.from(ids))); } catch { /* ignore */ }
+}
+
+function persistSavedJob(job: Job, isSaved: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(SAVED_JOBS_KEY);
+    const list: Job[] = raw ? JSON.parse(raw) : [];
+    const next = list.filter(j => j.id !== job.id);
+    if (isSaved) next.unshift(job);
+    window.localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(next.slice(0, 200)));
+  } catch { /* ignore */ }
+}
+
 function text(value: unknown, fallback = ""): string {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
