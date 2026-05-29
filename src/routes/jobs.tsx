@@ -106,6 +106,9 @@ function JobsPage() {
   const [applyName, setApplyName] = useState<string>("");
   const [applyResumeId, setApplyResumeId] = useState<string>("");
   const [applyLoading, setApplyLoading] = useState(false);
+  const [applyStep, setApplyStep] = useState<"tailor" | "confirm">("tailor");
+  const [applySavedResume, setApplySavedResume] = useState<SavedResume | null>(null);
+  const [savedJobIds, setSavedJobIds] = useState<Set<string>>(() => loadSavedJobIds());
   const navigate = useNavigate();
 
   // Client-side filter state for recommended-jobs panel
@@ -247,6 +250,8 @@ function JobsPage() {
     setApplyJob(job);
     setApplyName(`${job.company} - ${job.title}`.slice(0, 80));
     setApplyResumeId(resumeStore.getPrimaryId() || resumes[0]?.id || "");
+    setApplyStep("tailor");
+    setApplySavedResume(null);
   };
 
   const confirmTailorAndApply = async () => {
@@ -255,12 +260,31 @@ function JobsPage() {
     const saved = await tailorAndSave(applyJob, applyName, applyResumeId);
     setApplyLoading(false);
     if (saved) {
-      toast.success(`Saved "${saved.name}". Opening Naukri…`, {
-        action: { label: "Open in builder", onClick: () => navigate({ to: "/builder" }) },
-      });
-      window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
-      setApplyJob(null);
+      toast.success(`Tailored resume saved as "${saved.name}".`);
+      setApplySavedResume(saved);
+      setApplyStep("confirm");
     }
+  };
+
+  const openNaukriAndClose = () => {
+    if (applyJob) window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
+    setApplyJob(null);
+  };
+
+  const toggleSaveJob = (job: Job) => {
+    setSavedJobIds(prev => {
+      const next = new Set(prev);
+      if (next.has(job.id)) {
+        next.delete(job.id);
+        toast.success("Removed from saved jobs");
+      } else {
+        next.add(job.id);
+        toast.success(`Saved "${job.title}" at ${job.company}`);
+      }
+      persistSavedJobIds(next);
+      persistSavedJob(job, next.has(job.id));
+      return next;
+    });
   };
 
   const tailorFromNova = async () => {
