@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye, LayoutTemplate } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, TEMPLATE_SIDEBAR_DEFAULTS, SIDEBAR_ELIGIBLE, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId, type CustomSection } from "./types";
 import { computeScore, jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
@@ -105,6 +105,20 @@ export function Builder() {
   const [mounted, setMounted] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(true);
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
+  // Mobile view switcher: which panel is visible on screens < lg.
+  // 'editor' is the default; bottom nav toggles between editor and preview.
+  const [mobileView, setMobileView] = useState<"editor" | "preview">("editor");
+  // When user taps Templates on mobile bottom nav, click the existing trigger.
+  const openMobileTemplates = () => {
+    setMobileView("preview");
+    // Scroll preview into view then fire the trigger on next frame.
+    requestAnimationFrame(() => {
+      document.getElementById("resume-preview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      requestAnimationFrame(() => {
+        (document.getElementById("builder-templates-trigger") as HTMLButtonElement | null)?.click();
+      });
+    });
+  };
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
@@ -1031,7 +1045,7 @@ export function Builder() {
   };
 
   return (
-    <div className="min-h-screen bg-secondary/40">
+    <div className="min-h-screen bg-secondary/40 builder-mobile-pad overflow-x-hidden">
       {openingState && (
         <OpeningResumeOverlay
           state={openingState}
@@ -1427,7 +1441,7 @@ export function Builder() {
           : "lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]"
       )}>
         {/* Editor */}
-        <div className="no-print">
+        <div className={cn("no-print", mobileView !== "editor" && "hidden lg:block")}>
           <Tabs defaultValue="basics" className="w-full">
             <div className="sticky top-16 z-10 -mx-1 px-1 pb-2 pt-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
               <TabsList
@@ -1739,7 +1753,7 @@ export function Builder() {
         </div>
 
         {/* Preview */}
-        <div id="resume-preview" className="min-w-0 relative scroll-mt-20">
+        <div id="resume-preview" className={cn("min-w-0 relative scroll-mt-20", mobileView !== "preview" && "hidden lg:block")}>
           {!atsOpen && (
             <button
               onClick={() => setAtsOpen(true)}
@@ -1927,6 +1941,33 @@ export function Builder() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Mobile bottom navigation — switch between Editor/Preview, open Templates or ATS sheets. */}
+      <nav
+        className="no-print lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-[env(safe-area-inset-bottom)]"
+        aria-label="Builder mobile navigation"
+      >
+        <div className="grid grid-cols-4 h-[64px]">
+          {[
+            { id: "editor" as const, label: "Editor", icon: Pencil, onClick: () => setMobileView("editor"), active: mobileView === "editor" },
+            { id: "preview" as const, label: "Preview", icon: Eye, onClick: () => { setMobileView("preview"); requestAnimationFrame(() => document.getElementById("resume-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })); }, active: mobileView === "preview" },
+            { id: "templates" as const, label: "Templates", icon: LayoutTemplate, onClick: openMobileTemplates, active: false },
+            { id: "ats" as const, label: `ATS · ${score.score}`, icon: Gauge, onClick: () => setAtsSheetOpen(true), active: atsSheetOpen },
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={item.onClick}
+              className={cn(
+                "flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors",
+                item.active ? "text-[var(--navy-light)]" : "text-muted-foreground hover:text-foreground"
+              )}
+              aria-pressed={item.active}
+            >
+              <item.icon className="h-[18px] w-[18px]" />
+              <span className="leading-none">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }

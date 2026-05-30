@@ -218,7 +218,7 @@ export function TemplatesPopover({ data, onPick }: { data: ResumeData; onPick: (
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8">
+        <Button id="builder-templates-trigger" variant="outline" size="sm" className="h-8">
           <LayoutTemplate className="h-4 w-4" /> <span className="hidden sm:inline">Templates</span>
         </Button>
       </PopoverTrigger>
