@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import "@tanstack/react-start";
+import { requireAuth } from "@/lib/requireAuth.server";
 
 type Body = {
   keywords: string[];
@@ -18,6 +19,8 @@ export const Route = createFileRoute("/api/keyword-bullets")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
+        const auth = await requireAuth(request);
+        if (auth instanceof Response) return auth;
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
         const body = (await request.json()) as Body;
