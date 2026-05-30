@@ -164,6 +164,10 @@
 @media print {
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }
+  /* Force the preview wrapper to render even when the mobile bottom-nav
+     toggle has hidden it (Tailwind `hidden` -> display:none), which would
+     otherwise blank out every printed page / generated PDF. */
+  #resume-preview { display: block !important; visibility: visible !important; }
   .print-area {
     position: absolute;
     left: 0;
