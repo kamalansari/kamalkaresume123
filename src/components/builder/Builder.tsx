@@ -1,3 +1,4 @@
+import { authFetch } from "@/lib/authFetch";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
@@ -18,7 +19,6 @@ import { profileStore, type Profile } from "./profileStore";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-import { authFetch } from "@/lib/authFetch";
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
