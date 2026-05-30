@@ -105,6 +105,20 @@ export function Builder() {
   const [mounted, setMounted] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(true);
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
+  // Mobile view switcher: which panel is visible on screens < lg.
+  // 'editor' is the default; bottom nav toggles between editor and preview.
+  const [mobileView, setMobileView] = useState<"editor" | "preview">("editor");
+  // When user taps Templates on mobile bottom nav, click the existing trigger.
+  const openMobileTemplates = () => {
+    setMobileView("preview");
+    // Scroll preview into view then fire the trigger on next frame.
+    requestAnimationFrame(() => {
+      document.getElementById("resume-preview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      requestAnimationFrame(() => {
+        (document.getElementById("builder-templates-trigger") as HTMLButtonElement | null)?.click();
+      });
+    });
+  };
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
