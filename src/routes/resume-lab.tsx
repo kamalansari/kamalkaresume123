@@ -1,3 +1,4 @@
+import { authFetch } from "@/lib/authFetch";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { FlaskConical, Sparkles, Loader2, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
@@ -6,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
-import { authFetch } from "@/lib/authFetch";
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
