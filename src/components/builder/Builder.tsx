@@ -1045,7 +1045,7 @@ export function Builder() {
   };
 
   return (
-    <div className="min-h-screen bg-secondary/40">
+    <div className="min-h-screen bg-secondary/40 builder-mobile-pad overflow-x-hidden">
       {openingState && (
         <OpeningResumeOverlay
           state={openingState}
