@@ -1753,7 +1753,7 @@ export function Builder() {
         </div>
 
         {/* Preview */}
-        <div id="resume-preview" className="min-w-0 relative scroll-mt-20">
+        <div id="resume-preview" className={cn("min-w-0 relative scroll-mt-20", mobileView !== "preview" && "hidden lg:block")}>
           {!atsOpen && (
             <button
               onClick={() => setAtsOpen(true)}
