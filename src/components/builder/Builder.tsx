@@ -1441,7 +1441,7 @@ export function Builder() {
           : "lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]"
       )}>
         {/* Editor */}
-        <div className="no-print">
+        <div className={cn("no-print", mobileView !== "editor" && "hidden lg:block")}>
           <Tabs defaultValue="basics" className="w-full">
             <div className="sticky top-16 z-10 -mx-1 px-1 pb-2 pt-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
               <TabsList
