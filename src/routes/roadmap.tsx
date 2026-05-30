@@ -7,6 +7,7 @@ import { defaultBrief, targetBriefStore } from "@/lib/targetBriefStore";
 import { readinessStore } from "@/lib/readinessStore";
 import { resumeStore } from "@/components/builder/resumeStore";
 import { computeScore } from "@/components/builder/atsScore";
+import { authFetch } from "@/lib/authFetch";
 
 export const Route = createFileRoute("/roadmap")({
   head: () => ({
@@ -40,7 +41,7 @@ function RoadmapPage() {
     if (!brief.role) return toast.error("Set a target role on the dashboard first");
     setBusy(true);
     try {
-      const r = await fetch("/api/roadmap", {
+      const r = await authFetch("/api/roadmap", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

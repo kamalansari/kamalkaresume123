@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { defaultBrief, targetBriefStore } from "@/lib/targetBriefStore";
 import { readinessStore, type InterviewAttempt } from "@/lib/readinessStore";
+import { authFetch } from "@/lib/authFetch";
 
 export const Route = createFileRoute("/interview")({
   head: () => ({
@@ -53,7 +54,7 @@ function InterviewPage() {
     setResult(null);
     setAnswer("");
     try {
-      const r = await fetch("/api/interview-question", {
+      const r = await authFetch("/api/interview-question", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ round, role: brief.role || "Software Engineer", level: brief.level, difficulty, previousQuestions }),
@@ -72,7 +73,7 @@ function InterviewPage() {
     if (!question || !answer.trim()) return toast.error("Write an answer first");
     setScoring(true);
     try {
-      const r = await fetch("/api/interview-score", {
+      const r = await authFetch("/api/interview-score", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ round, question, answer, role: brief.role || "Software Engineer" }),

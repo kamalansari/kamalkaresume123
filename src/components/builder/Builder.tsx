@@ -18,6 +18,7 @@ import { profileStore, type Profile } from "./profileStore";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
+import { authFetch } from "@/lib/authFetch";
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -816,7 +817,7 @@ export function Builder() {
   const rewriteSummary = async () => {
     setRewriting(true);
     try {
-      const res = await fetch("/api/rewrite-summary", {
+      const res = await authFetch("/api/rewrite-summary", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -845,7 +846,7 @@ export function Builder() {
   const rewriteWithAI = async (kind: "bullets" | "skills" | "education", text: string, ctx: Record<string, string | undefined>, key: string): Promise<string | null> => {
     setRewritingKey(key);
     try {
-      const res = await fetch("/api/rewrite-section", {
+      const res = await authFetch("/api/rewrite-section", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ kind, text, context: { headline: data.headline, jobDescription: data.jobDescription, skills: data.skills, ...ctx } }),
@@ -898,7 +899,7 @@ export function Builder() {
       const source: ResumeData = primary
         ? { ...defaultResume, ...primary.data, jobDescription: data.jobDescription }
         : data;
-      const res = await fetch("/api/generate-from-jd", {
+      const res = await authFetch("/api/generate-from-jd", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -968,7 +969,7 @@ export function Builder() {
       // Always tailor from Primary Resume if set (keeps career data secure & editable)
       const primary = resumeStore.getPrimary();
       const source: ResumeData = primary ? { ...defaultResume, ...primary.data } : data;
-      const res = await fetch("/api/generate-from-jd", {
+      const res = await authFetch("/api/generate-from-jd", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
