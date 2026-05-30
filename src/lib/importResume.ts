@@ -1,5 +1,6 @@
 import { defaultResume, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language } from "@/components/builder/types";
 import { newId } from "@/components/builder/resumeStore";
+import { authFetch } from "@/lib/authFetch";
 
 async function extractPdfText(file: File): Promise<string> {
   const pdfjs: any = await import("pdfjs-dist/build/pdf.mjs");
@@ -111,7 +112,7 @@ export async function importResumeFile(file: File): Promise<ResumeData> {
   const text = await extractResumeText(file);
   const trimmed = text.trim();
   if (!trimmed) throw new Error("Could not read any text from this file.");
-  const res = await fetch("/api/parse-resume", {
+  const res = await authFetch("/api/parse-resume", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ text: trimmed.slice(0, 60000) }),

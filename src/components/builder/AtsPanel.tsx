@@ -11,6 +11,7 @@ import { computeScore } from "./atsScore";
 import { useSkillDictVersion } from "@/lib/skillDictionaryStore";
 import type { ResumeData } from "./types";
 import { AtsDebugPanel } from "./AtsDebugPanel";
+import { authFetch } from "@/lib/authFetch";
 
 type Tab = "resume" | "ats" | "nova";
 
@@ -329,7 +330,7 @@ function AtsScoreView({
     if (singleKw) setGeneratingKw(singleKw); else setGenerating(true);
     try {
       const target = experiences.find(e => e.id === effectiveTargetId) ?? experiences[0];
-      const res = await fetch("/api/keyword-bullets", {
+      const res = await authFetch("/api/keyword-bullets", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({
           keywords,
@@ -603,7 +604,7 @@ function NovaChatView({ data }: { data: ResumeData }) {
     setSending(true);
     try {
       const s = computeScore(data);
-      const res = await fetch("/api/nova-chat", {
+      const res = await authFetch("/api/nova-chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

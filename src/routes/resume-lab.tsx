@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
+import { authFetch } from "@/lib/authFetch";
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -74,7 +75,7 @@ function ResumeLabPage() {
     setBusy(true);
     setResult(null);
     try {
-      const r = await fetch("/api/align-resume", {
+      const r = await authFetch("/api/align-resume", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

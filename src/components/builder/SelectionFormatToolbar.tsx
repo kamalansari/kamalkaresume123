@@ -3,6 +3,7 @@ import { Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon, AlignLeft
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { ResumeData } from "./types";
+import { authFetch } from "@/lib/authFetch";
 
 type Pos = { top: number; left: number } | null;
 
@@ -113,7 +114,7 @@ export function SelectionFormatToolbar({ data }: { data: ResumeData }) {
     if (!text) return;
     setBusy(true);
     try {
-      const res = await fetch("/api/rewrite-snippet", {
+      const res = await authFetch("/api/rewrite-snippet", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

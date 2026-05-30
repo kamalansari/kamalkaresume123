@@ -14,6 +14,7 @@ import { downloadAtsReportPdf } from "@/components/builder/atsReportPdf";
 import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { authFetch } from "@/lib/authFetch";
 
 export const Route = createFileRoute("/jobs")({
   head: () => ({
@@ -150,7 +151,7 @@ function JobsPage() {
     setLoading(true);
     setActiveRoleTab(jobTitle);
     try {
-      const res = await fetch("/api/recommend-jobs", {
+      const res = await authFetch("/api/recommend-jobs", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -183,7 +184,7 @@ function JobsPage() {
     setNovaQuestion(question ?? "");
     setNovaLoading(true);
     try {
-      const res = await fetch("/api/job-tip", {
+      const res = await authFetch("/api/job-tip", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -208,7 +209,7 @@ function JobsPage() {
     }
     const base = source.data;
     try {
-      const res = await fetch("/api/align-resume", {
+      const res = await authFetch("/api/align-resume", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
