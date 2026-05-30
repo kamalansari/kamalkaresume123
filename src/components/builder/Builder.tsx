@@ -1941,6 +1941,33 @@ export function Builder() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Mobile bottom navigation — switch between Editor/Preview, open Templates or ATS sheets. */}
+      <nav
+        className="no-print lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-[env(safe-area-inset-bottom)]"
+        aria-label="Builder mobile navigation"
+      >
+        <div className="grid grid-cols-4 h-[64px]">
+          {[
+            { id: "editor" as const, label: "Editor", icon: Pencil, onClick: () => setMobileView("editor"), active: mobileView === "editor" },
+            { id: "preview" as const, label: "Preview", icon: Eye, onClick: () => { setMobileView("preview"); requestAnimationFrame(() => document.getElementById("resume-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })); }, active: mobileView === "preview" },
+            { id: "templates" as const, label: "Templates", icon: LayoutTemplate, onClick: openMobileTemplates, active: false },
+            { id: "ats" as const, label: `ATS · ${score.score}`, icon: Gauge, onClick: () => setAtsSheetOpen(true), active: atsSheetOpen },
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={item.onClick}
+              className={cn(
+                "flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors",
+                item.active ? "text-[var(--navy-light)]" : "text-muted-foreground hover:text-foreground"
+              )}
+              aria-pressed={item.active}
+            >
+              <item.icon className="h-[18px] w-[18px]" />
+              <span className="leading-none">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }
