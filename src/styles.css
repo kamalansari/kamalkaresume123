@@ -198,6 +198,36 @@
     break-inside: auto !important;
     page-break-inside: auto !important;
   }
+  .resume-layout-grid {
+    display: block !important;
+    position: relative !important;
+    min-height: auto !important;
+    align-items: initial !important;
+    grid-template-columns: none !important;
+    padding-left: 2.55in !important;
+  }
+  .resume-layout-grid.resume-layout-sidebar-right {
+    padding-left: 0 !important;
+    padding-right: 2.55in !important;
+  }
+  .resume-layout-grid > aside {
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 2.55in !important;
+    min-height: 100% !important;
+    height: auto !important;
+  }
+  .resume-layout-grid.resume-layout-sidebar-right > aside {
+    left: auto !important;
+    right: 0 !important;
+  }
+  .resume-layout-grid > main {
+    display: block !important;
+    min-height: auto !important;
+    width: auto !important;
+  }
   .resume-entry-header, .print-area h1, .print-area h2 {
     break-after: avoid !important;
     page-break-after: avoid !important;
