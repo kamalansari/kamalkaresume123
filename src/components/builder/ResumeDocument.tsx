@@ -627,7 +627,9 @@ function EducationSection({ data, accent, headingFont }: { data: ResumeData; acc
                 {ed.school ? <> · {ed.school}</> : null}
                 {ed.location ? <span style={{ color: "#666" }}> · {ed.location}</span> : null}
               </div>
-              <div style={{ color: "#666", whiteSpace: "nowrap" }}>{ed.date}</div>
+             whiteSpace: "normal",
+wordBreak: "break-word",
+overflowWrap: "anywhere",
             </div>
             {meta && <div style={{ color: "#555", fontSize: "0.92em", marginTop: 2 }}>{meta}</div>}
           </div>
