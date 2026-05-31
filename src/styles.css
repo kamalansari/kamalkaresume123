@@ -269,6 +269,45 @@ html, body { overflow-x: hidden; }
   .preview-editable { outline: none !important; background: transparent !important; }
 }
 
+.resume-document {
+  contain: layout paint;
+}
+
+.resume-section {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.resume-entry {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.resume-entry-header {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+@media screen and (max-width: 900px) {
+  .resume-preview-scale {
+    width: max-content;
+    max-width: none;
+  }
+}
+
+@media screen and (min-width: 901px) {
+  .resume-preview-scale {
+    width: max-content;
+    max-width: 100%;
+  }
+}
+
+@media print {
+  .resume-document {
+    contain: none !important;
+  }
+}
+
 @keyframes preview-flash {
   0%   { background-color: color-mix(in oklab, var(--primary) 30%, transparent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 45%, transparent); }
   100% { background-color: transparent; box-shadow: 0 0 0 0 transparent; }
