@@ -17,7 +17,8 @@ minHeight: "11in",
 
 With:
 
-width: "210mm",
+width: "100%",
+maxWidth: "210mm",
 minHeight: "297mm",
 height: "auto",
 overflowWrap: "anywhere",
