@@ -469,14 +469,16 @@ function ContactRow({ data, color }: { data: ResumeData; color: string }) {
         >
           <span style={{ display: "inline-flex", flexShrink: 0 }}>{it.icon}</span>
           <span
-            style={{
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              minWidth: 0,
-            }}
-          >
-            {it.text}
+            <span
+  style={{
+    minWidth: 0,
+    whiteSpace: "normal",
+    wordBreak: "break-word",
+    overflowWrap: "anywhere",
+  }}
+>
+  {insertSoftBreaks(it.text)}
+</span>
           </span>
         </span>
       ))}
