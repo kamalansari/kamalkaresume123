@@ -178,7 +178,10 @@ export function ResumeDocument({
     textJustify: "inter-word",
     ["--rd-section-gap" as string]: `${sectionGap}px`,
     ["--print-scale" as string]: `${data.printScale ?? 1}`,
-    overflow: "hidden",
+    // NOTE: keep overflow visible — `overflow:hidden` prevents browsers from
+    // paginating content past page 1 when printing/exporting to PDF, which
+    // silently clips long resumes.
+    overflow: "visible",
     padding: 0,
     margin: 0,
   } as React.CSSProperties;
