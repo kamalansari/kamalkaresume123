@@ -19,8 +19,8 @@
  */
 
 @theme inline {
-  --font-sans: 'Manrope', system-ui, sans-serif;
-  --font-display: 'Sora', system-ui, sans-serif;
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-display: "Sora", system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -89,7 +89,12 @@
   --navy-mid: oklch(0.32 0.09 260);
   --navy-light: oklch(0.58 0.13 252);
   --paper: oklch(0.97 0.008 250);
-  --gradient-hero: linear-gradient(135deg, oklch(0.22 0.08 265) 0%, oklch(0.32 0.09 260) 60%, oklch(0.45 0.12 256) 100%);
+  --gradient-hero: linear-gradient(
+    135deg,
+    oklch(0.22 0.08 265) 0%,
+    oklch(0.32 0.09 260) 60%,
+    oklch(0.45 0.12 256) 100%
+  );
   --gradient-accent: linear-gradient(120deg, oklch(0.58 0.13 252), oklch(0.7 0.1 240));
   --shadow-elegant: 0 20px 60px -20px color-mix(in oklab, oklch(0.22 0.08 265) 40%, transparent);
   --shadow-soft: 0 8px 24px -12px color-mix(in oklab, oklch(0.22 0.08 265) 20%, transparent);
@@ -155,18 +160,28 @@
     font-feature-settings: "ss01", "cv11";
   }
 
-  h1, h2, h3, h4, h5 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
 }
 
 @media print {
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  html, body {
-    width: 8.5in !important;
-    min-height: 11in !important;
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  html,
+  body {
+    width: 8.27in !important;
+    min-height: 11.69in !important;
     height: auto !important;
     overflow: visible !important;
     background: #ffffff !important;
@@ -174,7 +189,10 @@
   /* Force the preview wrapper to render even when the mobile bottom-nav
      toggle has hidden it (Tailwind `hidden` -> display:none), which would
      otherwise blank out every printed page / generated PDF. */
-  #resume-preview { display: block !important; visibility: visible !important; }
+  #resume-preview {
+    display: block !important;
+    visibility: visible !important;
+  }
   .print-area {
     position: static !important;
     left: 0;
@@ -187,14 +205,22 @@
     zoom: var(--print-scale, 1);
     transform-origin: top left;
   }
-  .resume-preview-scale { transform: none !important; width: 8.5in !important; overflow: visible !important; }
-  .no-print { display: none !important; }
-  .print-area, .print-area * {
+  .resume-preview-scale {
+    transform: none !important;
+    width: 8.5in !important;
+    overflow: visible !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-area,
+  .print-area * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
-  .resume-section, .resume-entry {
+  .resume-section,
+  .resume-entry {
     break-inside: auto !important;
     page-break-inside: auto !important;
   }
@@ -228,15 +254,22 @@
     min-height: auto !important;
     width: auto !important;
   }
-  .resume-entry-header, .print-area h1, .print-area h2 {
+  .resume-entry-header,
+  .print-area h1,
+  .print-area h2 {
     break-after: avoid !important;
     page-break-after: avoid !important;
   }
-  @page { size: 8.5in 11in; margin: 0; }
+  @page {
+    size: 8.5in 11in;
+    margin: 0;
+  }
 }
 
 .preview-clickable {
-  transition: outline-color 120ms ease, background-color 120ms ease;
+  transition:
+    outline-color 120ms ease,
+    background-color 120ms ease;
   outline: 2px solid transparent;
   outline-offset: 2px;
 }
@@ -245,7 +278,10 @@
   background-color: oklch(0.55 0.18 250 / 0.04);
 }
 @media print {
-  .preview-clickable { outline: none !important; background: transparent !important; }
+  .preview-clickable {
+    outline: none !important;
+    background: transparent !important;
+  }
 }
 
 /* Restore list bullets inside the rendered resume (Tailwind preflight
@@ -265,27 +301,35 @@
   outline: 1px dashed transparent;
   outline-offset: 3px;
   border-radius: 3px;
-  transition: outline-color 120ms ease, background-color 120ms ease;
+  transition:
+    outline-color 120ms ease,
+    background-color 120ms ease;
 }
 
 /* A4 paper feel for the live preview (screen only — never affects print). */
 .resume-preview-scale {
   display: block;
-  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.06))
-          drop-shadow(0 18px 40px rgba(15, 23, 42, 0.14));
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.06)) drop-shadow(0 18px 40px rgba(15, 23, 42, 0.14));
   border-radius: 6px;
   overflow: visible;
 }
 @media print {
-  .resume-preview-scale { filter: none !important; }
+  .resume-preview-scale {
+    filter: none !important;
+  }
 }
 
 /* Prevent any horizontal scroll on the builder screen. */
-html, body { overflow-x: hidden; }
+html,
+body {
+  overflow-x: hidden;
+}
 
 /* Mobile bottom-nav safe-area padding so the preview/editor isn't covered. */
 @media (max-width: 1023px) {
-  .builder-mobile-pad { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .builder-mobile-pad {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
 }
 .preview-editable:hover {
   outline-color: oklch(0.55 0.18 250 / 0.4);
@@ -296,7 +340,10 @@ html, body { overflow-x: hidden; }
   background-color: oklch(0.55 0.18 250 / 0.06);
 }
 @media print {
-  .preview-editable { outline: none !important; background: transparent !important; }
+  .preview-editable {
+    outline: none !important;
+    background: transparent !important;
+  }
 }
 
 .resume-document {
@@ -339,27 +386,77 @@ html, body { overflow-x: hidden; }
 }
 
 @keyframes preview-flash {
-  0%   { background-color: color-mix(in oklab, var(--primary) 30%, transparent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 45%, transparent); }
-  100% { background-color: transparent; box-shadow: 0 0 0 0 transparent; }
+  0% {
+    background-color: color-mix(in oklab, var(--primary) 30%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 .preview-flash {
   animation: preview-flash 1.1s ease-out;
   border-radius: 4px;
 }
 @media print {
-  .preview-flash { animation: none !important; background: transparent !important; box-shadow: none !important; }
+  .preview-flash {
+    animation: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
 }
 
 /* Nova chat markdown */
-.nova-md p { margin: 0.25rem 0; }
-.nova-md p:first-child { margin-top: 0; }
-.nova-md p:last-child { margin-bottom: 0; }
-.nova-md ul { list-style: disc; padding-left: 1.1rem; margin: 0.35rem 0; }
-.nova-md ol { list-style: decimal; padding-left: 1.3rem; margin: 0.35rem 0; }
-.nova-md li { margin: 0.15rem 0; }
-.nova-md strong { font-weight: 600; color: inherit; }
-.nova-md code { background: color-mix(in oklab, currentColor 10%, transparent); padding: 0 0.25rem; border-radius: 0.25rem; font-size: 0.85em; }
-.nova-md pre { background: color-mix(in oklab, currentColor 8%, transparent); padding: 0.5rem 0.65rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.4rem 0; }
-.nova-md h1, .nova-md h2, .nova-md h3 { font-weight: 600; margin: 0.4rem 0 0.25rem; }
-.nova-md h3 { font-size: 0.95rem; }
-.nova-md a { color: var(--navy-light); text-decoration: underline; }
+.nova-md p {
+  margin: 0.25rem 0;
+}
+.nova-md p:first-child {
+  margin-top: 0;
+}
+.nova-md p:last-child {
+  margin-bottom: 0;
+}
+.nova-md ul {
+  list-style: disc;
+  padding-left: 1.1rem;
+  margin: 0.35rem 0;
+}
+.nova-md ol {
+  list-style: decimal;
+  padding-left: 1.3rem;
+  margin: 0.35rem 0;
+}
+.nova-md li {
+  margin: 0.15rem 0;
+}
+.nova-md strong {
+  font-weight: 600;
+  color: inherit;
+}
+.nova-md code {
+  background: color-mix(in oklab, currentColor 10%, transparent);
+  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+}
+.nova-md pre {
+  background: color-mix(in oklab, currentColor 8%, transparent);
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.4rem 0;
+}
+.nova-md h1,
+.nova-md h2,
+.nova-md h3 {
+  font-weight: 600;
+  margin: 0.4rem 0 0.25rem;
+}
+.nova-md h3 {
+  font-size: 0.95rem;
+}
+.nova-md a {
+  color: var(--navy-light);
+  text-decoration: underline;
+}
