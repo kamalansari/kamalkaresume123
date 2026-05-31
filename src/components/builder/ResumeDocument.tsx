@@ -165,6 +165,7 @@ export function ResumeDocument({
   const base = {
     width: "8.5in",
     minHeight: "11in",
+    boxSizing: "border-box",
     fontFamily: bodyFont,
     fontSize: `${fs}pt`,
     lineHeight: lh,
@@ -324,8 +325,8 @@ export function ResumeDocument({
     );
     return (
       <KeywordContext.Provider value={kwSet}>
-      <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
-        <div className="grid" style={{ gridTemplateColumns: sidebarRight ? "1fr 2.55in" : "2.55in 1fr", minHeight: "11in", alignItems: "stretch" }}>
+      <div lang="en" className="print-area resume-document mx-auto shadow-[var(--shadow-soft)]" style={base}>
+        <div className={`grid resume-layout-grid${sidebarRight ? " resume-layout-sidebar-right" : ""}`} style={{ gridTemplateColumns: sidebarRight ? "1fr 2.55in" : "2.55in 1fr", minHeight: "11in", alignItems: "stretch" }}>
           {sidebarRight ? main : sidebar}
           {sidebarRight ? sidebar : main}
         </div>
@@ -338,7 +339,7 @@ export function ResumeDocument({
     const exec = data.template === "executive" || data.template === "bold";
     return (
       <KeywordContext.Provider value={kwSet}>
-      <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={base}>
+      <div lang="en" className="print-area resume-document mx-auto shadow-[var(--shadow-soft)]" style={base}>
         <header {...headerClickProps} style={{ padding: "0.4in 0.45in", background: accent, color: "#fff", cursor: onSectionClick ? "pointer" : undefined, borderBottom: exec ? "4px solid rgba(0,0,0,0.35)" : undefined }}>
           <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.6}pt`, fontWeight: 800, letterSpacing: exec ? "0.08em" : "-0.01em", textTransform: exec ? "uppercase" : undefined }}>{data.name || "Your Name"}</h1>
           <div style={{ fontSize: `${fs + 1.5}pt`, opacity: 0.92, marginTop: 2 }}>{data.headline}</div>
@@ -356,7 +357,7 @@ export function ResumeDocument({
   const isMinimal = data.template === "minimal";
   return (
     <KeywordContext.Provider value={kwSet}>
-    <div lang="en" className="print-area mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: 0 }}>
+    <div lang="en" className="print-area resume-document mx-auto shadow-[var(--shadow-soft)]" style={{ ...base, padding: 0 }}>
       {isMinimal ? (
         <header {...headerClickProps} style={{ padding: "0.7in 0.75in 0.25in", borderBottom: "1px solid #d4d4d4", cursor: onSectionClick ? "pointer" : undefined }}>
           <h1 style={{ fontFamily: headingFont, fontSize: `${fs * 2.4}pt`, fontWeight: 600, letterSpacing: "-0.01em", color: "#1a1a1a" }}>{data.name || "Your Name"}</h1>
@@ -533,7 +534,7 @@ function SidebarBlock({ title, headingFont, children, dark }: { title: string; h
 
 function Section({ title, accent, headingFont, children, ed, kind }: { title: string; accent: string; headingFont: string; children: React.ReactNode; ed?: EditableHandlers; kind?: EditableRewriteKind }) {
   return (
-    <section style={{ marginTop: "var(--rd-section-gap, 20px)" }}>
+    <section className="resume-section" style={{ marginTop: "var(--rd-section-gap, 20px)" }}>
       <h2 style={{ fontFamily: headingFont, fontSize: "11pt", fontWeight: 700, letterSpacing: "0.22em", color: accent, textTransform: "uppercase", borderBottom: `1px solid ${accent}55`, paddingBottom: 6, marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span>{title}</span>
         {ed && kind && kind !== "experience-bullets" && (
@@ -570,8 +571,8 @@ function ExperienceSection({ data, accent, headingFont, ed }: { data: ResumeData
   return (
     <Section title="Experience" accent={accent} headingFont={headingFont}>
       {data.experience.map(e => (
-        <div key={e.id} style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
+        <div key={e.id} className="resume-entry" style={{ marginBottom: 16 }}>
+          <div className="resume-entry-header" style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
             <div style={{ fontWeight: 700, fontSize: "1.02em" }}>
               {e.title || "Role"}
             </div>

@@ -164,12 +164,19 @@
 @media print {
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }
+  html, body {
+    width: 8.5in !important;
+    min-height: 11in !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
   /* Force the preview wrapper to render even when the mobile bottom-nav
      toggle has hidden it (Tailwind `hidden` -> display:none), which would
      otherwise blank out every printed page / generated PDF. */
   #resume-preview { display: block !important; visibility: visible !important; }
   .print-area {
-    position: absolute;
+    position: static !important;
     left: 0;
     top: 0;
     width: 8.5in !important;
@@ -180,15 +187,52 @@
     zoom: var(--print-scale, 1);
     transform-origin: top left;
   }
-  .resume-preview-scale { transform: none !important; width: auto !important; }
+  .resume-preview-scale { transform: none !important; width: 8.5in !important; overflow: visible !important; }
   .no-print { display: none !important; }
   .print-area, .print-area * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
+  .resume-section, .resume-entry {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+  .resume-layout-grid {
+    display: block !important;
+    position: relative !important;
+    min-height: auto !important;
+    align-items: initial !important;
+    grid-template-columns: none !important;
+    padding-left: 2.55in !important;
+  }
+  .resume-layout-grid.resume-layout-sidebar-right {
+    padding-left: 0 !important;
+    padding-right: 2.55in !important;
+  }
+  .resume-layout-grid > aside {
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 2.55in !important;
+    min-height: 100% !important;
+    height: auto !important;
+  }
+  .resume-layout-grid.resume-layout-sidebar-right > aside {
+    left: auto !important;
+    right: 0 !important;
+  }
+  .resume-layout-grid > main {
+    display: block !important;
+    min-height: auto !important;
+    width: auto !important;
+  }
+  .resume-entry-header, .print-area h1, .print-area h2 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
   @page { size: 8.5in 11in; margin: 0; }
-  html, body { background: #ffffff; }
 }
 
 .preview-clickable {
@@ -253,6 +297,45 @@ html, body { overflow-x: hidden; }
 }
 @media print {
   .preview-editable { outline: none !important; background: transparent !important; }
+}
+
+.resume-document {
+  contain: layout paint;
+}
+
+.resume-section {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.resume-entry {
+  break-inside: auto;
+  page-break-inside: auto;
+}
+
+.resume-entry-header {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+@media screen and (max-width: 900px) {
+  .resume-preview-scale {
+    width: max-content;
+    max-width: none;
+  }
+}
+
+@media screen and (min-width: 901px) {
+  .resume-preview-scale {
+    width: max-content;
+    max-width: 100%;
+  }
+}
+
+@media print {
+  .resume-document {
+    contain: none !important;
+  }
 }
 
 @keyframes preview-flash {
