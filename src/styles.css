@@ -347,7 +347,21 @@ body {
 }
 
 .resume-document {
-  contain: layout paint;
+  contain: none;
+  overflow: visible;
+}
+
+.resume-layout-grid {
+  overflow: visible;
+}
+
+.resume-main {
+  overflow: visible;
+  min-width: 0;
+}
+
+.resume-sidebar {
+  overflow: visible;
 }
 
 .resume-section {
@@ -382,6 +396,7 @@ body {
 @media print {
   .resume-document {
     contain: none !important;
+    overflow: visible !important;
   }
 }
 
