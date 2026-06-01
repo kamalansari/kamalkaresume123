@@ -157,32 +157,58 @@ export function ResumeDocument({
   const sections: Record<SectionId, React.ReactNode> = {
     summary:
       data.summary || ed
-        ? wrap("summary", <SummarySection data={data} accent={accent} headingFont={headingFont} ed={ed} />)
+        ? wrap(
+            "summary",
+            <SummarySection data={data} accent={accent} headingFont={headingFont} ed={ed} />,
+          )
         : null,
     experience: data.experience.length
-      ? wrap("experience", <ExperienceSection data={data} accent={accent} headingFont={headingFont} ed={ed} />)
+      ? wrap(
+          "experience",
+          <ExperienceSection data={data} accent={accent} headingFont={headingFont} ed={ed} />,
+        )
       : null,
     education: data.education.length
-      ? wrap("education", <EducationSection data={data} accent={accent} headingFont={headingFont} />)
+      ? wrap(
+          "education",
+          <EducationSection data={data} accent={accent} headingFont={headingFont} />,
+        )
       : null,
     skills:
       data.skills || ed
         ? wrap(
             "skills",
-            <SkillsSection data={data} accent={accent} headingFont={headingFont} template={variant} ed={ed} />,
+            <SkillsSection
+              data={data}
+              accent={accent}
+              headingFont={headingFont}
+              template={variant}
+              ed={ed}
+            />,
           )
         : null,
     projects: data.projects?.length
       ? wrap("projects", <ProjectsSection data={data} accent={accent} headingFont={headingFont} />)
       : null,
     certifications: data.certifications?.length
-      ? wrap("certifications", <CertSection data={data} accent={accent} headingFont={headingFont} />)
+      ? wrap(
+          "certifications",
+          <CertSection data={data} accent={accent} headingFont={headingFont} />,
+        )
       : null,
     awards: data.awards?.length
       ? wrap("awards", <AwardsSection data={data} accent={accent} headingFont={headingFont} />)
       : null,
     languages: data.languages?.length
-      ? wrap("languages", <LanguagesSection data={data} accent={accent} headingFont={headingFont} template={variant} />)
+      ? wrap(
+          "languages",
+          <LanguagesSection
+            data={data}
+            accent={accent}
+            headingFont={headingFont}
+            template={variant}
+          />,
+        )
       : null,
   };
 
@@ -273,7 +299,13 @@ export function ResumeDocument({
                     .filter(Boolean);
                   ed.onUpdate({ skills: lines.join(", ") });
                 }}
-                style={{ margin: 0, paddingLeft: 12, listStyle: "disc", listStylePosition: "outside", textIndent: 0 }}
+                style={{
+                  margin: 0,
+                  paddingLeft: 12,
+                  listStyle: "disc",
+                  listStylePosition: "outside",
+                  textIndent: 0,
+                }}
               >
                 {parseSkills(data.skills).map((s, i) => (
                   <li key={i} style={{ marginBottom: 2, paddingLeft: 2, fontWeight: 400 }}>
@@ -309,7 +341,15 @@ export function ResumeDocument({
       languages: data.languages?.length ? (
         <SidebarFlashWrap key="languages" flash={flashSection === "languages"}>
           <SidebarBlock title="Languages" headingFont={headingFont} dark={!compact}>
-            <ul style={{ margin: 0, paddingLeft: 12, listStyle: "disc", listStylePosition: "outside", textIndent: 0 }}>
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: 12,
+                listStyle: "disc",
+                listStylePosition: "outside",
+                textIndent: 0,
+              }}
+            >
               {data.languages.map((l) => (
                 <li key={l.id} style={{ marginBottom: 2, paddingLeft: 2 }}>
                   {l.name}
@@ -324,11 +364,16 @@ export function ResumeDocument({
         <SidebarFlashWrap key="education" flash={flashSection === "education"}>
           <SidebarBlock title="Education" headingFont={headingFont} dark={!compact}>
             {data.education.map((edu) => {
-              const updateField = (field: "degree" | "school" | "date") => (e: React.FocusEvent<HTMLDivElement>) => {
-                if (!ed) return;
-                const v = e.currentTarget.innerText.trim();
-                ed.onUpdate({ education: data.education.map((x) => (x.id === edu.id ? { ...x, [field]: v } : x)) });
-              };
+              const updateField =
+                (field: "degree" | "school" | "date") => (e: React.FocusEvent<HTMLDivElement>) => {
+                  if (!ed) return;
+                  const v = e.currentTarget.innerText.trim();
+                  ed.onUpdate({
+                    education: data.education.map((x) =>
+                      x.id === edu.id ? { ...x, [field]: v } : x,
+                    ),
+                  });
+                };
               const editProps = (field: "degree" | "school" | "date") =>
                 ed
                   ? {
@@ -386,6 +431,7 @@ export function ResumeDocument({
     const sidebar = (
       <aside
         {...headerClickProps}
+        className="resume-sidebar"
         style={{
           background: sidebarBg,
           color: sidebarText,
@@ -393,7 +439,8 @@ export function ResumeDocument({
           cursor: onSectionClick ? "pointer" : undefined,
           wordBreak: "break-word",
           overflowWrap: "anywhere",
-          height: "100%",
+          minHeight: "11in",
+          alignSelf: "stretch",
         }}
       >
         <h1
@@ -404,7 +451,8 @@ export function ResumeDocument({
                 "data-preview-edit": "name",
                 className: "preview-editable",
                 onClick: (e: React.MouseEvent) => e.stopPropagation(),
-                onBlur: (e: React.FocusEvent<HTMLHeadingElement>) => ed.onUpdate({ name: e.currentTarget.innerText }),
+                onBlur: (e: React.FocusEvent<HTMLHeadingElement>) =>
+                  ed.onUpdate({ name: e.currentTarget.innerText }),
               }
             : {})}
           style={{
@@ -425,7 +473,8 @@ export function ResumeDocument({
                 "data-preview-edit": "headline",
                 className: "preview-editable",
                 onClick: (e: React.MouseEvent) => e.stopPropagation(),
-                onBlur: (e: React.FocusEvent<HTMLDivElement>) => ed.onUpdate({ headline: e.currentTarget.innerText }),
+                onBlur: (e: React.FocusEvent<HTMLDivElement>) =>
+                  ed.onUpdate({ headline: e.currentTarget.innerText }),
               }
             : {})}
           style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}
@@ -433,23 +482,38 @@ export function ResumeDocument({
           {data.headline}
         </div>
         <div
-          style={{ height: 1, background: compact ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.3)", margin: "16px 0" }}
+          style={{
+            height: 1,
+            background: compact ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.3)",
+            margin: "16px 0",
+          }}
         />
         <SidebarBlock title="Contact" headingFont={headingFont} dark={!compact}>
           <SidebarContact data={data} dark={!compact} ed={ed} />
         </SidebarBlock>
-        {data.sectionOrder.filter((id) => sidebarSectionIds.includes(id)).map((id) => sidebarRenderers[id])}
+        {data.sectionOrder
+          .filter((id) => sidebarSectionIds.includes(id))
+          .map((id) => sidebarRenderers[id])}
       </aside>
     );
     const main = (
-      <main style={{ padding: "0.4in 0.35in 0.4in 0.28in", minWidth: 0 }}>
-        {data.sectionOrder.filter((id) => !sidebarSectionIds.includes(id)).map((id) => sections[id])}
+      <main
+        className="resume-main"
+        style={{ padding: "0.4in 0.35in 0.4in 0.28in", minWidth: 0, overflow: "visible" }}
+      >
+        {data.sectionOrder
+          .filter((id) => !sidebarSectionIds.includes(id))
+          .map((id) => sections[id])}
         {customBlocks}
       </main>
     );
     return (
       <KeywordContext.Provider value={kwSet}>
-        <div lang="en" className="print-area resume-document mx-auto shadow-[var(--shadow-soft)]" style={base}>
+        <div
+          lang="en"
+          className="print-area resume-document mx-auto shadow-[var(--shadow-soft)]"
+          style={base}
+        >
           <div
             className={`grid resume-layout-grid${sidebarRight ? " resume-layout-sidebar-right" : ""}`}
             style={{
@@ -470,7 +534,11 @@ export function ResumeDocument({
     const exec = data.template === "executive" || data.template === "bold";
     return (
       <KeywordContext.Provider value={kwSet}>
-        <div lang="en" className="print-area resume-document mx-auto shadow-[var(--shadow-soft)]" style={base}>
+        <div
+          lang="en"
+          className="print-area resume-document mx-auto shadow-[var(--shadow-soft)]"
+          style={base}
+        >
           <header
             {...headerClickProps}
             style={{
@@ -492,7 +560,9 @@ export function ResumeDocument({
             >
               {data.name || "Your Name"}
             </h1>
-            <div style={{ fontSize: `${fs + 1.5}pt`, opacity: 0.92, marginTop: 2 }}>{data.headline}</div>
+            <div style={{ fontSize: `${fs + 1.5}pt`, opacity: 0.92, marginTop: 2 }}>
+              {data.headline}
+            </div>
             <div style={{ marginTop: 8, color: "#fff", opacity: 0.92 }}>
               <ContactRow data={data} color="#ffffff" />
             </div>
@@ -534,7 +604,9 @@ export function ResumeDocument({
             >
               {data.name || "Your Name"}
             </h1>
-            <div style={{ fontSize: `${fs + 1}pt`, color: "#4a4a4a", marginTop: 4 }}>{data.headline}</div>
+            <div style={{ fontSize: `${fs + 1}pt`, color: "#4a4a4a", marginTop: 4 }}>
+              {data.headline}
+            </div>
             <div style={{ marginTop: 10 }}>{contactLine}</div>
           </header>
         ) : (
@@ -574,7 +646,13 @@ export function ResumeDocument({
                 {data.headline}
               </div>
             )}
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.25)" }}>
+            <div
+              style={{
+                marginTop: 14,
+                paddingTop: 12,
+                borderTop: "1px solid rgba(255,255,255,0.25)",
+              }}
+            >
               <ContactRow data={data} color="#ffffff" />
             </div>
           </header>
@@ -599,7 +677,9 @@ function ClickableSection({
   children: React.ReactNode;
   flash?: boolean;
 }) {
-  const cls = [onClick ? "preview-clickable" : "", flash ? "preview-flash" : ""].filter(Boolean).join(" ");
+  const cls = [onClick ? "preview-clickable" : "", flash ? "preview-flash" : ""]
+    .filter(Boolean)
+    .join(" ");
   if (!onClick && !flash) return <>{children}</>;
   return (
     <div
@@ -635,7 +715,9 @@ function ContactRow({ data, color }: { data: ResumeData; color: string }) {
   if (data.email) items.push({ icon: <Mail size={iconSize} />, text: data.email });
   if (data.phone) items.push({ icon: <Phone size={iconSize} />, text: data.phone });
   if (data.location) items.push({ icon: <MapPin size={iconSize} />, text: data.location });
-  splitLinks(data.links).forEach((l) => items.push({ icon: <LinkIcon size={iconSize} />, text: l }));
+  splitLinks(data.links).forEach((l) =>
+    items.push({ icon: <LinkIcon size={iconSize} />, text: l }),
+  );
   return (
     <div
       style={{
@@ -680,13 +762,24 @@ function ContactRow({ data, color }: { data: ResumeData; color: string }) {
   );
 }
 
-function SidebarContact({ data, dark, ed }: { data: ResumeData; dark: boolean; ed?: EditableHandlers }) {
+function SidebarContact({
+  data,
+  dark,
+  ed,
+}: {
+  data: ResumeData;
+  dark: boolean;
+  ed?: EditableHandlers;
+}) {
   type Field = "email" | "phone" | "location" | "links";
   const items: { icon: React.ReactNode; text: string; field: Field }[] = [];
   if (data.email) items.push({ icon: <Mail size={11} />, text: data.email, field: "email" });
   if (data.phone) items.push({ icon: <Phone size={11} />, text: data.phone, field: "phone" });
-  if (data.location) items.push({ icon: <MapPin size={11} />, text: data.location, field: "location" });
-  splitLinks(data.links).forEach((l) => items.push({ icon: <LinkIcon size={11} />, text: l, field: "links" }));
+  if (data.location)
+    items.push({ icon: <MapPin size={11} />, text: data.location, field: "location" });
+  splitLinks(data.links).forEach((l) =>
+    items.push({ icon: <LinkIcon size={11} />, text: l, field: "links" }),
+  );
   const linksOrder = splitLinks(data.links);
   return (
     <div>
@@ -867,7 +960,12 @@ function ExperienceSection({
         <div key={e.id} className="resume-entry" style={{ marginBottom: 16 }}>
           <div
             className="resume-entry-header"
-            style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              alignItems: "baseline",
+            }}
           >
             <div style={{ fontWeight: 700, fontSize: "1.02em" }}>{e.title || "Role"}</div>
             <div
@@ -890,7 +988,9 @@ function ExperienceSection({
               )}
             </div>
           </div>
-          {e.company && <div style={{ color: "#4a4a4a", marginTop: 2, fontWeight: 500 }}>{e.company}</div>}
+          {e.company && (
+            <div style={{ color: "#4a4a4a", marginTop: 2, fontWeight: 500 }}>{e.company}</div>
+          )}
           {ed ? (
             <div
               key={`exp-${e.id}-${e.bullets}`}
@@ -899,9 +999,20 @@ function ExperienceSection({
               data-preview-edit="experience-bullets"
               data-preview-exp-id={e.id}
               className="preview-editable"
-              style={{ marginTop: 8, marginLeft: 0, paddingLeft: 14, whiteSpace: "pre-wrap", textAlign: "left" }}
+              style={{
+                marginTop: 8,
+                marginLeft: 0,
+                paddingLeft: 14,
+                whiteSpace: "pre-wrap",
+                textAlign: "left",
+              }}
               onClick={(ev) => ev.stopPropagation()}
-              onBlur={(ev) => ed.onUpdateExperienceBullets(e.id, ev.currentTarget.innerText.replace(/^•\s*/gm, ""))}
+              onBlur={(ev) =>
+                ed.onUpdateExperienceBullets(
+                  e.id,
+                  ev.currentTarget.innerText.replace(/^•\s*/gm, ""),
+                )
+              }
             >
               {e.bullets
                 .split("\n")
@@ -939,7 +1050,15 @@ function ExperienceSection({
   );
 }
 
-function EducationSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+function EducationSection({
+  data,
+  accent,
+  headingFont,
+}: {
+  data: ResumeData;
+  accent: string;
+  headingFont: string;
+}) {
   return (
     <Section title="Education" accent={accent} headingFont={headingFont}>
       {data.education.map((ed) => {
@@ -976,7 +1095,8 @@ function SkillsSection({
   template: string;
   ed?: EditableHandlers;
 }) {
-  if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
+  if (template === "two-column" || template === "sidebar-right" || template === "compact-two")
+    return null;
   const groups = parseSkillGroups(data.skills);
   const hasHeadings = groups.some((g) => g.heading);
   const listStyle: React.CSSProperties = {
@@ -1045,7 +1165,15 @@ function SkillsSection({
   );
 }
 
-function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+function ProjectsSection({
+  data,
+  accent,
+  headingFont,
+}: {
+  data: ResumeData;
+  accent: string;
+  headingFont: string;
+}) {
   return (
     <Section title="Projects" accent={accent} headingFont={headingFont}>
       {data.projects.map((p) => (
@@ -1053,13 +1181,21 @@ function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; acce
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
             <div style={{ fontWeight: 600 }}>
               {p.name}
-              {p.link ? <span style={{ fontWeight: 400, color: "#4a4a4a" }}> · {p.link}</span> : null}
+              {p.link ? (
+                <span style={{ fontWeight: 400, color: "#4a4a4a" }}> · {p.link}</span>
+              ) : null}
             </div>
             <div style={{ color: "#666", whiteSpace: "nowrap" }}>{p.date}</div>
           </div>
           {p.bullets && (
             <ul
-              style={{ marginTop: 4, marginLeft: 0, paddingLeft: 14, listStyle: "disc", listStylePosition: "outside" }}
+              style={{
+                marginTop: 4,
+                marginLeft: 0,
+                paddingLeft: 14,
+                listStyle: "disc",
+                listStylePosition: "outside",
+              }}
             >
               {p.bullets
                 .split("\n")
@@ -1077,12 +1213,26 @@ function ProjectsSection({ data, accent, headingFont }: { data: ResumeData; acce
   );
 }
 
-function CertSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+function CertSection({
+  data,
+  accent,
+  headingFont,
+}: {
+  data: ResumeData;
+  accent: string;
+  headingFont: string;
+}) {
   return (
     <Section title="Certifications" accent={accent} headingFont={headingFont}>
       {data.certifications.map((c) => {
-        const dateLine = c.noExpiry ? c.date : c.expires ? `${c.date}${c.date ? " — " : ""}${c.expires}` : c.date;
-        const meta = [c.credentialId ? `ID: ${c.credentialId}` : "", c.url ?? ""].filter(Boolean).join(" · ");
+        const dateLine = c.noExpiry
+          ? c.date
+          : c.expires
+            ? `${c.date}${c.date ? " — " : ""}${c.expires}`
+            : c.date;
+        const meta = [c.credentialId ? `ID: ${c.credentialId}` : "", c.url ?? ""]
+          .filter(Boolean)
+          .join(" · ");
         return (
           <div key={c.id} style={{ marginBottom: 6 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
@@ -1100,11 +1250,22 @@ function CertSection({ data, accent, headingFont }: { data: ResumeData; accent: 
   );
 }
 
-function AwardsSection({ data, accent, headingFont }: { data: ResumeData; accent: string; headingFont: string }) {
+function AwardsSection({
+  data,
+  accent,
+  headingFont,
+}: {
+  data: ResumeData;
+  accent: string;
+  headingFont: string;
+}) {
   return (
     <Section title="Awards" accent={accent} headingFont={headingFont}>
       {data.awards.map((a) => (
-        <div key={a.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
+        <div
+          key={a.id}
+          style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 4 }}
+        >
           <div>
             <span style={{ fontWeight: 600 }}>{a.name}</span>
             {a.issuer ? ` · ${a.issuer}` : ""}
@@ -1127,7 +1288,8 @@ function LanguagesSection({
   headingFont: string;
   template: string;
 }) {
-  if (template === "two-column" || template === "sidebar-right" || template === "compact-two") return null;
+  if (template === "two-column" || template === "sidebar-right" || template === "compact-two")
+    return null;
   const sep = data.skillSeparator === "," ? ", " : " | ";
   return (
     <Section title="Languages" accent={accent} headingFont={headingFont}>
