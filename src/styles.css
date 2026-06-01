@@ -180,7 +180,7 @@
   }
   html,
   body {
-    width: 8.27in !important;
+    width: 8.5in !important;
     min-height: 11.69in !important;
     height: auto !important;
     overflow: visible !important;
@@ -381,8 +381,17 @@ body {
 
 @media screen and (max-width: 900px) {
   .resume-preview-scale {
-    width: max-content;
+    transform: scale(0.55);
+    transform-origin: top left;
+    width: calc(8.5in * 0.55);
     max-width: none;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  .resume-preview-scale {
+    transform: scale(0.44);
+    width: calc(8.5in * 0.44);
   }
 }
 
