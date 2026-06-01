@@ -386,6 +386,7 @@ export function ResumeDocument({
     const sidebar = (
       <aside
         {...headerClickProps}
+        className="resume-sidebar"
         style={{
           background: sidebarBg,
           color: sidebarText,
@@ -393,7 +394,8 @@ export function ResumeDocument({
           cursor: onSectionClick ? "pointer" : undefined,
           wordBreak: "break-word",
           overflowWrap: "anywhere",
-          height: "100%",
+          minHeight: "11in",
+          alignSelf: "stretch",
         }}
       >
         <h1
@@ -442,7 +444,7 @@ export function ResumeDocument({
       </aside>
     );
     const main = (
-      <main style={{ padding: "0.4in 0.35in 0.4in 0.28in", minWidth: 0 }}>
+      <main className="resume-main" style={{ padding: "0.4in 0.35in 0.4in 0.28in", minWidth: 0, overflow: "visible" }}>
         {data.sectionOrder.filter((id) => !sidebarSectionIds.includes(id)).map((id) => sections[id])}
         {customBlocks}
       </main>
