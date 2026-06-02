@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Mail, Phone, MapPin, Link as LinkIcon, Sparkles, Loader2 } from "lucide-react";
 import { FONT_PRESETS, getSidebarSectionIds, type ResumeData, type SectionId } from "./types";
 import { parseSkills, parseSkillGroups } from "@/lib/parseSkills";
@@ -240,7 +240,71 @@ export function ResumeDocument({
     ));
 
   const safePrintScale = Math.min(Math.max(data.printScale ?? 1, 0.75), 1.15);
-  const safeSidebarWidth = Math.min(Math.max(data.sidebarWidth ?? 2.55, 1.8), 3.4);
+  const userSidebarWidth = Math.min(Math.max(data.sidebarWidth ?? 2.55, 1.8), 3.4);
+  const autoFit = data.sidebarAutoFit !== false;
+  const isTwoColVariant =
+    variant === "two-column" || variant === "sidebar-right" || variant === "compact-two";
+  // Auto-fit grows the sidebar (never shrinks below the user's setting) when
+  // headings would otherwise overflow. Measured in src/components/builder/
+  // ResumeDocument.tsx via a layout effect on the sidebar DOM node.
+  const layoutRef = useRef<HTMLDivElement | null>(null);
+  const [autoExtraIn, setAutoExtraIn] = useState(0);
+  // Reset the extra width whenever the user-controlled width changes so we
+  // re-measure from their baseline instead of compounding adjustments.
+  useEffect(() => {
+    setAutoExtraIn(0);
+  }, [userSidebarWidth, data.template, data.fontId, data.fontSize, autoFit]);
+  const safeSidebarWidth = Math.min(
+    Math.max(userSidebarWidth + (autoFit && isTwoColVariant ? autoExtraIn : 0), 1.8),
+    3.4,
+  );
+  // Measure sidebar headings each render: if any unbreakable text overflows
+  // the sidebar column, request a slightly wider column on the next render.
+  // We measure inside an animation frame so layout has settled, including
+  // any CSS transform scaling applied to the preview wrapper.
+  useLayoutEffect(() => {
+    if (!autoFit || !isTwoColVariant) return;
+    const root = layoutRef.current;
+    if (!root) return;
+    let raf = 0;
+    const measure = () => {
+      const sidebarEl = root.querySelector(".resume-sidebar") as HTMLElement | null;
+      if (!sidebarEl) return;
+      // Compare each heading/contact element's intrinsic scrollWidth against
+      // its available width (clientWidth, which excludes padding-overflow).
+      const candidates = sidebarEl.querySelectorAll<HTMLElement>(
+        "h1, h2, h3, [data-preview-edit='name'], [data-preview-edit^='contact-']",
+      );
+      let worstOverflowPx = 0;
+      candidates.forEach((el) => {
+        const overflow = el.scrollWidth - el.clientWidth;
+        if (overflow > worstOverflowPx) worstOverflowPx = overflow;
+      });
+      if (worstOverflowPx <= 1) return; // within tolerance
+      // Convert overflow (CSS px at 96dpi) to inches with a small safety pad.
+      const neededInches = worstOverflowPx / 96 + 0.08;
+      const headroom = 3.4 - safeSidebarWidth;
+      if (headroom <= 0.02) return; // already at max
+      const delta = Math.min(neededInches, headroom);
+      setAutoExtraIn((prev) => Math.min(prev + delta, 3.4 - userSidebarWidth));
+    };
+    raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
+  }, [
+    autoFit,
+    isTwoColVariant,
+    safeSidebarWidth,
+    userSidebarWidth,
+    data.name,
+    data.headline,
+    data.email,
+    data.phone,
+    data.location,
+    data.links,
+    data.fontId,
+    data.fontSize,
+    data.template,
+  ]);
   const base = {
     width: "8.5in",
     minHeight: "11in",
@@ -525,6 +589,7 @@ export function ResumeDocument({
         >
           <div
             className={`grid resume-layout-grid${sidebarRight ? " resume-layout-sidebar-right" : ""}`}
+            ref={layoutRef}
             style={{
               gridTemplateColumns: sidebarRight
                 ? `1fr ${safeSidebarWidth}in`

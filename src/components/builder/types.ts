@@ -163,6 +163,11 @@ export type ResumeData = {
   // skill labels) don't get clipped in the preview or exported PDF.
   // Default 2.55in. Range typically 1.8–3.4in.
   sidebarWidth?: number;
+  // When true, the renderer measures sidebar headings (name, section titles,
+  // contact items) after each render and slightly grows the sidebar column
+  // (within 1.8–3.4in) so unbreakable text doesn't get clipped in the
+  // preview or printed PDF. Defaults to true.
+  sidebarAutoFit?: boolean;
 };
 
 export const defaultResume: ResumeData = {
