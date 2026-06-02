@@ -247,3 +247,171 @@ describe("auto-fit invariant: no clipping unless at MAX", () => {
     }
   }
 });
+
+/**
+ * Realistic content-shaped edge cases. Each fixture models a sidebar full
+ * of plausibly-clipping elements: very long applicant names, multi-line
+ * section headers (the wrap point shifts intrinsic width), and dense
+ * contact rows (email + phone + location + 3 links). The invariant is the
+ * same as above — fits, or pinned to MAX with the renderer's overflow-wrap
+ * fallback owning the rest.
+ */
+describe("auto-fit edge-case fixtures (long names, multi-line headers, dense contacts)", () => {
+  type Fixture = {
+    name: string;
+    userIn: number;
+    sidebarPx: number;
+    measurements: { label: string; scrollWidthPx: number }[];
+  };
+
+  const fixtures: Fixture[] = [
+    {
+      name: "very long hyphenated applicant name",
+      userIn: 2.2,
+      sidebarPx: 210,
+      measurements: [
+        { label: "h1 name", scrollWidthPx: 412 }, // e.g. "Maximilian-Alexander Wojciechowski"
+        { label: "headline", scrollWidthPx: 240 },
+        { label: "Contact heading", scrollWidthPx: 130 },
+      ],
+    },
+    {
+      name: "non-latin script with no break opportunities",
+      userIn: 2.0,
+      sidebarPx: 190,
+      measurements: [
+        { label: "h1 name (CJK)", scrollWidthPx: 305 },
+        { label: "headline", scrollWidthPx: 215 },
+      ],
+    },
+    {
+      name: "multi-line SKILLS / CERTIFICATIONS / EDUCATION headers",
+      userIn: 2.55,
+      sidebarPx: 245,
+      measurements: [
+        { label: "PROFESSIONAL CERTIFICATIONS", scrollWidthPx: 298 },
+        { label: "TECHNICAL SKILLS & TOOLS", scrollWidthPx: 276 },
+        { label: "EDUCATION & TRAINING", scrollWidthPx: 252 },
+        { label: "LANGUAGES", scrollWidthPx: 110 },
+      ],
+    },
+    {
+      name: "dense contact info (long email + 3 links)",
+      userIn: 2.4,
+      sidebarPx: 230,
+      measurements: [
+        { label: "h1 name", scrollWidthPx: 220 },
+        { label: "contact-email", scrollWidthPx: 388 }, // alexandra.morgan-thompson@example.io
+        { label: "contact-phone", scrollWidthPx: 175 },
+        { label: "contact-location", scrollWidthPx: 260 }, // "San Francisco Bay Area, CA"
+        { label: "contact-links #1", scrollWidthPx: 352 }, // linkedin.com/in/alexandra-morgan-thompson
+        { label: "contact-links #2", scrollWidthPx: 318 }, // github.com/alexandra-morgan-thompson
+        { label: "contact-links #3", scrollWidthPx: 296 }, // alexandra-morgan-thompson.dev
+      ],
+    },
+    {
+      name: "near-MAX baseline with one borderline overflow",
+      userIn: 3.3,
+      sidebarPx: 320,
+      measurements: [
+        { label: "h1 name", scrollWidthPx: 332 }, // 12px overflow, headroom = 0.1in (~9.6px)
+      ],
+    },
+    {
+      name: "everything fits comfortably — must not grow",
+      userIn: 2.55,
+      sidebarPx: 245,
+      measurements: [
+        { label: "h1 name", scrollWidthPx: 180 },
+        { label: "contact-email", scrollWidthPx: 200 },
+        { label: "SKILLS", scrollWidthPx: 90 },
+      ],
+    },
+    {
+      name: "absurd single overflow exceeding the whole document",
+      userIn: 1.8,
+      sidebarPx: 170,
+      measurements: [
+        // 900px would need 9.4+in of column — must pin to MAX without throwing.
+        { label: "h1 name (pathological)", scrollWidthPx: 900 },
+      ],
+    },
+    {
+      name: "many tiny overflows, none individually large",
+      userIn: 2.0,
+      sidebarPx: 190,
+      measurements: Array.from({ length: 12 }, (_, i) => ({
+        label: `row ${i}`,
+        scrollWidthPx: 196 + (i % 3) * 2, // 196 / 198 / 200 px → tiny overflows
+      })),
+    },
+  ];
+
+  for (const f of fixtures) {
+    it(`${f.name} → no clipping (or pinned to MAX)`, () => {
+      const measurements = f.measurements.map((m) => ({
+        scrollWidthPx: m.scrollWidthPx,
+        clientWidthPx: f.sidebarPx,
+      }));
+      const r = computeAutoFitExtra({
+        userSidebarWidthIn: f.userIn,
+        currentExtraIn: 0,
+        measurements,
+      });
+      const finalWidthIn = resolveSidebarWidth({
+        userSidebarWidthIn: f.userIn,
+        autoExtraIn: r.nextExtraIn,
+        autoFitActive: true,
+      });
+
+      // 1. Never below the user's baseline.
+      expect(finalWidthIn).toBeGreaterThanOrEqual(Math.min(f.userIn, SIDEBAR_MAX_IN) - 1e-9);
+      // 2. Never above the hard MAX.
+      expect(finalWidthIn).toBeLessThanOrEqual(SIDEBAR_MAX_IN + 1e-9);
+
+      // 3. Either every element fits in the resolved width, or we're at MAX.
+      const requiredExtraIn = Math.max(
+        0,
+        worstOverflowPx(measurements) / CSS_PX_PER_INCH,
+      );
+      const atMax = Math.abs(finalWidthIn - SIDEBAR_MAX_IN) < 1e-6;
+      const fits = finalWidthIn - Math.min(f.userIn, SIDEBAR_MAX_IN) + 1e-6 >= requiredExtraIn;
+      expect(atMax || fits).toBe(true);
+
+      // 4. If nothing overflowed, the column must NOT have grown.
+      if (worstOverflowPx(measurements) <= 1) {
+        expect(r.didGrow).toBe(false);
+        expect(finalWidthIn).toBeCloseTo(Math.min(f.userIn, SIDEBAR_MAX_IN), 6);
+      }
+    });
+  }
+
+  it("converges in a single pass for all fixtures (no oscillation)", () => {
+    for (const f of fixtures) {
+      const measurements = f.measurements.map((m) => ({
+        scrollWidthPx: m.scrollWidthPx,
+        clientWidthPx: f.sidebarPx,
+      }));
+      const pass1 = computeAutoFitExtra({
+        userSidebarWidthIn: f.userIn,
+        currentExtraIn: 0,
+        measurements,
+      });
+      // Simulate the next layout pass: the same elements now have at least
+      // as much room as before, so reported overflow can only shrink.
+      const grownClient = f.sidebarPx + pass1.nextExtraIn * CSS_PX_PER_INCH;
+      const pass2Measurements = f.measurements.map((m) => ({
+        scrollWidthPx: m.scrollWidthPx,
+        clientWidthPx: grownClient,
+      }));
+      const pass2 = computeAutoFitExtra({
+        userSidebarWidthIn: f.userIn,
+        currentExtraIn: pass1.nextExtraIn,
+        measurements: pass2Measurements,
+      });
+      // Second pass should not need to grow further beyond a rounding hair.
+      expect(pass2.nextExtraIn).toBeLessThanOrEqual(pass1.nextExtraIn + 1 / CSS_PX_PER_INCH + 1e-9);
+      expect(pass2.nextExtraIn).toBeGreaterThanOrEqual(pass1.nextExtraIn);
+    }
+  });
+});
