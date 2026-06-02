@@ -374,33 +374,33 @@ export function ResumeDocument({
                 }}
                 style={{
                   margin: 0,
-                  paddingLeft: 12,
+                  paddingLeft: 14,
                   listStyle: "disc",
                   listStylePosition: "outside",
                   textIndent: 0,
                 }}
               >
                 {parseSkills(data.skills).map((s, i) => (
-                  <li key={i} style={{ marginBottom: 2, paddingLeft: 2, fontWeight: 400 }}>
+                  <li key={i} style={{ marginBottom: 5, paddingLeft: 2, fontWeight: 400, lineHeight: 1.45 }}>
                     {s}
                   </li>
                 ))}
               </ul>
             ) : (
               parseSkillGroups(data.skills).map((g, gi) => (
-                <div key={gi} style={{ marginBottom: 6 }}>
-                  {g.heading && <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>}
+                <div key={gi} style={{ marginBottom: 10 }}>
+                  {g.heading && <div style={{ fontWeight: 600, marginBottom: 4 }}>{g.heading}</div>}
                   <ul
                     style={{
                       margin: 0,
-                      paddingLeft: 12,
+                      paddingLeft: 14,
                       listStyle: "disc",
                       listStylePosition: "outside",
                       textIndent: 0,
                     }}
                   >
                     {g.items.map((s, i) => (
-                      <li key={i} style={{ marginBottom: 2, paddingLeft: 2, fontWeight: 400 }}>
+                      <li key={i} style={{ marginBottom: 5, paddingLeft: 2, fontWeight: 400, lineHeight: 1.45 }}>
                         {s}
                       </li>
                     ))}
