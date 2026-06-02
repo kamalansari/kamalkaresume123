@@ -508,7 +508,7 @@ export function ResumeDocument({
         style={{
           background: sidebarBg,
           color: sidebarText,
-          padding: "0.45in 0.32in",
+          padding: "0.55in 0.4in",
           cursor: onSectionClick ? "pointer" : undefined,
           wordBreak: "break-word",
           overflowWrap: "anywhere",
