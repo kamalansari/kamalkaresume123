@@ -303,6 +303,36 @@
   color: currentColor;
 }
 
+/*
+ * Force every skills / experience bullet onto its own line in both the
+ * live preview and the printed PDF. Tailwind's preflight or an inherited
+ * `display: flex` on an ancestor can otherwise cause `<li>`s to flow
+ * inline; and contentEditable lists sometimes lose their block layout
+ * after edits. These rules are the safety net.
+ */
+.print-area ul,
+.print-area ol {
+  display: block !important;
+  column-count: 1 !important;
+  -webkit-column-count: 1 !important;
+  width: 100%;
+}
+.print-area li {
+  display: list-item !important;
+  width: 100%;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+/* Editable experience bullets render as <div> rows inside a
+   contentEditable wrapper — keep them block-level even when the browser
+   collapses whitespace after edits. */
+.print-area [data-preview-edit="experience-bullets"] > div,
+.print-area [data-preview-edit="skills"] > li {
+  display: block;
+  width: 100%;
+  white-space: normal;
+}
+
 .preview-editable {
   outline: 1px dashed transparent;
   outline-offset: 3px;
