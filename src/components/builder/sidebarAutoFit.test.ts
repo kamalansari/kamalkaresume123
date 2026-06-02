@@ -141,19 +141,22 @@ describe("computeAutoFitExtra", () => {
   });
 
   it("picks the worst-clipping element when several are measured", () => {
+    // Use a small baseline so headroom is large enough not to cap growth,
+    // isolating the "biggest overflow wins" behaviour from the MAX clamp.
+    const smallBaseline = 1.8;
     const r = computeAutoFitExtra({
-      userSidebarWidthIn: baseline,
+      userSidebarWidthIn: smallBaseline,
       currentExtraIn: 0,
       measurements: [
         // Section heading: small overflow.
         { scrollWidthPx: 190, clientWidthPx: 180 },
-        // Long applicant name: big overflow — must drive the growth.
-        { scrollWidthPx: 326, clientWidthPx: 180 },
+        // Long applicant name: biggest overflow — must drive the growth.
+        { scrollWidthPx: 260, clientWidthPx: 180 },
         // Email row: medium overflow.
-        { scrollWidthPx: 240, clientWidthPx: 180 },
+        { scrollWidthPx: 220, clientWidthPx: 180 },
       ],
     });
-    const expected = (326 - 180) / CSS_PX_PER_INCH + SIDEBAR_AUTOFIT_PAD_IN;
+    const expected = (260 - 180) / CSS_PX_PER_INCH + SIDEBAR_AUTOFIT_PAD_IN;
     expect(r.nextExtraIn).toBeCloseTo(expected, 5);
   });
 
