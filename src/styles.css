@@ -349,6 +349,9 @@
     drop-shadow(0 18px 40px rgba(15, 23, 42, 0.14));
   border-radius: 6px;
   overflow: visible;
+  /* Allow native pinch-to-zoom on touch devices. */
+  touch-action: pinch-zoom;
+  transform-origin: top left;
 }
 @media print {
   .resume-preview-scale {
@@ -444,27 +447,21 @@ body {
   text-align: right;
 }
 
-@media screen and (max-width: 900px) {
-  .resume-preview-scale {
-    transform: scale(0.55);
-    transform-origin: top left;
-    width: calc(8.5in * 0.55);
-    max-width: none;
-  }
+/*
+ * Fit-to-width preview: a JS ResizeObserver in Builder.tsx sets
+ * --preview-fit-scale on the wrapper to scale the 8.5in document down
+ * to the container width. The wrapper's box-size is reduced by the same
+ * factor so layout doesn't reserve extra empty space.
+ */
+.resume-preview-scale {
+  --preview-fit-scale: 1;
+  transform: scale(var(--preview-fit-scale));
+  width: 8.5in;
+  max-width: none;
 }
-
-@media screen and (max-width: 420px) {
-  .resume-preview-scale {
-    transform: scale(0.44);
-    width: calc(8.5in * 0.44);
-  }
-}
-
-@media screen and (min-width: 901px) {
-  .resume-preview-scale {
-    width: max-content;
-    max-width: none;
-  }
+.resume-preview-fit-wrap {
+  width: 100%;
+  overflow: hidden;
 }
 
 @media print {
