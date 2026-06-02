@@ -354,10 +354,28 @@ body {
 .resume-document {
   contain: none;
   overflow: visible;
+  box-sizing: border-box;
+  max-width: none;
+}
+
+.resume-document *,
+.resume-document *::before,
+.resume-document *::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.resume-document p,
+.resume-document li,
+.resume-document div,
+.resume-document span {
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .resume-layout-grid {
   overflow: visible;
+  width: 100%;
 }
 
 .resume-main {
@@ -382,6 +400,16 @@ body {
 .resume-entry-header {
   break-after: avoid;
   page-break-after: avoid;
+  flex-wrap: wrap;
+}
+
+.resume-entry-header > * {
+  max-width: 100%;
+}
+
+.resume-entry-header > :last-child {
+  white-space: normal !important;
+  text-align: right;
 }
 
 @media screen and (max-width: 900px) {
