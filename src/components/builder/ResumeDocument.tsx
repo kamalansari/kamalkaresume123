@@ -4,6 +4,12 @@ import { FONT_PRESETS, getSidebarSectionIds, type ResumeData, type SectionId } f
 import { parseSkills, parseSkillGroups } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
 import { jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
+import {
+  computeAutoFitExtra,
+  resolveSidebarWidth,
+  SIDEBAR_MAX_IN,
+  type SidebarMeasurement,
+} from "./sidebarAutoFit";
 
 const KeywordContext = createContext<Set<string> | null>(null);
 
@@ -244,20 +250,16 @@ export function ResumeDocument({
   const autoFit = data.sidebarAutoFit !== false;
   const isTwoColVariant =
     variant === "two-column" || variant === "sidebar-right" || variant === "compact-two";
-  // Auto-fit grows the sidebar (never shrinks below the user's setting) when
-  // headings would otherwise overflow. Measured in src/components/builder/
-  // ResumeDocument.tsx via a layout effect on the sidebar DOM node.
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const [autoExtraIn, setAutoExtraIn] = useState(0);
-  // Reset the extra width whenever the user-controlled width changes so we
-  // re-measure from their baseline instead of compounding adjustments.
   useEffect(() => {
     setAutoExtraIn(0);
   }, [userSidebarWidth, data.template, data.fontId, data.fontSize, autoFit]);
-  const safeSidebarWidth = Math.min(
-    Math.max(userSidebarWidth + (autoFit && isTwoColVariant ? autoExtraIn : 0), 1.8),
-    3.4,
-  );
+  const safeSidebarWidth = resolveSidebarWidth({
+    userSidebarWidthIn: userSidebarWidth,
+    autoExtraIn,
+    autoFitActive: autoFit && isTwoColVariant,
+  });
   // Measure sidebar headings each render: if any unbreakable text overflows
   // the sidebar column, request a slightly wider column on the next render.
   // We measure inside an animation frame so layout has settled, including
@@ -270,23 +272,23 @@ export function ResumeDocument({
     const measure = () => {
       const sidebarEl = root.querySelector(".resume-sidebar") as HTMLElement | null;
       if (!sidebarEl) return;
-      // Compare each heading/contact element's intrinsic scrollWidth against
-      // its available width (clientWidth, which excludes padding-overflow).
       const candidates = sidebarEl.querySelectorAll<HTMLElement>(
         "h1, h2, h3, [data-preview-edit='name'], [data-preview-edit^='contact-']",
       );
-      let worstOverflowPx = 0;
-      candidates.forEach((el) => {
-        const overflow = el.scrollWidth - el.clientWidth;
-        if (overflow > worstOverflowPx) worstOverflowPx = overflow;
+      const measurements: SidebarMeasurement[] = [];
+      candidates.forEach((el) =>
+        measurements.push({ scrollWidthPx: el.scrollWidth, clientWidthPx: el.clientWidth }),
+      );
+      setAutoExtraIn((prev) => {
+        const { nextExtraIn, didGrow } = computeAutoFitExtra({
+          userSidebarWidthIn: userSidebarWidth,
+          currentExtraIn: prev,
+          measurements,
+        });
+        return didGrow ? nextExtraIn : prev;
       });
-      if (worstOverflowPx <= 1) return; // within tolerance
-      // Convert overflow (CSS px at 96dpi) to inches with a small safety pad.
-      const neededInches = worstOverflowPx / 96 + 0.08;
-      const headroom = 3.4 - safeSidebarWidth;
-      if (headroom <= 0.02) return; // already at max
-      const delta = Math.min(neededInches, headroom);
-      setAutoExtraIn((prev) => Math.min(prev + delta, 3.4 - userSidebarWidth));
+      // (SIDEBAR_MAX_IN is the absolute ceiling enforced inside the helper.)
+      void SIDEBAR_MAX_IN;
     };
     raf = requestAnimationFrame(measure);
     return () => cancelAnimationFrame(raf);
