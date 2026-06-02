@@ -1039,7 +1039,7 @@ function ExperienceSection({
   return (
     <Section title="Experience" accent={accent} headingFont={headingFont}>
       {data.experience.map((e) => (
-        <div key={e.id} className="resume-entry" style={{ marginBottom: 16 }}>
+        <div key={e.id} className="resume-entry" style={{ marginBottom: 20 }}>
           <div
             className="resume-entry-header"
             style={{
@@ -1049,7 +1049,7 @@ function ExperienceSection({
               alignItems: "baseline",
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: "1.02em" }}>{e.title || "Role"}</div>
+            <div style={{ fontWeight: 600, fontSize: "1.04em", letterSpacing: "0.005em" }}>{e.title || "Role"}</div>
             <div
               style={{
                 color: "#555",
@@ -1071,7 +1071,7 @@ function ExperienceSection({
             </div>
           </div>
           {e.company && (
-            <div style={{ color: "#4a4a4a", marginTop: 2, fontWeight: 500 }}>{e.company}</div>
+            <div style={{ color: "#444", marginTop: 3, fontWeight: 500 }}>{e.company}</div>
           )}
           {ed ? (
             <div
@@ -1082,11 +1082,12 @@ function ExperienceSection({
               data-preview-exp-id={e.id}
               className="preview-editable"
               style={{
-                marginTop: 8,
+                marginTop: 10,
                 marginLeft: 0,
-                paddingLeft: 14,
+                paddingLeft: 16,
                 whiteSpace: "pre-wrap",
                 textAlign: "left",
+                lineHeight: 1.5,
               }}
               onClick={(ev) => ev.stopPropagation()}
               onBlur={(ev) =>
@@ -1100,7 +1101,7 @@ function ExperienceSection({
                 .split("\n")
                 .filter(Boolean)
                 .map((b, i) => (
-                  <div key={i} style={{ marginBottom: 4 }}>
+                  <div key={i} style={{ marginBottom: 6 }}>
                     • {b}
                   </div>
                 ))}
@@ -1108,9 +1109,9 @@ function ExperienceSection({
           ) : (
             <ul
               style={{
-                marginTop: 8,
+                marginTop: 10,
                 marginLeft: 0,
-                paddingLeft: 14,
+                paddingLeft: 16,
                 listStyle: "disc",
                 listStylePosition: "outside",
                 textAlign: "left",
@@ -1120,7 +1121,7 @@ function ExperienceSection({
                 .split("\n")
                 .filter(Boolean)
                 .map((b, i) => (
-                  <li key={i} style={{ paddingLeft: 0, marginBottom: 6 }}>
+                  <li key={i} style={{ paddingLeft: 0, marginBottom: 7, lineHeight: 1.5 }}>
                     <InlineText text={b} />
                   </li>
                 ))}
