@@ -502,7 +502,12 @@ export function ResumeDocument({
     const main = (
       <main
         className="resume-main"
-        style={{ padding: "0.4in 0.35in 0.4in 0.28in", minWidth: 0, overflow: "visible", overflowWrap: "anywhere" }}
+        style={{
+          padding: "0.4in 0.35in 0.4in 0.28in",
+          minWidth: 0,
+          overflow: "visible",
+          overflowWrap: "anywhere",
+        }}
       >
         {data.sectionOrder
           .filter((id) => !sidebarSectionIds.includes(id))
