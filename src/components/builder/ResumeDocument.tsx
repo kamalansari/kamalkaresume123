@@ -239,6 +239,7 @@ export function ResumeDocument({
       </section>
     ));
 
+  const safePrintScale = Math.min(Math.max(data.printScale ?? 1, 0.75), 1.15);
   const base = {
     width: "8.5in",
     minHeight: "11in",
@@ -255,7 +256,9 @@ export function ResumeDocument({
     msHyphens: "auto",
     textJustify: "inter-word",
     ["--rd-section-gap" as string]: `${sectionGap}px`,
-    ["--print-scale" as string]: `${data.printScale ?? 1}`,
+    ["--print-scale" as string]: `${safePrintScale}`,
+    ["--print-layout-width" as string]: `${8.5 / safePrintScale}in`,
+    ["--print-sidebar-width" as string]: `${2.55 / safePrintScale}in`,
     // NOTE: keep overflow visible — `overflow:hidden` prevents browsers from
     // paginating content past page 1 when printing/exporting to PDF, which
     // silently clips long resumes.
@@ -499,7 +502,7 @@ export function ResumeDocument({
     const main = (
       <main
         className="resume-main"
-        style={{ padding: "0.4in 0.35in 0.4in 0.28in", minWidth: 0, overflow: "visible" }}
+        style={{ padding: "0.4in 0.35in 0.4in 0.28in", minWidth: 0, overflow: "visible", overflowWrap: "anywhere" }}
       >
         {data.sectionOrder
           .filter((id) => !sidebarSectionIds.includes(id))
@@ -520,6 +523,7 @@ export function ResumeDocument({
               gridTemplateColumns: sidebarRight ? "1fr 2.55in" : "2.55in 1fr",
               minHeight: "11in",
               alignItems: "stretch",
+              width: "100%",
             }}
           >
             {sidebarRight ? main : sidebar}
