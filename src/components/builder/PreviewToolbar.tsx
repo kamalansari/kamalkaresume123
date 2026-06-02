@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2, Columns2 } from "lucide-react";
+import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2, Columns2, Wand2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,11 +46,23 @@ export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras,
   };
   const scale = data.printScale ?? 1;
   const sidebarWidth = data.sidebarWidth ?? 2.55;
+  const autoFit = data.sidebarAutoFit !== false;
   const isTwoCol = TWO_COL_TEMPLATES.has(data.template as string);
   return (
     <div className="no-print flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-background/80 backdrop-blur p-1.5 sticky top-16 z-10 mb-3 shadow-[var(--shadow-soft)]">
       {extras && <div className="flex items-center gap-1.5">{extras}</div>}
       <div className="ml-auto flex items-center gap-1.5">
+        {onUpdate && isTwoCol && (
+          <Button
+            size="sm"
+            variant={autoFit ? "default" : "outline"}
+            onClick={() => onUpdate({ sidebarAutoFit: !autoFit })}
+            title="Auto-fit: slightly widens the sidebar when a heading would clip"
+          >
+            <Wand2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Auto-fit {autoFit ? "on" : "off"}</span>
+          </Button>
+        )}
         {onUpdate && isTwoCol && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
