@@ -431,7 +431,7 @@ body {
 @media screen and (min-width: 901px) {
   .resume-preview-scale {
     width: max-content;
-    max-width: 100%;
+    max-width: none;
   }
 }
 
