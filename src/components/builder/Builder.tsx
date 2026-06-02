@@ -50,6 +50,51 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
+/**
+ * Wraps the resume preview and scales the 8.5in document down to fit the
+ * container width on smaller viewports. The wrapper itself reports the
+ * scaled-down height so the surrounding layout doesn't reserve extra space.
+ */
+function PreviewFitWrap({ children }: { children: React.ReactNode }) {
+  const outerRef = useRef<HTMLDivElement | null>(null);
+  const innerRef = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState(1);
+  const [innerHeight, setInnerHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
+    const PAGE_PX = 8.5 * 96; // 8.5in at 96dpi
+    const update = () => {
+      const w = outer.clientWidth;
+      if (!w) return;
+      // Never upscale beyond 1; allow a slight zoom-out only when needed.
+      const next = Math.min(1, w / PAGE_PX);
+      setScale(next);
+      // Inner is rendered at 8.5in fixed; its natural height is scrollHeight.
+      setInnerHeight(inner.scrollHeight * next);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(outer);
+    ro.observe(inner);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={outerRef} className="resume-preview-fit-wrap" style={{ height: innerHeight ?? undefined }}>
+      <div
+        ref={innerRef}
+        className="resume-preview-scale"
+        style={{ ["--preview-fit-scale" as string]: scale }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function ensureSection(order: SectionId[], id: SectionId): SectionId[] {
   return order.includes(id) ? order : [...order, id];
 }
@@ -1853,7 +1898,7 @@ export function Builder() {
             </Sheet>
           </div>
           <div className="overflow-auto rounded-xl">
-            <div className="resume-preview-scale">
+            <PreviewFitWrap>
               <ResumeDocument
                 data={data}
                 onSectionClick={inlineEdit ? undefined : scrollToEditor}
@@ -1866,7 +1911,7 @@ export function Builder() {
                   rewritingKey: rewriting ? "summary" : rewritingKey,
                 }}
               />
-            </div>
+            </PreviewFitWrap>
           </div>
         </div>
         {inlineEdit && <SelectionFormatToolbar data={data} />}

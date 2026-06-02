@@ -24,7 +24,7 @@ function renderWithKeywords(text: string, set: Set<string>): React.ReactNode {
     if (isJdKeyword(m[0], set)) {
       if (m.index > last) parts.push(text.slice(last, m.index));
       parts.push(
-        <strong key={m.index} style={{ fontWeight: 700 }}>
+        <strong key={m.index} style={{ fontWeight: 600 }}>
           {m[0]}
         </strong>,
       );
@@ -246,7 +246,7 @@ export function ResumeDocument({
     ));
 
   const safePrintScale = Math.min(Math.max(data.printScale ?? 1, 0.75), 1.15);
-  const userSidebarWidth = Math.min(Math.max(data.sidebarWidth ?? 2.55, 1.8), 3.4);
+  const userSidebarWidth = Math.min(Math.max(data.sidebarWidth ?? 2.75, 2.1), 3.4);
   const autoFit = data.sidebarAutoFit !== false;
   const isTwoColVariant =
     variant === "two-column" || variant === "sidebar-right" || variant === "compact-two";
@@ -374,33 +374,33 @@ export function ResumeDocument({
                 }}
                 style={{
                   margin: 0,
-                  paddingLeft: 12,
+                  paddingLeft: 14,
                   listStyle: "disc",
                   listStylePosition: "outside",
                   textIndent: 0,
                 }}
               >
                 {parseSkills(data.skills).map((s, i) => (
-                  <li key={i} style={{ marginBottom: 2, paddingLeft: 2, fontWeight: 400 }}>
+                  <li key={i} style={{ marginBottom: 5, paddingLeft: 2, fontWeight: 400, lineHeight: 1.45 }}>
                     {s}
                   </li>
                 ))}
               </ul>
             ) : (
               parseSkillGroups(data.skills).map((g, gi) => (
-                <div key={gi} style={{ marginBottom: 6 }}>
-                  {g.heading && <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>}
+                <div key={gi} style={{ marginBottom: 10 }}>
+                  {g.heading && <div style={{ fontWeight: 600, marginBottom: 4 }}>{g.heading}</div>}
                   <ul
                     style={{
                       margin: 0,
-                      paddingLeft: 12,
+                      paddingLeft: 14,
                       listStyle: "disc",
                       listStylePosition: "outside",
                       textIndent: 0,
                     }}
                   >
                     {g.items.map((s, i) => (
-                      <li key={i} style={{ marginBottom: 2, paddingLeft: 2, fontWeight: 400 }}>
+                      <li key={i} style={{ marginBottom: 5, paddingLeft: 2, fontWeight: 400, lineHeight: 1.45 }}>
                         {s}
                       </li>
                     ))}
@@ -417,14 +417,14 @@ export function ResumeDocument({
             <ul
               style={{
                 margin: 0,
-                paddingLeft: 12,
+                paddingLeft: 14,
                 listStyle: "disc",
                 listStylePosition: "outside",
                 textIndent: 0,
               }}
             >
               {data.languages.map((l) => (
-                <li key={l.id} style={{ marginBottom: 2, paddingLeft: 2 }}>
+                <li key={l.id} style={{ marginBottom: 5, paddingLeft: 2, lineHeight: 1.45 }}>
                   {l.name}
                   {l.level ? ` (${l.level})` : ""}
                 </li>
@@ -508,7 +508,7 @@ export function ResumeDocument({
         style={{
           background: sidebarBg,
           color: sidebarText,
-          padding: "0.45in 0.32in",
+          padding: "0.55in 0.4in",
           cursor: onSectionClick ? "pointer" : undefined,
           wordBreak: "break-word",
           overflowWrap: "anywhere",
@@ -573,7 +573,7 @@ export function ResumeDocument({
       <main
         className="resume-main"
         style={{
-          padding: "0.4in 0.35in 0.4in 0.28in",
+          padding: "0.5in 0.45in 0.5in 0.4in",
           minWidth: 0,
           overflow: "visible",
           overflowWrap: "anywhere",
@@ -885,11 +885,11 @@ function SidebarContact({
             style={{
               display: "flex",
               alignItems: "flex-start",
-              gap: 7,
-              marginBottom: 6,
+              gap: 8,
+              marginBottom: 8,
               opacity: dark ? 0.95 : 1,
               minWidth: 0,
-              lineHeight: 1.35,
+              lineHeight: 1.45,
             }}
           >
             <span style={{ display: "inline-flex", flexShrink: 0, marginTop: 3 }}>{it.icon}</span>
@@ -928,15 +928,15 @@ function SidebarBlock({
   dark: boolean;
 }) {
   return (
-    <div style={{ marginBottom: 14, fontSize: "9.5pt" }}>
+    <div style={{ marginBottom: 16, fontSize: "10pt", lineHeight: 1.5 }}>
       <div
         style={{
           fontFamily: headingFont,
-          fontSize: "9pt",
+          fontSize: "9.5pt",
           fontWeight: 700,
-          letterSpacing: "0.16em",
+          letterSpacing: "0.14em",
           textTransform: "uppercase",
-          marginBottom: 5,
+          marginBottom: 8,
           opacity: dark ? 0.95 : 0.7,
         }}
       >
@@ -967,14 +967,14 @@ function Section({
       <h2
         style={{
           fontFamily: headingFont,
-          fontSize: "11pt",
-          fontWeight: 700,
-          letterSpacing: "0.22em",
+          fontSize: "10.5pt",
+          fontWeight: 600,
+          letterSpacing: "0.18em",
           color: accent,
           textTransform: "uppercase",
-          borderBottom: `1px solid ${accent}55`,
-          paddingBottom: 6,
-          marginBottom: 12,
+          borderBottom: `1px solid ${accent}40`,
+          paddingBottom: 5,
+          marginBottom: 10,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -1039,7 +1039,7 @@ function ExperienceSection({
   return (
     <Section title="Experience" accent={accent} headingFont={headingFont}>
       {data.experience.map((e) => (
-        <div key={e.id} className="resume-entry" style={{ marginBottom: 16 }}>
+        <div key={e.id} className="resume-entry" style={{ marginBottom: 20 }}>
           <div
             className="resume-entry-header"
             style={{
@@ -1049,7 +1049,7 @@ function ExperienceSection({
               alignItems: "baseline",
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: "1.02em" }}>{e.title || "Role"}</div>
+            <div style={{ fontWeight: 600, fontSize: "1.04em", letterSpacing: "0.005em" }}>{e.title || "Role"}</div>
             <div
               style={{
                 color: "#555",
@@ -1071,7 +1071,7 @@ function ExperienceSection({
             </div>
           </div>
           {e.company && (
-            <div style={{ color: "#4a4a4a", marginTop: 2, fontWeight: 500 }}>{e.company}</div>
+            <div style={{ color: "#444", marginTop: 3, fontWeight: 500 }}>{e.company}</div>
           )}
           {ed ? (
             <div
@@ -1082,11 +1082,12 @@ function ExperienceSection({
               data-preview-exp-id={e.id}
               className="preview-editable"
               style={{
-                marginTop: 8,
+                marginTop: 10,
                 marginLeft: 0,
-                paddingLeft: 14,
+                paddingLeft: 16,
                 whiteSpace: "pre-wrap",
                 textAlign: "left",
+                lineHeight: 1.5,
               }}
               onClick={(ev) => ev.stopPropagation()}
               onBlur={(ev) =>
@@ -1100,7 +1101,7 @@ function ExperienceSection({
                 .split("\n")
                 .filter(Boolean)
                 .map((b, i) => (
-                  <div key={i} style={{ marginBottom: 4 }}>
+                  <div key={i} style={{ marginBottom: 6 }}>
                     • {b}
                   </div>
                 ))}
@@ -1108,9 +1109,9 @@ function ExperienceSection({
           ) : (
             <ul
               style={{
-                marginTop: 8,
+                marginTop: 10,
                 marginLeft: 0,
-                paddingLeft: 14,
+                paddingLeft: 16,
                 listStyle: "disc",
                 listStylePosition: "outside",
                 textAlign: "left",
@@ -1120,7 +1121,7 @@ function ExperienceSection({
                 .split("\n")
                 .filter(Boolean)
                 .map((b, i) => (
-                  <li key={i} style={{ paddingLeft: 0, marginBottom: 6 }}>
+                  <li key={i} style={{ paddingLeft: 0, marginBottom: 7, lineHeight: 1.5 }}>
                     <InlineText text={b} />
                   </li>
                 ))}
