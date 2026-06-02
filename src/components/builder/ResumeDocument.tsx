@@ -573,7 +573,7 @@ export function ResumeDocument({
       <main
         className="resume-main"
         style={{
-          padding: "0.4in 0.35in 0.4in 0.28in",
+          padding: "0.5in 0.45in 0.5in 0.4in",
           minWidth: 0,
           overflow: "visible",
           overflowWrap: "anywhere",
