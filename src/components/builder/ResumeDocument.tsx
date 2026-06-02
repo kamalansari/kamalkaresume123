@@ -1209,7 +1209,7 @@ function SkillsSection({
               .split("\n")
               .map((s) => s.replace(/^[•\-\u2022]\s*/, "").trim())
               .filter(Boolean);
-            ed.onUpdate({ skills: lines.join(", ") });
+            ed.onUpdate({ skills: lines.join("\n") });
           }}
           style={listStyle}
         >
