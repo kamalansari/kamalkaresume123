@@ -24,7 +24,7 @@ function renderWithKeywords(text: string, set: Set<string>): React.ReactNode {
     if (isJdKeyword(m[0], set)) {
       if (m.index > last) parts.push(text.slice(last, m.index));
       parts.push(
-        <strong key={m.index} style={{ fontWeight: 700 }}>
+        <strong key={m.index} style={{ fontWeight: 600 }}>
           {m[0]}
         </strong>,
       );
@@ -246,7 +246,7 @@ export function ResumeDocument({
     ));
 
   const safePrintScale = Math.min(Math.max(data.printScale ?? 1, 0.75), 1.15);
-  const userSidebarWidth = Math.min(Math.max(data.sidebarWidth ?? 2.55, 1.8), 3.4);
+  const userSidebarWidth = Math.min(Math.max(data.sidebarWidth ?? 2.75, 2.1), 3.4);
   const autoFit = data.sidebarAutoFit !== false;
   const isTwoColVariant =
     variant === "two-column" || variant === "sidebar-right" || variant === "compact-two";
