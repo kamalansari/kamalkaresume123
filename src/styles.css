@@ -197,7 +197,7 @@
     position: static !important;
     left: 0;
     top: 0;
-    width: 8.5in !important;
+    width: var(--print-layout-width, 8.5in) !important;
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -207,7 +207,8 @@
   }
   .resume-preview-scale {
     transform: none !important;
-    width: 8.5in !important;
+    width: var(--print-layout-width, 8.5in) !important;
+    max-width: none !important;
     overflow: visible !important;
   }
   .no-print {
@@ -230,20 +231,23 @@
     min-height: auto !important;
     align-items: initial !important;
     grid-template-columns: none !important;
-    padding-left: 2.55in !important;
+    width: var(--print-layout-width, 8.5in) !important;
+    padding-left: var(--print-sidebar-width, 2.55in) !important;
+    box-sizing: border-box !important;
   }
   .resume-layout-grid.resume-layout-sidebar-right {
     padding-left: 0 !important;
-    padding-right: 2.55in !important;
+    padding-right: var(--print-sidebar-width, 2.55in) !important;
   }
   .resume-layout-grid > aside {
     position: absolute !important;
     top: 0 !important;
     bottom: 0 !important;
     left: 0 !important;
-    width: 2.55in !important;
+    width: var(--print-sidebar-width, 2.55in) !important;
     min-height: 100% !important;
     height: auto !important;
+    box-sizing: border-box !important;
   }
   .resume-layout-grid.resume-layout-sidebar-right > aside {
     left: auto !important;
