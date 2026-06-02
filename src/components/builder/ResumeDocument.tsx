@@ -885,11 +885,11 @@ function SidebarContact({
             style={{
               display: "flex",
               alignItems: "flex-start",
-              gap: 7,
-              marginBottom: 6,
+              gap: 8,
+              marginBottom: 8,
               opacity: dark ? 0.95 : 1,
               minWidth: 0,
-              lineHeight: 1.35,
+              lineHeight: 1.45,
             }}
           >
             <span style={{ display: "inline-flex", flexShrink: 0, marginTop: 3 }}>{it.icon}</span>
