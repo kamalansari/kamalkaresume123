@@ -258,6 +258,53 @@ export function ResumeDocument({
     Math.max(userSidebarWidth + (autoFit && isTwoColVariant ? autoExtraIn : 0), 1.8),
     3.4,
   );
+  // Measure sidebar headings each render: if any unbreakable text overflows
+  // the sidebar column, request a slightly wider column on the next render.
+  // We measure inside an animation frame so layout has settled, including
+  // any CSS transform scaling applied to the preview wrapper.
+  useLayoutEffect(() => {
+    if (!autoFit || !isTwoColVariant) return;
+    const root = layoutRef.current;
+    if (!root) return;
+    let raf = 0;
+    const measure = () => {
+      const sidebarEl = root.querySelector(".resume-sidebar") as HTMLElement | null;
+      if (!sidebarEl) return;
+      // Compare each heading/contact element's intrinsic scrollWidth against
+      // its available width (clientWidth, which excludes padding-overflow).
+      const candidates = sidebarEl.querySelectorAll<HTMLElement>(
+        "h1, h2, h3, [data-preview-edit='name'], [data-preview-edit^='contact-']",
+      );
+      let worstOverflowPx = 0;
+      candidates.forEach((el) => {
+        const overflow = el.scrollWidth - el.clientWidth;
+        if (overflow > worstOverflowPx) worstOverflowPx = overflow;
+      });
+      if (worstOverflowPx <= 1) return; // within tolerance
+      // Convert overflow (CSS px at 96dpi) to inches with a small safety pad.
+      const neededInches = worstOverflowPx / 96 + 0.08;
+      const headroom = 3.4 - safeSidebarWidth;
+      if (headroom <= 0.02) return; // already at max
+      const delta = Math.min(neededInches, headroom);
+      setAutoExtraIn((prev) => Math.min(prev + delta, 3.4 - userSidebarWidth));
+    };
+    raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
+  }, [
+    autoFit,
+    isTwoColVariant,
+    safeSidebarWidth,
+    userSidebarWidth,
+    data.name,
+    data.headline,
+    data.email,
+    data.phone,
+    data.location,
+    data.links,
+    data.fontId,
+    data.fontSize,
+    data.template,
+  ]);
   const base = {
     width: "8.5in",
     minHeight: "11in",
