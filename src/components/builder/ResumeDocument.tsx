@@ -542,6 +542,7 @@ export function ResumeDocument({
         >
           <div
             className={`grid resume-layout-grid${sidebarRight ? " resume-layout-sidebar-right" : ""}`}
+            ref={layoutRef}
             style={{
               gridTemplateColumns: sidebarRight
                 ? `1fr ${safeSidebarWidth}in`
