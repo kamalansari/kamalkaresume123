@@ -1,7 +1,7 @@
 import { authFetch } from "@/lib/authFetch";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { FlaskConical, Sparkles, Loader2, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
+import { FlaskConical, Sparkles, Loader2, CheckCircle2, AlertCircle, ArrowRight, Printer, FileType, Download } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { resumeStore, newId } from "@/components/builder/resumeStore";
 import { defaultResume, type ResumeData, type Experience } from "@/components/builder/types";
 import { computeScore } from "@/components/builder/atsScore";
+import { ResumeDocument } from "@/components/builder/ResumeDocument";
+import { exportDocx } from "@/components/builder/exportDocx";
 
 export const Route = createFileRoute("/resume-lab")({
   head: () => ({
@@ -47,6 +49,7 @@ function ResumeLabPage() {
   const [result, setResult] = useState<AlignResult | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [tailoredName, setTailoredName] = useState("");
+  const [docxBusy, setDocxBusy] = useState(false);
   const hasPrimary = typeof window !== "undefined" && !!resumeStore.getPrimaryId();
 
   useEffect(() => {
@@ -69,6 +72,39 @@ function ResumeLabPage() {
     };
     return computeScore(merged).score;
   }, [resume, result, jd]);
+
+  // The exact resume that the preview renders AND that downloads (PDF/DOCX)
+  // use, so "what you see is what you get".
+  const mergedResume: ResumeData = useMemo(() => {
+    if (!result) return { ...resume, jobDescription: jd || resume.jobDescription };
+    return {
+      ...resume,
+      headline: result.headline ?? resume.headline,
+      summary: result.summary ?? resume.summary,
+      skills: result.skills ?? resume.skills,
+      experience: mergeExperience(resume.experience, result.experience),
+      jobDescription: jd || resume.jobDescription,
+    };
+  }, [resume, result, jd]);
+
+  const downloadPdf = () => {
+    // Print CSS hides .no-print and renders .print-area only — the
+    // ResumeDocument below is wrapped in .print-area, so the PDF matches
+    // the preview pixel-for-pixel.
+    requestAnimationFrame(() => window.print());
+  };
+
+  const downloadDocx = async () => {
+    setDocxBusy(true);
+    try {
+      await exportDocx(mergedResume);
+      toast.success("DOCX downloaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message.slice(0, 120) : "Export failed");
+    } finally {
+      setDocxBusy(false);
+    }
+  };
 
   const align = async () => {
     if (!jd.trim()) return toast.error("Paste a job description first");
@@ -123,7 +159,7 @@ function ResumeLabPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
-      <header className="flex items-center gap-3">
+      <header className="no-print flex items-center gap-3">
         <FlaskConical className="h-5 w-5 text-primary" />
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Resume Lab</h1>
@@ -131,7 +167,7 @@ function ResumeLabPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="no-print grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl border border-border bg-card p-5">
           <Label>Target job description</Label>
           <Textarea rows={14} value={jd} onChange={e => setJd(e.target.value)} placeholder="Paste the full JD here..." className="mt-2 font-mono text-xs" />
@@ -199,6 +235,35 @@ function ResumeLabPage() {
           )}
         </div>
       </div>
+
+      {/* Live resume preview — this is exactly what the PDF/DOCX downloads
+          will produce. Wrapped in `.print-area` via ResumeDocument itself. */}
+      <section className="space-y-3">
+        <div className="no-print flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Resume preview</h2>
+            <p className="text-xs text-muted-foreground">
+              {result ? "Showing the JD-tailored rewrite. Downloads match this preview exactly." : "Showing your current resume. Align to JD above to tailor it."}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={downloadPdf} title="Download as PDF">
+              <Printer className="h-4 w-4" /> PDF
+            </Button>
+            <Button size="sm" variant="outline" onClick={downloadDocx} disabled={docxBusy} title="Download as DOCX">
+              {docxBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileType className="h-4 w-4" />} DOCX
+            </Button>
+            {result && (
+              <Button size="sm" onClick={() => setConfirmOpen(true)} title="Save as a new resume in the builder">
+                <Download className="h-4 w-4" /> Save to builder
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-muted/30 p-4 overflow-auto">
+          <ResumeDocument data={mergedResume} />
+        </div>
+      </section>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
