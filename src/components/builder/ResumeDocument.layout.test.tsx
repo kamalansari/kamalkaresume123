@@ -23,11 +23,11 @@ function renderTwoCol(overrides: Partial<typeof defaultResume>) {
 }
 
 describe("ResumeDocument two-column layout", () => {
-  it("uses the default sidebar width (2.55in) when none is set", () => {
+  it("uses the default sidebar width (2.75in) when none is set", () => {
     const { container } = renderTwoCol({});
     const grid = container.querySelector(".resume-layout-grid") as HTMLElement;
     expect(grid).toBeTruthy();
-    expect(grid.style.gridTemplateColumns).toBe("2.55in 1fr");
+    expect(grid.style.gridTemplateColumns).toBe("2.75in 1fr");
   });
 
   it("passes the user-chosen sidebar width into the grid and print CSS var", () => {
@@ -63,6 +63,6 @@ describe("ResumeDocument two-column layout", () => {
   it("clamps a sidebar width below the min into the rendered grid", () => {
     const { container } = renderTwoCol({ sidebarWidth: 0.5, sidebarAutoFit: false });
     const grid = container.querySelector(".resume-layout-grid") as HTMLElement;
-    expect(grid.style.gridTemplateColumns).toBe("1.8in 1fr");
+    expect(grid.style.gridTemplateColumns).toBe("2.1in 1fr");
   });
 });
