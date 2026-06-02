@@ -367,7 +367,10 @@ export function ResumeDocument({
                     .split("\n")
                     .map((s) => s.replace(/^[•\-\u2022]\s*/, "").trim())
                     .filter(Boolean);
-                  ed.onUpdate({ skills: lines.join(", ") });
+                  // Persist with newlines so each skill stays on its own
+                  // line when re-rendered (parseSkills already splits on
+                  // commas AND newlines, so existing data keeps working).
+                  ed.onUpdate({ skills: lines.join("\n") });
                 }}
                 style={{
                   margin: 0,
