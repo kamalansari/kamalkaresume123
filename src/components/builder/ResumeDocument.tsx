@@ -417,14 +417,14 @@ export function ResumeDocument({
             <ul
               style={{
                 margin: 0,
-                paddingLeft: 12,
+                paddingLeft: 14,
                 listStyle: "disc",
                 listStylePosition: "outside",
                 textIndent: 0,
               }}
             >
               {data.languages.map((l) => (
-                <li key={l.id} style={{ marginBottom: 2, paddingLeft: 2 }}>
+                <li key={l.id} style={{ marginBottom: 5, paddingLeft: 2, lineHeight: 1.45 }}>
                   {l.name}
                   {l.level ? ` (${l.level})` : ""}
                 </li>
