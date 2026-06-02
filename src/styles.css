@@ -197,7 +197,7 @@
     position: static !important;
     left: 0;
     top: 0;
-    width: 8.5in !important;
+    width: var(--print-layout-width, 8.5in) !important;
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -207,7 +207,8 @@
   }
   .resume-preview-scale {
     transform: none !important;
-    width: 8.5in !important;
+    width: var(--print-layout-width, 8.5in) !important;
+    max-width: none !important;
     overflow: visible !important;
   }
   .no-print {
@@ -225,34 +226,39 @@
     page-break-inside: auto !important;
   }
   .resume-layout-grid {
-    display: block !important;
-    position: relative !important;
+    display: table !important;
+    table-layout: fixed !important;
+    position: static !important;
     min-height: auto !important;
     align-items: initial !important;
     grid-template-columns: none !important;
-    padding-left: 2.55in !important;
+    width: var(--print-layout-width, 8.5in) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
   }
   .resume-layout-grid.resume-layout-sidebar-right {
     padding-left: 0 !important;
-    padding-right: 2.55in !important;
+    padding-right: 0 !important;
   }
   .resume-layout-grid > aside {
-    position: absolute !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    width: 2.55in !important;
+    display: table-cell !important;
+    position: static !important;
+    vertical-align: top !important;
+    width: var(--print-sidebar-width, 2.55in) !important;
     min-height: 100% !important;
     height: auto !important;
+    box-sizing: border-box !important;
   }
   .resume-layout-grid.resume-layout-sidebar-right > aside {
     left: auto !important;
-    right: 0 !important;
+    right: auto !important;
   }
   .resume-layout-grid > main {
-    display: block !important;
+    display: table-cell !important;
+    vertical-align: top !important;
     min-height: auto !important;
-    width: auto !important;
+    width: calc(var(--print-layout-width, 8.5in) - var(--print-sidebar-width, 2.55in)) !important;
   }
   .resume-entry-header,
   .print-area h1,
@@ -350,10 +356,28 @@ body {
 .resume-document {
   contain: none;
   overflow: visible;
+  box-sizing: border-box;
+  max-width: none;
+}
+
+.resume-document *,
+.resume-document *::before,
+.resume-document *::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.resume-document p,
+.resume-document li,
+.resume-document div,
+.resume-document span {
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .resume-layout-grid {
   overflow: visible;
+  width: 100%;
 }
 
 .resume-main {
@@ -378,6 +402,16 @@ body {
 .resume-entry-header {
   break-after: avoid;
   page-break-after: avoid;
+  flex-wrap: wrap;
+}
+
+.resume-entry-header > * {
+  max-width: 100%;
+}
+
+.resume-entry-header > :last-child {
+  white-space: normal !important;
+  text-align: right;
 }
 
 @media screen and (max-width: 900px) {
@@ -399,7 +433,7 @@ body {
 @media screen and (min-width: 901px) {
   .resume-preview-scale {
     width: max-content;
-    max-width: 100%;
+    max-width: none;
   }
 }
 
