@@ -1853,7 +1853,7 @@ export function Builder() {
             </Sheet>
           </div>
           <div className="overflow-auto rounded-xl">
-            <div className="resume-preview-scale">
+            <PreviewFitWrap>
               <ResumeDocument
                 data={data}
                 onSectionClick={inlineEdit ? undefined : scrollToEditor}
@@ -1866,7 +1866,7 @@ export function Builder() {
                   rewritingKey: rewriting ? "summary" : rewritingKey,
                 }}
               />
-            </div>
+            </PreviewFitWrap>
           </div>
         </div>
         {inlineEdit && <SelectionFormatToolbar data={data} />}
