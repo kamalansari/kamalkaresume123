@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Mail, Phone, MapPin, Link as LinkIcon, Sparkles, Loader2 } from "lucide-react";
 import { FONT_PRESETS, getSidebarSectionIds, type ResumeData, type SectionId } from "./types";
 import { parseSkills, parseSkillGroups } from "@/lib/parseSkills";
@@ -240,7 +240,24 @@ export function ResumeDocument({
     ));
 
   const safePrintScale = Math.min(Math.max(data.printScale ?? 1, 0.75), 1.15);
-  const safeSidebarWidth = Math.min(Math.max(data.sidebarWidth ?? 2.55, 1.8), 3.4);
+  const userSidebarWidth = Math.min(Math.max(data.sidebarWidth ?? 2.55, 1.8), 3.4);
+  const autoFit = data.sidebarAutoFit !== false;
+  const isTwoColVariant =
+    variant === "two-column" || variant === "sidebar-right" || variant === "compact-two";
+  // Auto-fit grows the sidebar (never shrinks below the user's setting) when
+  // headings would otherwise overflow. Measured in src/components/builder/
+  // ResumeDocument.tsx via a layout effect on the sidebar DOM node.
+  const layoutRef = useRef<HTMLDivElement | null>(null);
+  const [autoExtraIn, setAutoExtraIn] = useState(0);
+  // Reset the extra width whenever the user-controlled width changes so we
+  // re-measure from their baseline instead of compounding adjustments.
+  useEffect(() => {
+    setAutoExtraIn(0);
+  }, [userSidebarWidth, data.template, data.fontId, data.fontSize, autoFit]);
+  const safeSidebarWidth = Math.min(
+    Math.max(userSidebarWidth + (autoFit && isTwoColVariant ? autoExtraIn : 0), 1.8),
+    3.4,
+  );
   const base = {
     width: "8.5in",
     minHeight: "11in",
