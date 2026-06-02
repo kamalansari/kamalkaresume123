@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2 } from "lucide-react";
+import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2, Columns2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +22,16 @@ type Props = {
 };
 
 const SCALE_OPTIONS = [0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15];
+const SIDEBAR_WIDTH_OPTIONS = [1.9, 2.1, 2.3, 2.55, 2.8, 3.0, 3.3];
+const TWO_COL_TEMPLATES = new Set([
+  "two-column",
+  "sidebar-right",
+  "compact-two",
+  "fresher",
+  "contemporary",
+  "iconic",
+  "creative",
+]);
 
 export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras, onUpdate }: Props) {
   const share = async () => {
@@ -35,10 +45,38 @@ export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras,
     }
   };
   const scale = data.printScale ?? 1;
+  const sidebarWidth = data.sidebarWidth ?? 2.55;
+  const isTwoCol = TWO_COL_TEMPLATES.has(data.template as string);
   return (
     <div className="no-print flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-background/80 backdrop-blur p-1.5 sticky top-16 z-10 mb-3 shadow-[var(--shadow-soft)]">
       {extras && <div className="flex items-center gap-1.5">{extras}</div>}
       <div className="ml-auto flex items-center gap-1.5">
+        {onUpdate && isTwoCol && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                title="Sidebar column width — widen to prevent clipped headings"
+              >
+                <Columns2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Sidebar {sidebarWidth.toFixed(2)}in</span>
+                <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {SIDEBAR_WIDTH_OPTIONS.map((w) => (
+                <DropdownMenuItem
+                  key={w}
+                  onClick={() => onUpdate({ sidebarWidth: w })}
+                  className={Math.abs(w - sidebarWidth) < 0.01 ? "font-semibold" : ""}
+                >
+                  {w.toFixed(2)}in {Math.abs(w - 2.55) < 0.01 ? "· default" : ""}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         {onUpdate && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

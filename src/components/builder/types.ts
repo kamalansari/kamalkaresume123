@@ -158,6 +158,11 @@ export type ResumeData = {
   // Range typically 0.85–1.15. Lets users tighten/expand the printed page
   // without changing on-screen layout.
   printScale?: number;
+  // Width (in inches) of the sidebar column for two-column / sidebar layouts.
+  // Lets users widen the sidebar so long headings (e.g. long names, multi-word
+  // skill labels) don't get clipped in the preview or exported PDF.
+  // Default 2.55in. Range typically 1.8–3.4in.
+  sidebarWidth?: number;
 };
 
 export const defaultResume: ResumeData = {
