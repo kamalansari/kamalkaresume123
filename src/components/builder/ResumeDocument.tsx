@@ -928,15 +928,15 @@ function SidebarBlock({
   dark: boolean;
 }) {
   return (
-    <div style={{ marginBottom: 14, fontSize: "9.5pt" }}>
+    <div style={{ marginBottom: 16, fontSize: "10pt", lineHeight: 1.5 }}>
       <div
         style={{
           fontFamily: headingFont,
-          fontSize: "9pt",
+          fontSize: "9.5pt",
           fontWeight: 700,
-          letterSpacing: "0.16em",
+          letterSpacing: "0.14em",
           textTransform: "uppercase",
-          marginBottom: 5,
+          marginBottom: 8,
           opacity: dark ? 0.95 : 0.7,
         }}
       >
