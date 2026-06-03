@@ -1182,16 +1182,21 @@ function SkillsSection({
     return null;
   const groups = parseSkillGroups(data.skills);
   const hasHeadings = groups.some((g) => g.heading);
+  const desktopCols = data.skillsColumns;
+  const mobileCols = data.skillsColumnsMobile ?? 1;
   const listStyle: React.CSSProperties = {
     margin: 0,
     paddingLeft: 16,
     listStyle: "disc",
     listStylePosition: "outside",
-    columnWidth: "11rem",
     columnGap: "1.25rem",
     columnFill: "balance",
     orphans: 2,
     widows: 2,
+    ...(desktopCols
+      ? { columnCount: desktopCols }
+      : { columnWidth: "11rem" }),
+    ["--skills-cols-mobile" as any]: mobileCols,
   };
   const liStyle: React.CSSProperties = {
     paddingLeft: 0,
