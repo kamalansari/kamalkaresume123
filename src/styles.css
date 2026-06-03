@@ -192,6 +192,26 @@
   #resume-preview {
     display: block !important;
     visibility: visible !important;
+    position: static !important;
+    transform: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  /* Neutralize any positioning context between <body> and .print-area so
+     absolute positioning anchors to the page, not a relative ancestor. */
+  body,
+  body > * ,
+  #root,
+  #root * {
+    transform: none !important;
+  }
+  .resume-preview-fit-wrap,
+  .resume-preview-scale {
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
   }
   .print-area {
     position: absolute !important;
