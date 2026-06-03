@@ -1189,11 +1189,20 @@ function SkillsSection({
     listStylePosition: "outside",
     columnWidth: "11rem",
     columnGap: "1.25rem",
+    columnFill: "balance",
+    WebkitColumnWidth: "11rem",
+    WebkitColumnGap: "1.25rem",
+    orphans: 2,
+    widows: 2,
   };
   const liStyle: React.CSSProperties = {
     paddingLeft: 0,
-    marginBottom: 2,
+    marginBottom: 4,
+    lineHeight: 1.45,
     breakInside: "avoid",
+    pageBreakInside: "avoid",
+    WebkitColumnBreakInside: "avoid",
+    display: "list-item",
     fontWeight: 400,
   };
   return (
