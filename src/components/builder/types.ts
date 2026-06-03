@@ -151,6 +151,14 @@ export type ResumeData = {
   sectionSpacing?: number;
   // Separator between skills when rendered inline. Defaults to "|".
   skillSeparator?: "|" | ",";
+  // Number of columns for the Skills list. When undefined (default), the
+  // list auto-fills using column-width (typically 2–3 columns on the
+  // printed page). When a number is set, that exact column count is used
+  // on desktop / print. Range 1–4.
+  skillsColumns?: number;
+  // Number of columns for the Skills list on small screens (mobile preview,
+  // ≤640px). Defaults to 1. Range 1–2.
+  skillsColumnsMobile?: number;
   // Optional per-resume override of which section ids appear in the sidebar.
   // When undefined, the template default (TEMPLATE_SIDEBAR_DEFAULTS) is used.
   sidebarSections?: SectionId[];
