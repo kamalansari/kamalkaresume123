@@ -566,3 +566,13 @@ body {
   color: var(--navy-light);
   text-decoration: underline;
 }
+
+/* Skills list responsive columns: on small screens shrink to user-chosen
+   mobile column count (default 1) so single-column resumes don't compress
+   into too-narrow columns on phones. Print uses the desktop setting. */
+@media screen and (max-width: 640px) {
+  ul[data-skills-list] {
+    column-count: var(--skills-cols-mobile, 1) !important;
+    column-width: auto !important;
+  }
+}
