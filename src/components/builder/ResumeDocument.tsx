@@ -1187,7 +1187,8 @@ function SkillsSection({
     paddingLeft: 16,
     listStyle: "disc",
     listStylePosition: "outside",
-    columnCount: 1,
+    columnWidth: "11rem",
+    columnGap: "1.25rem",
   };
   const liStyle: React.CSSProperties = {
     paddingLeft: 0,
