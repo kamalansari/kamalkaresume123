@@ -1215,6 +1215,7 @@ function SkillsSection({
           contentEditable
           suppressContentEditableWarning
           data-preview-edit="skills"
+          data-skills-list
           className="preview-editable"
           onClick={(e) => e.stopPropagation()}
           onBlur={(e) => {
@@ -1237,7 +1238,7 @@ function SkillsSection({
           {groups.map((g, gi) => (
             <div key={gi} style={{ marginBottom: 6 }}>
               {g.heading && <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>}
-              <ul style={listStyle}>
+              <ul data-skills-list style={listStyle}>
                 {g.items.map((s, i) => (
                   <li key={i} style={liStyle}>
                     {s}
@@ -1248,7 +1249,7 @@ function SkillsSection({
           ))}
         </div>
       ) : (
-        <ul style={listStyle}>
+        <ul data-skills-list style={listStyle}>
           {parseSkills(data.skills).map((s, i) => (
             <li key={i} style={liStyle}>
               {s}
