@@ -654,6 +654,52 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
           </div>
         </div>
         <div>
+          <Label className="text-xs text-muted-foreground">Skills columns (desktop / print)</Label>
+          <div className="mt-2 grid grid-cols-5 gap-1.5">
+            {([
+              { v: undefined, label: "Auto" },
+              { v: 1, label: "1" },
+              { v: 2, label: "2" },
+              { v: 3, label: "3" },
+              { v: 4, label: "4" },
+            ] as const).map((opt) => {
+              const active = (data.skillsColumns ?? undefined) === opt.v;
+              return (
+                <button
+                  key={String(opt.v)}
+                  onClick={() => onPatch({ skillsColumns: opt.v })}
+                  className={cn(
+                    "inline-flex items-center justify-center rounded-md border h-9 px-2 text-xs font-medium",
+                    active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40",
+                  )}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Skills columns (mobile preview)</Label>
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
+            {[1, 2].map((n) => {
+              const active = (data.skillsColumnsMobile ?? 1) === n;
+              return (
+                <button
+                  key={n}
+                  onClick={() => onPatch({ skillsColumnsMobile: n })}
+                  className={cn(
+                    "inline-flex items-center justify-center rounded-md border h-9 px-3 text-xs font-medium",
+                    active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40",
+                  )}
+                >
+                  {n} column{n > 1 ? "s" : ""}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div>
           <Label className="text-xs text-muted-foreground">Text style</Label>
           <div className="mt-2 flex gap-2">
             <button onClick={() => onPatch({ justifyText: !data.justifyText })}
