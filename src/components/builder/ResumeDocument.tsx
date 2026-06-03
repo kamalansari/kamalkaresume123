@@ -1190,8 +1190,6 @@ function SkillsSection({
     columnWidth: "11rem",
     columnGap: "1.25rem",
     columnFill: "balance",
-    WebkitColumnWidth: "11rem",
-    WebkitColumnGap: "1.25rem",
     orphans: 2,
     widows: 2,
   };
@@ -1201,7 +1199,6 @@ function SkillsSection({
     lineHeight: 1.45,
     breakInside: "avoid",
     pageBreakInside: "avoid",
-    WebkitColumnBreakInside: "avoid",
     display: "list-item",
     fontWeight: 400,
   };
