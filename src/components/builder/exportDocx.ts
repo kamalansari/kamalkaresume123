@@ -4,6 +4,7 @@ const { saveAs } = FileSaver;
 import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
 import { parseSkills } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
+import { splitBulletLines } from "@/lib/resumeText";
 import { jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
 
 const KW_WORD_RE = /[A-Za-z][A-Za-z0-9+.#-]{2,}/g;
@@ -94,7 +95,7 @@ function buildSections(data: ResumeData, color: string, headingFont?: string): R
           h("Experience"),
           ...data.experience.flatMap(e => [
             line(`${e.title || "Role"} · ${e.company}`, { bold: true, right: e.date }),
-            ...e.bullets.split("\n").filter(Boolean).map(t => bullet(t, bb, jx)),
+            ...splitBulletLines(e.bullets).map(t => bullet(t, bb, jx)),
             new Paragraph({ children: [new TextRun({ text: "", size: 10 })] }),
           ]),
         ]
@@ -118,7 +119,7 @@ function buildSections(data: ResumeData, color: string, headingFont?: string): R
           h("Projects"),
           ...data.projects.flatMap(p => [
             line(`${p.name}${p.link ? ` · ${p.link}` : ""}`, { bold: true, right: p.date }),
-            ...(p.bullets ? p.bullets.split("\n").filter(Boolean).map(t => bullet(t, bb, jx)) : []),
+            ...(p.bullets ? splitBulletLines(p.bullets).map(t => bullet(t, bb, jx)) : []),
             new Paragraph({ children: [new TextRun({ text: "", size: 10 })] }),
           ]),
         ]

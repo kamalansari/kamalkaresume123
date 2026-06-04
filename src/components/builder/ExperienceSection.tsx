@@ -49,6 +49,7 @@ import { FormattableTextarea } from "./FormattableTextarea";
 import { DateRangePicker } from "./MonthYearPicker";
 import type { Experience } from "./types";
 import { cn } from "@/lib/utils";
+import { normalizeBulletText } from "@/lib/resumeText";
 
 /** Strong action verbs grouped for the inserter. */
 export const ACTION_VERBS: { group: string; verbs: string[] }[] = [
@@ -279,7 +280,7 @@ export function ExperienceSection({
                     `exp-${e.id}`,
                   );
                   if (out) {
-                    updateExp(e.id, { bullets: out });
+                    updateExp(e.id, { bullets: normalizeBulletText(out) });
                     toast.success(e.bullets.trim() ? "Bullets rewritten" : "Bullets generated");
                   }
                 }}
@@ -474,7 +475,7 @@ function SortableExperienceItem({
             onChange={v => onChange({ bullets: v })}
             onBlur={() => {
               if (!exp.bullets.trim()) return;
-              const next = autoActionVerbs(exp.bullets, customVerbs.fallback);
+              const next = autoActionVerbs(normalizeBulletText(exp.bullets), customVerbs.fallback);
               if (next !== exp.bullets) {
                 onChange({ bullets: next });
                 toast.success("Bullets auto-strengthened with action verbs");
