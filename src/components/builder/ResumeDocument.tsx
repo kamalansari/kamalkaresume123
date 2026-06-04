@@ -1101,7 +1101,7 @@ function ExperienceSection({
                 .split("\n")
                 .filter(Boolean)
                 .map((b, i) => (
-                  <div key={i} style={{ marginBottom: 6 }}>
+                  <div key={i} style={{ marginBottom: 6, display: "block", width: "100%" }}>
                     • {b}
                   </div>
                 ))}
@@ -1115,13 +1115,25 @@ function ExperienceSection({
                 listStyle: "disc",
                 listStylePosition: "outside",
                 textAlign: "left",
+                display: "block",
+                columnCount: 1,
               }}
             >
               {e.bullets
                 .split("\n")
                 .filter(Boolean)
                 .map((b, i) => (
-                  <li key={i} style={{ paddingLeft: 0, marginBottom: 7, lineHeight: 1.5 }}>
+                  <li
+                    key={i}
+                    style={{
+                      paddingLeft: 0,
+                      marginBottom: 7,
+                      lineHeight: 1.5,
+                      display: "list-item",
+                      width: "100%",
+                      breakInside: "avoid",
+                    }}
+                  >
                     <InlineText text={b} />
                   </li>
                 ))}

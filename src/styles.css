@@ -353,6 +353,22 @@
   white-space: normal;
 }
 
+/* Experience bullets must always render line-by-line, never inline. */
+.print-area .resume-entry ul {
+  display: block !important;
+  column-count: 1 !important;
+  -webkit-column-count: 1 !important;
+  flex-direction: column !important;
+  width: 100%;
+}
+.print-area .resume-entry ul > li {
+  display: list-item !important;
+  width: 100% !important;
+  float: none !important;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
 .preview-editable {
   outline: 1px dashed transparent;
   outline-offset: 3px;
