@@ -3,6 +3,7 @@ import { Mail, Phone, MapPin, Link as LinkIcon, Sparkles, Loader2 } from "lucide
 import { FONT_PRESETS, getSidebarSectionIds, type ResumeData, type SectionId } from "./types";
 import { parseSkills, parseSkillGroups } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
+import { normalizeBulletText, splitBulletLines } from "@/lib/resumeText";
 import { jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
 import {
   computeAutoFitExtra,
@@ -1093,13 +1094,11 @@ function ExperienceSection({
               onBlur={(ev) =>
                 ed.onUpdateExperienceBullets(
                   e.id,
-                  ev.currentTarget.innerText.replace(/^•\s*/gm, ""),
+                  normalizeBulletText(ev.currentTarget.innerText),
                 )
               }
             >
-              {e.bullets
-                .split("\n")
-                .filter(Boolean)
+              {splitBulletLines(e.bullets)
                 .map((b, i) => (
                   <div key={i} style={{ marginBottom: 6, display: "block", width: "100%" }}>
                     • {b}
@@ -1119,9 +1118,7 @@ function ExperienceSection({
                 columnCount: 1,
               }}
             >
-              {e.bullets
-                .split("\n")
-                .filter(Boolean)
+              {splitBulletLines(e.bullets)
                 .map((b, i) => (
                   <li
                     key={i}
