@@ -66,7 +66,7 @@ function ResumeLabPage() {
       ...resume,
       headline: result.headline ?? resume.headline,
       summary: result.summary ?? resume.summary,
-      skills: result.skills ?? resume.skills,
+      skills: result.skills != null ? normalizeSkills(result.skills) : resume.skills,
       experience: mergeExperience(resume.experience, result.experience),
       jobDescription: jd,
     };
@@ -81,7 +81,7 @@ function ResumeLabPage() {
       ...resume,
       headline: result.headline ?? resume.headline,
       summary: result.summary ?? resume.summary,
-      skills: result.skills ?? resume.skills,
+      skills: result.skills != null ? normalizeSkills(result.skills) : resume.skills,
       experience: mergeExperience(resume.experience, result.experience),
       jobDescription: jd || resume.jobDescription,
     };
@@ -142,7 +142,7 @@ function ResumeLabPage() {
       ...resume,
       headline: result.headline ?? resume.headline,
       summary: result.summary ?? resume.summary,
-      skills: result.skills ?? resume.skills,
+      skills: result.skills != null ? normalizeSkills(result.skills) : resume.skills,
       experience: mergeExperience(resume.experience, result.experience),
       jobDescription: jd || resume.jobDescription,
     };
