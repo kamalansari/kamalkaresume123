@@ -974,7 +974,7 @@ export function Builder() {
         experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
           if (!match) return e;
-          const { text, changes } = autoActionVerbsDetailed(match.bullets, verbState.fallback);
+          const { text, changes } = autoActionVerbsDetailed(normalizeBulletText(match.bullets), verbState.fallback);
           for (const c of changes) collected.push({ expId: e.id, title: e.title, company: e.company, ...c });
           return { ...e, bullets: text };
         }),
@@ -1044,7 +1044,7 @@ export function Builder() {
         experience: source.experience.map(e => {
           const match = out.experience?.find(x => x.id === e.id);
           if (!match) return e;
-          const { text, changes } = autoActionVerbsDetailed(match.bullets, verbState.fallback);
+          const { text, changes } = autoActionVerbsDetailed(normalizeBulletText(match.bullets), verbState.fallback);
           for (const c of changes) collected.push({ expId: e.id, title: e.title, company: e.company, ...c });
           return { ...e, bullets: text };
         }),
