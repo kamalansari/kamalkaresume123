@@ -33,6 +33,7 @@ import { SortableContext, arrayMove, verticalListSortingStrategy, sortableKeyboa
 import { CSS } from "@dnd-kit/utilities";
 import { Slider } from "@/components/ui/slider";
 import { parseSkills } from "@/lib/parseSkills";
+import { normalizeBulletText } from "@/lib/resumeText";
 import { cn } from "@/lib/utils";
 import { FormattableTextarea } from "./FormattableTextarea";
 import { AtsPanel } from "./AtsPanel";
@@ -729,7 +730,7 @@ export function Builder() {
         const id = el.dataset.previewExpId;
         const current = source.experience.find(e => e.id === id);
         if (!id || !current) return;
-        const bullets = el.innerText.split("\n").map(line => line.replace(/^\s*[•-]\s*/, "").trim()).filter(Boolean).join("\n");
+        const bullets = normalizeBulletText(el.innerText);
         if (bullets !== current.bullets) {
           next = { ...next, experience: next.experience.map(e => e.id === id ? { ...e, bullets } : e) };
           dirty = true;
@@ -920,7 +921,7 @@ export function Builder() {
       const e = data.experience.find(x => x.id === refId);
       if (!e) return;
       const out = await rewriteWithAI("bullets", e.bullets, { title: e.title, company: e.company }, `exp-${e.id}`);
-      if (out) { updateExp(e.id, { bullets: out }); toast.success("Bullets rewritten"); }
+      if (out) { updateExp(e.id, { bullets: normalizeBulletText(out) }); toast.success("Bullets rewritten"); }
     }
   };
 
