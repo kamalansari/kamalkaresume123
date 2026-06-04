@@ -22,6 +22,7 @@ import { defaultResume, type ResumeData, type Experience } from "@/components/bu
 import { computeScore } from "@/components/builder/atsScore";
 import { ResumeDocument } from "@/components/builder/ResumeDocument";
 import { exportDocx } from "@/components/builder/exportDocx";
+import { normalizeBulletText, splitBulletLines } from "@/lib/resumeText";
 
 export const Route = createFileRoute("/resume-lab")({
   head: () => ({
@@ -202,7 +203,7 @@ function ResumeLabPage() {
                       <div key={i} className="border-l-2 border-primary/40 pl-3">
                         <div className="font-medium">{e.title} · <span className="text-muted-foreground">{e.company}</span></div>
                         <ul className="mt-1 list-disc list-inside text-muted-foreground whitespace-pre-wrap">
-                          {(e.bullets ?? "").split("\n").filter(Boolean).map((b, j) => <li key={j}>{b.replace(/^[-•]\s*/, "")}</li>)}
+                          {splitBulletLines(e.bullets).map((b, j) => <li key={j}>{b}</li>)}
                         </ul>
                       </div>
                     ))}
@@ -308,7 +309,7 @@ function mergeExperience(base: Experience[], next?: { title?: string; company?: 
   if (!next || !next.length) return base;
   return base.map((e, i) => ({
     ...e,
-    bullets: next[i]?.bullets != null ? normalizeBullets(next[i]!.bullets) : e.bullets,
+    bullets: next[i]?.bullets != null ? normalizeBulletText(next[i]!.bullets) : normalizeBulletText(e.bullets),
   }));
 }
 
@@ -328,25 +329,4 @@ function normalizeSkills(input: unknown): string {
     return s.split(/[\u2022•·]+/).map((p) => p.trim()).filter(Boolean).join(", ");
   }
   return s;
-}
-
-// AI sometimes returns bullets joined by " • " or as an array. Normalize to
-// newline-separated lines so each bullet renders on its own line.
-function normalizeBullets(input: unknown): string {
-  if (Array.isArray(input)) {
-    return input
-      .map((b) => String(b).trim().replace(/^[\u2022•\-\*]\s*/, ""))
-      .filter(Boolean)
-      .join("\n");
-  }
-  if (typeof input !== "string") return "";
-  let s = input.trim();
-  if (!s) return "";
-  // Replace bullet glyphs with newlines, then split on newlines.
-  s = s.replace(/\s*[\u2022•·]\s*/g, "\n");
-  return s
-    .split(/\r?\n+/)
-    .map((line) => line.trim().replace(/^[\-\*]\s*/, ""))
-    .filter(Boolean)
-    .join("\n");
 }
