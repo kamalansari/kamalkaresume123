@@ -66,7 +66,7 @@ function ResumeLabPage() {
       ...resume,
       headline: result.headline ?? resume.headline,
       summary: result.summary ?? resume.summary,
-      skills: result.skills ?? resume.skills,
+      skills: result.skills != null ? normalizeSkills(result.skills) : resume.skills,
       experience: mergeExperience(resume.experience, result.experience),
       jobDescription: jd,
     };
@@ -81,7 +81,7 @@ function ResumeLabPage() {
       ...resume,
       headline: result.headline ?? resume.headline,
       summary: result.summary ?? resume.summary,
-      skills: result.skills ?? resume.skills,
+      skills: result.skills != null ? normalizeSkills(result.skills) : resume.skills,
       experience: mergeExperience(resume.experience, result.experience),
       jobDescription: jd || resume.jobDescription,
     };
@@ -142,7 +142,7 @@ function ResumeLabPage() {
       ...resume,
       headline: result.headline ?? resume.headline,
       summary: result.summary ?? resume.summary,
-      skills: result.skills ?? resume.skills,
+      skills: result.skills != null ? normalizeSkills(result.skills) : resume.skills,
       experience: mergeExperience(resume.experience, result.experience),
       jobDescription: jd || resume.jobDescription,
     };
@@ -308,6 +308,45 @@ function mergeExperience(base: Experience[], next?: { title?: string; company?: 
   if (!next || !next.length) return base;
   return base.map((e, i) => ({
     ...e,
-    bullets: next[i]?.bullets ?? e.bullets,
+    bullets: next[i]?.bullets != null ? normalizeBullets(next[i]!.bullets) : e.bullets,
   }));
+}
+
+// AI sometimes returns skills as an array, as a single mashed string, or
+// separated only by bullet glyphs. Normalize to a comma-separated string so
+// parseSkills() in the builder splits them correctly.
+function normalizeSkills(input: unknown): string {
+  if (Array.isArray(input)) {
+    return input.map((s) => String(s).trim()).filter(Boolean).join(", ");
+  }
+  if (typeof input !== "string") return "";
+  const s = input.trim();
+  if (!s) return "";
+  if (/[,|\n]/.test(s)) return s;
+  // Split on bullet glyphs / middots if present
+  if (/[\u2022•·]/.test(s)) {
+    return s.split(/[\u2022•·]+/).map((p) => p.trim()).filter(Boolean).join(", ");
+  }
+  return s;
+}
+
+// AI sometimes returns bullets joined by " • " or as an array. Normalize to
+// newline-separated lines so each bullet renders on its own line.
+function normalizeBullets(input: unknown): string {
+  if (Array.isArray(input)) {
+    return input
+      .map((b) => String(b).trim().replace(/^[\u2022•\-\*]\s*/, ""))
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (typeof input !== "string") return "";
+  let s = input.trim();
+  if (!s) return "";
+  // Replace bullet glyphs with newlines, then split on newlines.
+  s = s.replace(/\s*[\u2022•·]\s*/g, "\n");
+  return s
+    .split(/\r?\n+/)
+    .map((line) => line.trim().replace(/^[\-\*]\s*/, ""))
+    .filter(Boolean)
+    .join("\n");
 }
