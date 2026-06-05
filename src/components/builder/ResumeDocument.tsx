@@ -1075,7 +1075,7 @@ function ExperienceSection({
             <div style={{ color: "#444", marginTop: 3, fontWeight: 500 }}>{e.company}</div>
           )}
           {ed ? (
-            <div
+            <ul
               key={`exp-${e.id}-${e.bullets}`}
               contentEditable
               suppressContentEditableWarning
@@ -1086,8 +1086,11 @@ function ExperienceSection({
                 marginTop: 10,
                 marginLeft: 0,
                 paddingLeft: 16,
-                whiteSpace: "pre-wrap",
+                listStyle: "disc outside",
+                listStylePosition: "outside",
                 textAlign: "left",
+                display: "block",
+                columnCount: 1,
                 lineHeight: 1.5,
               }}
               onClick={(ev) => ev.stopPropagation()}
@@ -1100,11 +1103,21 @@ function ExperienceSection({
             >
               {splitBulletLines(e.bullets)
                 .map((b, i) => (
-                  <div key={i} style={{ marginBottom: 6, display: "block", width: "100%" }}>
-                    • {b}
-                  </div>
+                  <li
+                    key={i}
+                    style={{
+                      paddingLeft: 0,
+                      marginBottom: 7,
+                      lineHeight: 1.5,
+                      display: "list-item",
+                      width: "100%",
+                      breakInside: "avoid",
+                    }}
+                  >
+                    {b}
+                  </li>
                 ))}
-            </div>
+            </ul>
           ) : (
             <ul
               style={{
