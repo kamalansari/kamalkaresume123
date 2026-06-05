@@ -117,6 +117,11 @@ export function ResumeDocument({
     academic: "#7a1f3d",
     startup: "#ea580c",
     corporate: "#0f2a52",
+    luxe: "#a17a2d",
+    noir: "#0a0a0a",
+    editorial: "#1c1c1c",
+    aurora: "#5b6cff",
+    monochrome: "#2a2a2a",
   };
   const accent = TEMPLATE_ACCENT[data.template] ?? data.accentHex;
   const fs = data.fontSize ?? 10.5;
@@ -145,6 +150,11 @@ export function ResumeDocument({
     academic: "classic",
     startup: "compact-two",
     corporate: "classic",
+    luxe: "classic",
+    noir: "modern",
+    editorial: "classic",
+    aurora: "sidebar-right",
+    monochrome: "classic",
   };
   const variant = VARIANT_MAP[data.template] ?? "classic";
 

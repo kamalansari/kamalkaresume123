@@ -35,19 +35,18 @@ export const ALL_TEMPLATES: TemplateMeta[] = [
   { id: "executive", label: "Executive", desc: "Authoritative band", cols: 1 },
   { id: "minimal", label: "Minimal", desc: "Quiet & spacious", cols: 1 },
   { id: "modern", label: "Modern", desc: "Bold header bar", cols: 1 },
-  { id: "elegant", label: "Elegant", desc: "Refined classic", cols: 1 },
-  { id: "bold", label: "Bold", desc: "Statement banner", cols: 1 },
-  { id: "two-column", label: "Two column", desc: "Dark sidebar", cols: 2 },
-  { id: "sidebar-right", label: "Sidebar right", desc: "Right rail accent", cols: 2 },
-  { id: "compact-two", label: "Compact two", desc: "Tight two-col", cols: 2 },
-  { id: "fresher", label: "Fresher", desc: "Cream sidebar", cols: 2 },
-  { id: "contemporary", label: "Contemporary", desc: "Modern sidebar", cols: 2 },
-  { id: "iconic", label: "Iconic", desc: "Teal sidebar, icon labels", cols: 2 },
-  { id: "creative", label: "Creative", desc: "Violet right rail", cols: 2 },
-  { id: "startup", label: "Startup", desc: "Orange compact two-col", cols: 2 },
   { id: "technical", label: "Technical", desc: "Slate engineering band", cols: 1 },
   { id: "academic", label: "Academic", desc: "Burgundy scholarly", cols: 1 },
-  { id: "corporate", label: "Corporate", desc: "Navy formal", cols: 1 },
+  { id: "editorial", label: "Editorial", desc: "Magazine serif", cols: 1 },
+  { id: "noir", label: "Noir", desc: "Black header, sharp", cols: 1 },
+  { id: "luxe", label: "Luxe", desc: "Gold accents, premium", cols: 1 },
+  { id: "monochrome", label: "Monochrome", desc: "All black & white", cols: 1 },
+  { id: "two-column", label: "Two column", desc: "Dark sidebar", cols: 2 },
+  { id: "sidebar-right", label: "Sidebar right", desc: "Right rail accent", cols: 2 },
+  { id: "iconic", label: "Iconic", desc: "Teal sidebar, icons", cols: 2 },
+  { id: "creative", label: "Creative", desc: "Violet right rail", cols: 2 },
+  { id: "aurora", label: "Aurora", desc: "Indigo gradient rail", cols: 2 },
+  { id: "startup", label: "Startup", desc: "Orange compact two-col", cols: 2 },
 ];
 
 const BG_PRESETS = [
@@ -79,12 +78,94 @@ const TEMPLATE_THUMB_ACCENT: Partial<Record<TemplateId, string>> = {
   academic: "#7a1f3d",
   startup: "#ea580c",
   corporate: "#0f2a52",
+  luxe: "#a17a2d",
+  noir: "#0a0a0a",
+  editorial: "#1c1c1c",
+  aurora: "#5b6cff",
+  monochrome: "#2a2a2a",
 };
 
 function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active: boolean }) {
   const id = t.id;
   accent = TEMPLATE_THUMB_ACCENT[id] ?? accent;
   const inner = (() => {
+    if (id === "aurora") {
+      return (
+        <div className="h-full w-full flex">
+          <div className="flex-1 p-1 space-y-1">
+            <div className="h-1 w-3/4 rounded bg-foreground/30" />
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-2/3 rounded bg-foreground/10" />
+          </div>
+          <div
+            className="w-1/3 h-full p-1 space-y-1"
+            style={{ background: "linear-gradient(180deg, #5b6cff 0%, #a855f7 60%, #ec4899 100%)" }}
+          >
+            <div className="h-1 w-3/4 rounded bg-white/85" />
+            <div className="h-0.5 w-full rounded bg-white/50" />
+            <div className="h-0.5 w-2/3 rounded bg-white/50" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "noir") {
+      return (
+        <div className="h-full w-full">
+          <div className="h-1/3 w-full p-1 flex items-end" style={{ background: "#0a0a0a" }}>
+            <div className="h-1 w-2/3 rounded" style={{ background: "#f5d77a" }} />
+          </div>
+          <div className="p-1 space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/15" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/15" />
+            <div className="h-0.5 w-2/3 rounded bg-foreground/15" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "luxe") {
+      return (
+        <div className="h-full w-full p-1.5 flex flex-col items-center">
+          <div className="h-1 w-2/3 rounded" style={{ background: "#a17a2d" }} />
+          <div className="mt-0.5 h-0.5 w-1/2 rounded bg-foreground/30" />
+          <div className="mt-1 h-px w-full" style={{ background: "linear-gradient(90deg, transparent, #a17a2d, transparent)" }} />
+          <div className="mt-1 self-stretch space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "editorial") {
+      return (
+        <div className="h-full w-full p-1.5 flex flex-col">
+          <div className="font-serif italic text-[7px] leading-none text-foreground/80">Aa</div>
+          <div className="mt-0.5 h-1 w-2/3 rounded bg-foreground/80" />
+          <div className="mt-0.5 h-0.5 w-1/3 rounded bg-foreground/30" />
+          <div className="mt-1 h-px w-full bg-foreground/30" />
+          <div className="mt-1 space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "monochrome") {
+      return (
+        <div className="h-full w-full p-1.5 flex flex-col">
+          <div className="h-1 w-1/2 rounded bg-foreground" />
+          <div className="mt-0.5 h-0.5 w-1/3 rounded bg-foreground/50" />
+          <div className="mt-1 h-px w-full bg-foreground/40" />
+          <div className="mt-1 space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/20" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/20" />
+            <div className="h-0.5 w-3/4 rounded bg-foreground/20" />
+          </div>
+        </div>
+      );
+    }
     if (id === "two-column" || id === "fresher" || id === "iconic") {
       const cream = id === "fresher";
       return (
