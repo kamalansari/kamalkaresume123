@@ -1075,7 +1075,7 @@ function ExperienceSection({
             <div style={{ color: "#444", marginTop: 3, fontWeight: 500 }}>{e.company}</div>
           )}
           {ed ? (
-            <ul
+            <div
               key={`exp-${e.id}-${e.bullets}`}
               contentEditable
               suppressContentEditableWarning
@@ -1085,9 +1085,7 @@ function ExperienceSection({
               style={{
                 marginTop: 10,
                 marginLeft: 0,
-                paddingLeft: 16,
-                listStyle: "disc outside",
-                listStylePosition: "outside",
+                paddingLeft: 0,
                 textAlign: "left",
                 display: "block",
                 columnCount: 1,
@@ -1103,29 +1101,28 @@ function ExperienceSection({
             >
               {splitBulletLines(e.bullets)
                 .map((b, i) => (
-                  <li
+                  <div
                     key={i}
                     style={{
-                      paddingLeft: 0,
+                      paddingLeft: 16,
+                      textIndent: -12,
                       marginBottom: 7,
                       lineHeight: 1.5,
-                      display: "list-item",
+                      display: "block",
                       width: "100%",
                       breakInside: "avoid",
                     }}
                   >
-                    {b}
-                  </li>
+                    • {b}
+                  </div>
                 ))}
-            </ul>
+            </div>
           ) : (
-            <ul
+            <div
               style={{
                 marginTop: 10,
                 marginLeft: 0,
-                paddingLeft: 16,
-                listStyle: "disc",
-                listStylePosition: "outside",
+                paddingLeft: 0,
                 textAlign: "left",
                 display: "block",
                 columnCount: 1,
@@ -1133,21 +1130,22 @@ function ExperienceSection({
             >
               {splitBulletLines(e.bullets)
                 .map((b, i) => (
-                  <li
+                  <div
                     key={i}
                     style={{
-                      paddingLeft: 0,
+                      paddingLeft: 16,
+                      textIndent: -12,
                       marginBottom: 7,
                       lineHeight: 1.5,
-                      display: "list-item",
+                      display: "block",
                       width: "100%",
                       breakInside: "avoid",
                     }}
                   >
-                    <InlineText text={b} />
-                  </li>
+                    • <InlineText text={b} />
+                  </div>
                 ))}
-            </ul>
+            </div>
           )}
         </div>
       ))}
