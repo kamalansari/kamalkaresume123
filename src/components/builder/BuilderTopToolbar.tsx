@@ -89,6 +89,83 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
   const id = t.id;
   accent = TEMPLATE_THUMB_ACCENT[id] ?? accent;
   const inner = (() => {
+    if (id === "aurora") {
+      return (
+        <div className="h-full w-full flex">
+          <div className="flex-1 p-1 space-y-1">
+            <div className="h-1 w-3/4 rounded bg-foreground/30" />
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-2/3 rounded bg-foreground/10" />
+          </div>
+          <div
+            className="w-1/3 h-full p-1 space-y-1"
+            style={{ background: "linear-gradient(180deg, #5b6cff 0%, #a855f7 60%, #ec4899 100%)" }}
+          >
+            <div className="h-1 w-3/4 rounded bg-white/85" />
+            <div className="h-0.5 w-full rounded bg-white/50" />
+            <div className="h-0.5 w-2/3 rounded bg-white/50" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "noir") {
+      return (
+        <div className="h-full w-full">
+          <div className="h-1/3 w-full p-1 flex items-end" style={{ background: "#0a0a0a" }}>
+            <div className="h-1 w-2/3 rounded" style={{ background: "#f5d77a" }} />
+          </div>
+          <div className="p-1 space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/15" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/15" />
+            <div className="h-0.5 w-2/3 rounded bg-foreground/15" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "luxe") {
+      return (
+        <div className="h-full w-full p-1.5 flex flex-col items-center">
+          <div className="h-1 w-2/3 rounded" style={{ background: "#a17a2d" }} />
+          <div className="mt-0.5 h-0.5 w-1/2 rounded bg-foreground/30" />
+          <div className="mt-1 h-px w-full" style={{ background: "linear-gradient(90deg, transparent, #a17a2d, transparent)" }} />
+          <div className="mt-1 self-stretch space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "editorial") {
+      return (
+        <div className="h-full w-full p-1.5 flex flex-col">
+          <div className="font-serif italic text-[7px] leading-none text-foreground/80">Aa</div>
+          <div className="mt-0.5 h-1 w-2/3 rounded bg-foreground/80" />
+          <div className="mt-0.5 h-0.5 w-1/3 rounded bg-foreground/30" />
+          <div className="mt-1 h-px w-full bg-foreground/30" />
+          <div className="mt-1 space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "monochrome") {
+      return (
+        <div className="h-full w-full p-1.5 flex flex-col">
+          <div className="h-1 w-1/2 rounded bg-foreground" />
+          <div className="mt-0.5 h-0.5 w-1/3 rounded bg-foreground/50" />
+          <div className="mt-1 h-px w-full bg-foreground/40" />
+          <div className="mt-1 space-y-1">
+            <div className="h-0.5 w-full rounded bg-foreground/20" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/20" />
+            <div className="h-0.5 w-3/4 rounded bg-foreground/20" />
+          </div>
+        </div>
+      );
+    }
     if (id === "two-column" || id === "fresher" || id === "iconic") {
       const cream = id === "fresher";
       return (
