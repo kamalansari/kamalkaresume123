@@ -43,7 +43,12 @@ export type TemplateId =
   | "technical"
   | "academic"
   | "startup"
-  | "corporate";
+  | "corporate"
+  | "luxe"
+  | "noir"
+  | "editorial"
+  | "aurora"
+  | "monochrome";
 export type SectionId =
   | "summary"
   | "experience"
