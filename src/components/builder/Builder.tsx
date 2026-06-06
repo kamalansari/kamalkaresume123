@@ -957,18 +957,20 @@ export function Builder() {
 
   const rewriteWithAI = async (kind: "bullets" | "skills" | "education", text: string, ctx: Record<string, string | undefined>, key: string): Promise<string | null> => {
     setRewritingKey(key);
+    announce(`AI is rewriting your ${kind === "bullets" ? "experience bullets" : kind}…`);
     try {
       const res = await authFetch("/api/rewrite-section", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ kind, text, context: { headline: data.headline, jobDescription: data.jobDescription, skills: data.skills, ...ctx } }),
       });
-      if (res.status === 429) { toast.error("Rate limit hit. Please retry."); return null; }
-      if (res.status === 402) { toast.error("AI credits exhausted."); return null; }
-      if (!res.ok) { toast.error("Rewrite failed."); return null; }
+      if (res.status === 429) { announce("Rate limit hit. Please retry shortly."); toast.error("Rate limit hit. Please retry."); return null; }
+      if (res.status === 402) { announce("AI credits exhausted."); toast.error("AI credits exhausted."); return null; }
+      if (!res.ok) { announce("Rewrite failed."); toast.error("Rewrite failed."); return null; }
       const json = (await res.json()) as { text?: string };
       return json.text ?? null;
     } catch {
+      announce("Network error during rewrite.");
       toast.error("Network error.");
       return null;
     } finally {
