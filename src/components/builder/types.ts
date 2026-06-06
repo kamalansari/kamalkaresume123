@@ -87,6 +87,12 @@ export const TEMPLATE_SIDEBAR_DEFAULTS: Partial<Record<TemplateId, SectionId[]>>
   "iconic":        ["skills", "languages", "education", "certifications"],
   "creative":      ["skills", "languages", "education"],
   "startup":       ["skills", "languages", "certifications"],
+  "novo-dark":     ["skills", "languages", "education", "certifications"],
+  "marketer-band": ["skills", "languages", "education"],
+  "ats-blue":      ["skills", "languages", "certifications"],
+  "teal-chips":    ["skills", "languages", "education"],
+  "hybrid-photo":  ["skills", "languages", "education"],
+  "dark-sidebar":  ["skills", "languages", "education"],
 };
 
 // Templates that render a sidebar column at all.
