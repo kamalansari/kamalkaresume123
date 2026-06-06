@@ -813,9 +813,38 @@ export function Builder() {
     toast.success("Profile reset");
   };
 
-  const update = <K extends keyof ResumeData>(k: K, v: ResumeData[K]) => setData(d => ({ ...d, [k]: v }));
+  const update = <K extends keyof ResumeData>(k: K, v: ResumeData[K]) => setData(d => {
+    if (k === "template" && v !== d.template) {
+      const map = { ...(d.alignmentByTemplate ?? {}) };
+      // Save current alignment under the previous template.
+      map[d.template] = {
+        summaryAlign: d.summaryAlign,
+        experienceAlign: d.experienceAlign,
+      };
+      const next = map[v as TemplateId];
+      return {
+        ...d,
+        template: v as TemplateId,
+        summaryAlign: next?.summaryAlign,
+        experienceAlign: next?.experienceAlign,
+        alignmentByTemplate: map,
+      };
+    }
+    return { ...d, [k]: v };
+  });
 
-  const updatePatch = (patch: Partial<ResumeData>) => setData(d => ({ ...d, ...patch }));
+  const updatePatch = (patch: Partial<ResumeData>) => setData(d => {
+    const next = { ...d, ...patch };
+    if ("summaryAlign" in patch || "experienceAlign" in patch) {
+      const map = { ...(next.alignmentByTemplate ?? {}) };
+      map[next.template] = {
+        summaryAlign: next.summaryAlign,
+        experienceAlign: next.experienceAlign,
+      };
+      next.alignmentByTemplate = map;
+    }
+    return next;
+  });
 
   const commitPreviewEdits = (source: ResumeData = data, opts: { sync?: boolean } = { sync: true }): ResumeData => {
     if (typeof document === "undefined") return source;

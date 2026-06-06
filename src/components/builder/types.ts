@@ -164,6 +164,13 @@ export type ResumeData = {
   // Per-section text alignment overrides. Fall back to justifyText when unset.
   summaryAlign?: "left" | "justify" | "center";
   experienceAlign?: "left" | "justify" | "center";
+  // Remembered per-template alignment so switching templates restores prior picks.
+  alignmentByTemplate?: Partial<
+    Record<
+      TemplateId,
+      { summaryAlign?: "left" | "justify" | "center"; experienceAlign?: "left" | "justify" | "center" }
+    >
+  >;
   customSections: CustomSection[];
   // Body line-height (unitless) and gap (px) between top-level sections.
   // Controls both the on-screen preview and printed PDF/DOCX output.
