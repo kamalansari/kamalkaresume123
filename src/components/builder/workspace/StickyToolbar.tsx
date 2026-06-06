@@ -120,8 +120,8 @@ export function StickyToolbar({
 
   return (
     <div className="no-print sticky top-14 z-20 border-b border-border bg-background/90 backdrop-blur-md shadow-[var(--shadow-soft)]">
-      <div className="mx-auto max-w-[1600px] px-3 sm:px-6 h-12 flex items-center gap-2">
-        {/* Resume name + autosave */}
+      <div className="mx-auto max-w-[1600px] px-2 sm:px-6 h-12 flex items-center gap-2">
+        {/* Resume name + autosave — always visible, shrinks on mobile */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {editingName ? (
             <Input
@@ -139,13 +139,22 @@ export function StickyToolbar({
             <button
               type="button"
               onClick={() => setEditingName(true)}
-              className="group inline-flex items-center gap-1.5 truncate rounded-md px-2 py-1 text-sm font-semibold hover:bg-accent/60"
+              className="group inline-flex items-center gap-1.5 min-w-0 rounded-md px-2 py-1 text-sm font-semibold hover:bg-accent/60"
               title="Rename resume"
             >
-              <span className="truncate max-w-[180px] sm:max-w-[280px]">{name}</span>
-              <PencilIcon className="h-3.5 w-3.5 opacity-0 group-hover:opacity-70 transition-opacity" />
+              <span className="truncate max-w-[120px] sm:max-w-[280px]">{name}</span>
+              <PencilIcon className="h-3.5 w-3.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-70 transition-opacity shrink-0" />
             </button>
           )}
+          {/* Compact autosave dot on mobile, full pill on sm+ */}
+          <span
+            className={cn(
+              "sm:hidden inline-flex h-2 w-2 rounded-full shrink-0",
+              saving ? "bg-amber-500 animate-pulse" : "bg-emerald-500",
+            )}
+            title={savedLabel}
+            aria-label={savedLabel}
+          />
           <span
             className={cn(
               "hidden sm:inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
@@ -160,31 +169,16 @@ export function StickyToolbar({
           </span>
         </div>
 
-        {/* Undo / Redo */}
+        {/* Desktop inline controls */}
         <div className="hidden md:flex items-center gap-0.5 rounded-lg border border-border p-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2"
-            onClick={onUndo}
-            disabled={!canUndo}
-            title="Undo (Ctrl/Cmd+Z)"
-          >
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={onUndo} disabled={!canUndo} title="Undo (Ctrl/Cmd+Z)">
             <Undo2 className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2"
-            onClick={onRedo}
-            disabled={!canRedo}
-            title="Redo (Ctrl/Cmd+Shift+Z)"
-          >
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={onRedo} disabled={!canRedo} title="Redo (Ctrl/Cmd+Shift+Z)">
             <Redo2 className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* Zoom */}
         <div className="hidden md:flex items-center gap-0.5 rounded-lg border border-border p-0.5">
           <Button variant="ghost" size="sm" className="h-8 px-2" onClick={decZoom} title="Zoom out">
             <ZoomOut className="h-4 w-4" />
@@ -202,11 +196,10 @@ export function StickyToolbar({
           </Button>
         </div>
 
-        {/* Preview toggle */}
         <Button
           variant={previewOnly ? "default" : "outline"}
           size="sm"
-          className="h-8"
+          className="hidden md:inline-flex h-8"
           onClick={onTogglePreview}
           title={previewOnly ? "Switch to edit mode" : "Preview only"}
         >
@@ -214,16 +207,15 @@ export function StickyToolbar({
           <span className="hidden sm:inline">{previewOnly ? "Edit" : "Preview"}</span>
         </Button>
 
-        {/* Share */}
-        <Button variant="outline" size="sm" className="h-8" onClick={share} title="Copy shareable link">
+        <Button variant="outline" size="sm" className="hidden md:inline-flex h-8" onClick={share} title="Copy shareable link">
           <Share2 className="h-4 w-4" />
           <span className="hidden sm:inline">Share</span>
         </Button>
 
-        {/* PDF */}
+        {/* PDF — primary action, always visible */}
         <Button
           size="sm"
-          className="h-8"
+          className="h-8 shrink-0"
           style={{ background: "var(--gradient-hero)", color: "white" }}
           onClick={onPdf}
           title="Download as PDF"
@@ -231,6 +223,51 @@ export function StickyToolbar({
           <Download className="h-4 w-4" />
           <span className="hidden sm:inline">PDF</span>
         </Button>
+
+        {/* Mobile overflow menu — exposes every action below md */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="md:hidden h-8 px-2 shrink-0" title="More actions">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-60">
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              View
+            </DropdownMenuLabel>
+            <DropdownMenuItem onClick={onTogglePreview}>
+              {previewOnly ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {previewOnly ? "Switch to edit" : "Preview only"}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              History
+            </DropdownMenuLabel>
+            <DropdownMenuItem onClick={onUndo} disabled={!canUndo}>
+              <Undo2 className="h-4 w-4" /> Undo
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onRedo} disabled={!canRedo}>
+              <Redo2 className="h-4 w-4" /> Redo
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              Zoom · {Math.round(zoom * 100)}%
+            </DropdownMenuLabel>
+            <DropdownMenuItem onClick={decZoom}>
+              <ZoomOut className="h-4 w-4" /> Zoom out
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onZoom(1)}>
+              <Check className="h-4 w-4" /> Reset to 100%
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={incZoom}>
+              <ZoomIn className="h-4 w-4" /> Zoom in
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={share}>
+              <Share2 className="h-4 w-4" /> Copy share link
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
