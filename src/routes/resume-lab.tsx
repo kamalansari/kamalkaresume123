@@ -595,3 +595,30 @@ function normalizeSkills(input: unknown): string {
   }
   return s;
 }
+
+type JdMeta = {
+  text: string;
+  skills: string[];
+  experience: string;
+  location: string;
+  industry: string;
+  keywords: string[];
+};
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error("Failed to read file"));
+    r.readAsDataURL(file);
+  });
+}
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-muted-foreground">{label}</div>
+      <div className="font-medium truncate" title={value || "—"}>{value || "—"}</div>
+    </div>
+  );
+}
