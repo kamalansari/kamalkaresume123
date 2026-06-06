@@ -2,7 +2,7 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, T
 import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
 import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
-import { parseSkills } from "@/lib/parseSkills";
+import { parseSkills, parseSkillGroups, type SkillGroup } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
 import { splitBulletLines } from "@/lib/resumeText";
 import { jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
