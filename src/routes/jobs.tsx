@@ -434,7 +434,10 @@ function JobsPage() {
             onRefresh={() => syncMut.mutate()}
             refreshing={syncMut.isPending}
             authed={authed}
+            hasFilters={activeFilters.length > 0 || !!search.trim()}
+            onClearFilters={clearFilters}
           />
+
         ) : (
           <>
             {!hasResumeData && (
