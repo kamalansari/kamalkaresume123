@@ -583,6 +583,29 @@ function ResumeLabPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={applyPromptOpen} onOpenChange={setApplyPromptOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apply for this job now?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your tailored resume{savedResumeName ? ` "${savedResumeName}"` : ""} is saved.
+              {search.jobTitle ? ` Open the application page for ${search.jobTitle}${search.company ? ` at ${search.company}` : ""}?` : " Open the application page in a new tab?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Not now</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (search.jobUrl) window.open(search.jobUrl, "_blank", "noopener,noreferrer");
+                setApplyPromptOpen(false);
+              }}
+            >
+              Apply now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
