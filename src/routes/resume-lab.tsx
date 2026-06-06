@@ -184,9 +184,22 @@ function ResumeLabPage() {
   useEffect(() => {
     const primary = resumeStore.getPrimary();
     const draft = resumeStore.getDraft();
-    if (primary?.data) setResume(primary.data);
-    else if (draft) setResume(draft);
-  }, []);
+    const base = primary?.data ?? draft ?? null;
+    if (base) setResume(base);
+    if (search.company) {
+      const profileName = (base?.name ?? defaultResume.name ?? "Resume").trim();
+      const stamp = new Date().toLocaleDateString();
+      setTailoredName(`${profileName} - ${search.company} - ${stamp}`);
+    }
+  }, [search.company]);
+
+  // Auto-show save dialog once alignment completes if the user arrived via Apply Now
+  useEffect(() => {
+    if (result && search.jobUrl && !confirmOpen && !applyPromptOpen) {
+      setConfirmOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   const beforeScore = useMemo(() => computeScore({ ...resume, jobDescription: jd }).score, [resume, jd]);
   const afterScore = useMemo(() => {
