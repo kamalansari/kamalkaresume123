@@ -168,14 +168,14 @@ async function callAdzuna(
   if (where && where.toLowerCase() !== "remote") params.set("where", where);
   if (where && where.toLowerCase() === "remote") params.set("what_or", `${query} remote`);
   const url = `https://api.adzuna.com/v1/api/jobs/in/search/${page}?${params.toString()}`;
-  const res = await fetch(url, { headers: { accept: "application/json" } });
-  if (!res.ok) {
-    const body = (await res.text()).slice(0, 200);
-    console.warn(`[adzuna] ${res.status} ${query} @ ${where}: ${body}`);
+  try {
+    const res = await fetchWithRetry(url, { headers: { accept: "application/json" }, timeoutMs: 10000 }, { label: `adzuna ${query}@${where}` });
+    const data = (await res.json()) as AdzunaResponse;
+    return data.results ?? [];
+  } catch (e) {
+    console.warn(`[adzuna] ${query} @ ${where}: ${(e as Error).message}`);
     return [];
   }
-  const data = (await res.json()) as AdzunaResponse;
-  return data.results ?? [];
 }
 
 type UpsertRow = Database["public"]["Tables"]["jobs"]["Insert"];
