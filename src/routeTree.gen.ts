@@ -25,7 +25,6 @@ import { Route as ApiRoadmapRouteImport } from './routes/api/roadmap'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
 import { Route as ApiRewriteSnippetRouteImport } from './routes/api/rewrite-snippet'
 import { Route as ApiRewriteSectionRouteImport } from './routes/api/rewrite-section'
-import { Route as ApiRecommendJobsRouteImport } from './routes/api/recommend-jobs'
 import { Route as ApiParseResumeRouteImport } from './routes/api/parse-resume'
 import { Route as ApiNovaChatRouteImport } from './routes/api/nova-chat'
 import { Route as ApiKeywordBulletsRouteImport } from './routes/api/keyword-bullets'
@@ -36,6 +35,7 @@ import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-fro
 import { Route as ApiExtractJdRouteImport } from './routes/api/extract-jd'
 import { Route as ApiAlignResumeRouteImport } from './routes/api/align-resume'
 import { Route as AdminSkillDictionaryRouteImport } from './routes/admin.skill-dictionary'
+import { Route as ApiPublicHooksFetchJobsRouteImport } from './routes/api/public/hooks/fetch-jobs'
 
 const RoadmapRoute = RoadmapRouteImport.update({
   id: '/roadmap',
@@ -117,11 +117,6 @@ const ApiRewriteSectionRoute = ApiRewriteSectionRouteImport.update({
   path: '/api/rewrite-section',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRecommendJobsRoute = ApiRecommendJobsRouteImport.update({
-  id: '/api/recommend-jobs',
-  path: '/api/recommend-jobs',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiParseResumeRoute = ApiParseResumeRouteImport.update({
   id: '/api/parse-resume',
   path: '/api/parse-resume',
@@ -172,6 +167,11 @@ const AdminSkillDictionaryRoute = AdminSkillDictionaryRouteImport.update({
   path: '/admin/skill-dictionary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksFetchJobsRoute = ApiPublicHooksFetchJobsRouteImport.update({
+  id: '/api/public/hooks/fetch-jobs',
+  path: '/api/public/hooks/fetch-jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -196,11 +196,11 @@ export interface FileRoutesByFullPath {
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/parse-resume': typeof ApiParseResumeRoute
-  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
   '/api/roadmap': typeof ApiRoadmapRoute
+  '/api/public/hooks/fetch-jobs': typeof ApiPublicHooksFetchJobsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -225,11 +225,11 @@ export interface FileRoutesByTo {
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/parse-resume': typeof ApiParseResumeRoute
-  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
   '/api/roadmap': typeof ApiRoadmapRoute
+  '/api/public/hooks/fetch-jobs': typeof ApiPublicHooksFetchJobsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -255,11 +255,11 @@ export interface FileRoutesById {
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/parse-resume': typeof ApiParseResumeRoute
-  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
   '/api/roadmap': typeof ApiRoadmapRoute
+  '/api/public/hooks/fetch-jobs': typeof ApiPublicHooksFetchJobsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -286,11 +286,11 @@ export interface FileRouteTypes {
     | '/api/keyword-bullets'
     | '/api/nova-chat'
     | '/api/parse-resume'
-    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
     | '/api/roadmap'
+    | '/api/public/hooks/fetch-jobs'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -315,11 +315,11 @@ export interface FileRouteTypes {
     | '/api/keyword-bullets'
     | '/api/nova-chat'
     | '/api/parse-resume'
-    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
     | '/api/roadmap'
+    | '/api/public/hooks/fetch-jobs'
   id:
     | '__root__'
     | '/'
@@ -344,11 +344,11 @@ export interface FileRouteTypes {
     | '/api/keyword-bullets'
     | '/api/nova-chat'
     | '/api/parse-resume'
-    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
     | '/api/roadmap'
+    | '/api/public/hooks/fetch-jobs'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -374,11 +374,11 @@ export interface RootRouteChildren {
   ApiKeywordBulletsRoute: typeof ApiKeywordBulletsRoute
   ApiNovaChatRoute: typeof ApiNovaChatRoute
   ApiParseResumeRoute: typeof ApiParseResumeRoute
-  ApiRecommendJobsRoute: typeof ApiRecommendJobsRoute
   ApiRewriteSectionRoute: typeof ApiRewriteSectionRoute
   ApiRewriteSnippetRoute: typeof ApiRewriteSnippetRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
   ApiRoadmapRoute: typeof ApiRoadmapRoute
+  ApiPublicHooksFetchJobsRoute: typeof ApiPublicHooksFetchJobsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -495,13 +495,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRewriteSectionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/recommend-jobs': {
-      id: '/api/recommend-jobs'
-      path: '/api/recommend-jobs'
-      fullPath: '/api/recommend-jobs'
-      preLoaderRoute: typeof ApiRecommendJobsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/parse-resume': {
       id: '/api/parse-resume'
       path: '/api/parse-resume'
@@ -572,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSkillDictionaryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/fetch-jobs': {
+      id: '/api/public/hooks/fetch-jobs'
+      path: '/api/public/hooks/fetch-jobs'
+      fullPath: '/api/public/hooks/fetch-jobs'
+      preLoaderRoute: typeof ApiPublicHooksFetchJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -598,22 +598,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiKeywordBulletsRoute: ApiKeywordBulletsRoute,
   ApiNovaChatRoute: ApiNovaChatRoute,
   ApiParseResumeRoute: ApiParseResumeRoute,
-  ApiRecommendJobsRoute: ApiRecommendJobsRoute,
   ApiRewriteSectionRoute: ApiRewriteSectionRoute,
   ApiRewriteSnippetRoute: ApiRewriteSnippetRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
   ApiRoadmapRoute: ApiRoadmapRoute,
+  ApiPublicHooksFetchJobsRoute: ApiPublicHooksFetchJobsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
