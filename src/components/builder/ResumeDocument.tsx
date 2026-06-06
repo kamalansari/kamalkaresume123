@@ -592,7 +592,7 @@ export function ResumeDocument({
       skills: data.skills ? (
         <SidebarFlashWrap key="skills" flash={flashSection === "skills"}>
           <SidebarBlock title="Skills" headingFont={headingFont} dark={!compact}>
-            <SkillsGridContent data={data} ed={ed} dark={!compact} />
+            <SkillsGridContent data={data} ed={ed} dark={!compact} sidebar />
           </SidebarBlock>
         </SidebarFlashWrap>
       ) : null,
