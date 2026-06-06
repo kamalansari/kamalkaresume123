@@ -1179,6 +1179,7 @@ function SummarySection({
   headingFont: string;
   ed?: EditableHandlers;
 }) {
+  const summaryAlign = data.summaryAlign ?? (data.justifyText ? "justify" : "left");
   return (
     <Section title="Summary" accent={accent} headingFont={headingFont} ed={ed} kind="summary">
       {ed ? (
@@ -1190,12 +1191,12 @@ function SummarySection({
           className="preview-editable"
           onClick={(e) => e.stopPropagation()}
           onBlur={(e) => ed.onUpdate({ summary: e.currentTarget.innerText })}
-          style={{ textAlign: "justify" }}
+          style={{ textAlign: summaryAlign }}
         >
           {data.summary}
         </p>
       ) : (
-        <p style={{ textAlign: "justify" }}>
+        <p style={{ textAlign: summaryAlign }}>
           <InlineText text={data.summary} />
         </p>
       )}
