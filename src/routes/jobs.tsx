@@ -26,6 +26,7 @@ import {
   type MatchBreakdown,
 } from "@/lib/jobMatch";
 import { supabase } from "@/integrations/supabase/client";
+import { AskNovaJobDialog } from "@/components/AskNovaJobDialog";
 
 export const Route = createFileRoute("/jobs")({
   head: () => ({
@@ -578,6 +579,7 @@ function JobCard({
   const expLabel = extractExperienceLabel(job, breakdown.seniority.jobLevel);
   const locLabel = shortLocation(job.location, job.is_remote);
   const salary = shortSalary(job.salary_min, job.salary_max);
+  const [novaOpen, setNovaOpen] = useState(false);
 
   return (
     <article className="group border rounded-xl p-4 bg-card hover:shadow-lg hover:border-primary/40 transition-all flex flex-col">
@@ -641,10 +643,13 @@ function JobCard({
           {timeAgo(job.created_date)}
         </span>
         <div className="flex items-center gap-1.5">
-          <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs">
-            <Link to="/interview">
-              <Sparkles className="h-3 w-3 mr-1" />Ask Nova
-            </Link>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-xs"
+            onClick={() => setNovaOpen(true)}
+          >
+            <Sparkles className="h-3 w-3 mr-1" />Ask Nova
           </Button>
           <Button asChild size="sm" className="h-7 px-3 text-xs">
             <a href={job.redirect_url} target="_blank" rel="noopener noreferrer">
@@ -653,6 +658,7 @@ function JobCard({
           </Button>
         </div>
       </div>
+      <AskNovaJobDialog open={novaOpen} onOpenChange={setNovaOpen} job={job} breakdown={breakdown} />
     </article>
   );
 }
