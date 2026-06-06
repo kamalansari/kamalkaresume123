@@ -125,8 +125,12 @@ function SkillsGridContent({
   ed?: EditableHandlers;
   dark?: boolean;
 }) {
-  const groups = parseSkillGroups(data.skills);
-  const flatSkills = parseSkills(data.skills);
+  const allGroups = parseSkillGroups(data.skills);
+  const hiddenSet = new Set((data.hiddenSkillCategories ?? []).map((h) => h.trim().toLowerCase()));
+  const groups = allGroups.filter((g) => !g.heading || !hiddenSet.has(g.heading.trim().toLowerCase()));
+  const flatSkills = ed
+    ? parseSkills(data.skills)
+    : groups.flatMap((g) => g.items);
   const hasHeadings = groups.some((g) => g.heading);
   const { mode, desktopCols, mobileCols, balanceStrategy, balanceBias, textStyle } = getSkillsLayout(data, hasHeadings);
 

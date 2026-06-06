@@ -190,6 +190,10 @@ export type ResumeData = {
   skillsTextStyle?: "chips" | "plain";
   // Backward-compatible persisted alias used by older saved resumes/imports.
   textStyle?: "chips" | "plain";
+  // Category headings (from "Heading: a, b" lines in `skills`) to hide from
+  // the rendered Skills section. Matching is case-insensitive on the
+  // heading text. Only applies when the section is in "categorized" view.
+  hiddenSkillCategories?: string[];
   // Optional per-resume override of which section ids appear in the sidebar.
   // When undefined, the template default (TEMPLATE_SIDEBAR_DEFAULTS) is used.
   sidebarSections?: SectionId[];
