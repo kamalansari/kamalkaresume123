@@ -167,6 +167,7 @@ function JobsPage() {
   const filters = { search, location, company, workMode, experience, minSalaryLpa: minSalary, source };
 
   useEffect(() => {
+    if (!filtersHydratedRef.current) return;
     try {
       window.localStorage.setItem(
         FILTERS_STORAGE_KEY,
