@@ -120,10 +120,12 @@ function SkillsGridContent({
   data,
   ed,
   dark = false,
+  sidebar = false,
 }: {
   data: ResumeData;
   ed?: EditableHandlers;
   dark?: boolean;
+  sidebar?: boolean;
 }) {
   const allGroups = parseSkillGroups(data.skills);
   const hiddenSet = new Set((data.hiddenSkillCategories ?? []).map((h) => h.trim().toLowerCase()));
@@ -132,7 +134,13 @@ function SkillsGridContent({
     ? parseSkills(data.skills)
     : groups.flatMap((g) => g.items);
   const hasHeadings = groups.some((g) => g.heading);
-  const { mode, desktopCols, mobileCols, balanceStrategy, balanceBias, textStyle } = getSkillsLayout(data, hasHeadings);
+  const layout = getSkillsLayout(data, hasHeadings);
+  // In the narrow sidebar of two-column templates, always render skills as
+  // a single vertical bulleted list (one item per line) — sub-columns wrap
+  // text and look broken in the cramped column.
+  const { mode, desktopCols, mobileCols, balanceStrategy, balanceBias, textStyle } = sidebar
+    ? { ...layout, desktopCols: 1, mobileCols: 1 }
+    : layout;
 
   const estimateWeight = (text: string, cols: number) => {
     let raw: number;
