@@ -1776,17 +1776,39 @@ export function Builder() {
           <Card
             title="Skills"
             action={
-              <Button size="sm" variant="ghost" disabled={rewritingKey === "skills" || !data.skills.trim()}
-                onClick={async () => {
-                  const out = await rewriteWithAI("skills", data.skills, {}, "skills");
-                  if (out) { update("skills", out); toast.success("Skills tuned"); }
-                }}>
-                {rewritingKey === "skills" ? <Loader2 className="animate-spin" /> : <Sparkles />} AI tune
-              </Button>
+              data.skills.trim() ? (
+                <Button size="sm" variant="ghost" disabled={rewritingKey === "skills"}
+                  onClick={async () => {
+                    const out = await rewriteWithAI("skills", data.skills, {}, "skills");
+                    if (out) { update("skills", out); toast.success("Skills tuned"); }
+                  }}>
+                  {rewritingKey === "skills" ? <Loader2 className="animate-spin" /> : <Sparkles />} AI tune
+                </Button>
+              ) : null
             }
           >
-            <FormattableTextarea rows={3} value={data.skills} onChange={v => update("skills", v)} placeholder="Comma or pipe separated: React | TypeScript, Figma | Design Systems" />
-            <p className="mt-2 text-xs text-muted-foreground">Separate with <code>,</code> or <code>|</code>. {parseSkills(data.skills).length} skills detected.</p>
+            {!data.skills.trim() ? (
+              <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center">
+                <p className="text-sm text-muted-foreground mb-3">No skills yet. Generate a relevant list from your role{data.jobDescription.trim() ? " and target job" : ""}.</p>
+                <Button variant="accent" disabled={rewritingKey === "skills"}
+                  onClick={async () => {
+                    const out = await rewriteWithAI("skills", data.skills || data.headline || "", {}, "skills");
+                    if (out) { update("skills", out); toast.success("Skills generated"); }
+                  }}>
+                  {rewritingKey === "skills" ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                  {rewritingKey === "skills" ? "Generating…" : "Generate Skills with AI"}
+                </Button>
+                <p className="mt-3 text-xs text-muted-foreground">Or type your own below.</p>
+                <div className="mt-3 text-left">
+                  <FormattableTextarea rows={3} value={data.skills} onChange={v => update("skills", v)} placeholder="Comma or pipe separated: React | TypeScript, Figma | Design Systems" />
+                </div>
+              </div>
+            ) : (
+              <>
+                <FormattableTextarea rows={3} value={data.skills} onChange={v => update("skills", v)} placeholder="Comma or pipe separated: React | TypeScript, Figma | Design Systems" />
+                <p className="mt-2 text-xs text-muted-foreground">Separate with <code>,</code> or <code>|</code>. {parseSkills(data.skills).length} skills detected.</p>
+              </>
+            )}
           </Card>
           </div>
             </TabsContent>
