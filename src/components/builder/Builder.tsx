@@ -172,6 +172,12 @@ const TEMPLATES: { id: TemplateId; label: string; desc: string }[] = [
   { id: "editorial", label: "Editorial", desc: "Magazine-style headings" },
   { id: "aurora", label: "Aurora", desc: "Soft gradient accents" },
   { id: "monochrome", label: "Monochrome", desc: "Black & white minimal" },
+  { id: "novo-dark", label: "Novo Dark", desc: "Navy header + photo + gold rules" },
+  { id: "marketer-band", label: "Marketer Band", desc: "Centered uppercase navy band" },
+  { id: "ats-blue", label: "ATS Blue", desc: "Clean blue band, ATS-friendly" },
+  { id: "teal-chips", label: "Teal Chips", desc: "Minimal teal with skill chips" },
+  { id: "hybrid-photo", label: "Hybrid Photo", desc: "Photo header + icon sidebar" },
+  { id: "dark-sidebar", label: "Dark Sidebar", desc: "Dark left rail with timeline" },
 ];
 
 
