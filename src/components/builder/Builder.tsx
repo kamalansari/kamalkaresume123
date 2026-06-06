@@ -850,6 +850,14 @@ export function Builder() {
     if (typeof document === "undefined") return source;
     const root = document.getElementById("resume-preview");
     if (!root) return source;
+    // If the preview is not actually rendered (e.g. mobile editor view hides it
+    // via Tailwind `hidden`), `innerText` reads back "" for every editable
+    // element. Committing that would wipe summary/experience right before
+    // printing or exporting. Bail out and trust the existing state.
+    if (root.offsetParent === null && getComputedStyle(root).display === "none") {
+      return source;
+    }
+
 
     let next = source;
     let dirty = false;
@@ -884,13 +892,19 @@ export function Builder() {
   };
 
   const printCurrentResume = () => {
-    commitPreviewEdits();
-    announce("Preparing PDF for download…");
+    // Make sure the preview is mounted/visible so contentEditable reads back
+    // real text in commitPreviewEdits (innerText returns "" for display:none).
+    setMobileView("preview");
     requestAnimationFrame(() => {
-      window.print();
-      announce("PDF ready. Use your browser's save dialog to download.");
+      commitPreviewEdits();
+      announce("Preparing PDF for download…");
+      requestAnimationFrame(() => {
+        window.print();
+        announce("PDF ready. Use your browser's save dialog to download.");
+      });
     });
   };
+
 
   // Autosave: continuously sync contentEditable edits in the preview to the
   // saved-resume store (and React state on idle) so that downloads, share
