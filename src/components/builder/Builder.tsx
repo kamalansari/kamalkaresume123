@@ -902,7 +902,6 @@ export function Builder() {
     announce("Preparing PDF for download…");
     requestAnimationFrame(() => {
       window.print();
-      window.setTimeout(cleanup, 1000);
       announce("PDF ready. Use your browser's save dialog to download.");
     });
   };
