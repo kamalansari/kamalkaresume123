@@ -147,6 +147,22 @@ function JobsPage() {
 
   useEffect(() => {
     refreshResumes();
+    // Hydrate from session cache for snappy initial load
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const c = JSON.parse(raw) as { jobs: Job[]; total: number; page: number; hasMore: boolean; fetchedAt: number; jobTitle: string; location: string };
+        if (c.jobs?.length) {
+          setJobs(c.jobs);
+          setTotalResults(c.total ?? c.jobs.length);
+          setPage(c.page ?? 1);
+          setHasMore(!!c.hasMore);
+          setFetchedAt(c.fetchedAt ?? Date.now());
+          if (c.jobTitle) { setJobTitle(c.jobTitle); setActiveRoleTab(c.jobTitle); }
+          if (c.location) setLocation(c.location);
+        }
+      }
+    } catch { /* ignore */ }
   }, []);
 
   const activeResume: ResumeData = useMemo(() => {
@@ -159,37 +175,58 @@ function JobsPage() {
 
   const filterCount = [industry !== INDUSTRIES[0], role !== ROLES[0], datePosted !== "All time", alias, keywords].filter(Boolean).length;
 
-  const searchJobs = async () => {
+  const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
     if (!jobTitle.trim()) { toast.error("Enter a job title."); return; }
-    setLoading(true);
-    setActiveRoleTab(jobTitle);
+    append ? setLoadingMore(true) : setLoading(true);
     try {
       const res = await authFetch("/api/recommend-jobs", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          jobTitle, experience, location,
-          industry: industry === INDUSTRIES[0] ? "" : industry,
-          roleCategory: role === ROLES[0] ? "" : role,
-          datePosted, keywords,
-          resume: { headline: activeResume.headline, skills: activeResume.skills, summary: activeResume.summary },
-        }),
+        body: JSON.stringify({ jobTitle, experience, location, keywords, page: pageNum, pageSize: PAGE_SIZE }),
       });
       if (res.status === 429) { toast.error("Rate limit hit. Retry shortly."); return; }
-      if (res.status === 402) { toast.error("AI credits exhausted."); return; }
       if (!res.ok) { toast.error("Search failed."); return; }
-      const out = (await res.json()) as { jobs?: Job[] };
+      const out = (await res.json()) as { jobs?: Job[]; total?: number; hasMore?: boolean; fetchedAt?: number };
       const nextJobs = normalizeJobs(out.jobs ?? []);
-      setJobs(nextJobs);
-      // Reset client filters on a fresh search so users see all results first.
-      setRoleFilter(new Set());
-      setExpLevel("any");
-      setMinScore(0);
-      setSalaryRange([0, 100]);
-      toast.success(`${nextJobs.length} jobs matched`);
+      const merged = append ? [...jobs, ...nextJobs] : nextJobs;
+      setJobs(merged);
+      setTotalResults(out.total ?? merged.length);
+      setHasMore(!!out.hasMore);
+      setPage(pageNum);
+      const stamp = out.fetchedAt ?? Date.now();
+      setFetchedAt(stamp);
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          jobs: merged, total: out.total ?? merged.length, page: pageNum, hasMore: !!out.hasMore,
+          fetchedAt: stamp, jobTitle, location,
+        }));
+      } catch { /* ignore */ }
+      if (!append) {
+        setRoleFilter(new Set()); setExpLevel("any"); setMinScore(0); setSalaryRange([0, 100]);
+        toast.success(`${out.total ?? nextJobs.length} live jobs found`);
+      }
     } catch { toast.error("Network error."); }
-    finally { setLoading(false); }
-  };
+    finally { append ? setLoadingMore(false) : setLoading(false); }
+  }, [jobTitle, experience, location, keywords, jobs]);
+
+  const searchJobs = useCallback(() => {
+    setActiveRoleTab(jobTitle);
+    fetchPage(1, false);
+  }, [fetchPage, jobTitle]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!hasMore || loading || loadingMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) fetchPage(page + 1, true);
+    }, { rootMargin: "400px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, loading, loadingMore, page, fetchPage]);
+
+
 
   const askNova = async (job: Job, question?: string) => {
     setNovaJob(job);
