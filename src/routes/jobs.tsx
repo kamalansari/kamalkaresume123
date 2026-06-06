@@ -1049,13 +1049,13 @@ function JobCard({ job, resume, onScore, onNova, onApply, liveScore, isSaved, on
         </button>
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-border">
         <span className="text-xs text-muted-foreground">{job.postedAgo}</span>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={onNova}>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button size="sm" variant="outline" onClick={onNova} className="flex-1 sm:flex-none">
             <Sparkles className="h-3.5 w-3.5" /> Ask Nova
           </Button>
-          <Button size="sm" onClick={onApply} className="bg-[var(--navy-light)] text-white hover:opacity-95">
+          <Button size="sm" onClick={onApply} className="flex-1 sm:flex-none bg-[var(--navy-light)] text-white hover:opacity-95">
             Apply Now <ExternalLink className="h-3 w-3" />
           </Button>
         </div>
