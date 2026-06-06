@@ -764,11 +764,11 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
           <Label className="text-xs text-muted-foreground">Skills columns (mobile preview)</Label>
           <div className="mt-2 grid grid-cols-2 gap-1.5">
             {[1, 2].map((n) => {
-              const active = (data.skillsColumnsMobile ?? 1) === n;
+              const active = (data.skillsColumnsMobile ?? data.mobileSkillsColumns ?? 2) === n;
               return (
                 <button
                   key={n}
-                  onClick={() => onPatch({ skillsColumnsMobile: n })}
+                  onClick={() => onPatch({ skillsColumnsMobile: n, mobileSkillsColumns: n })}
                   className={cn(
                     "inline-flex items-center justify-center rounded-md border h-9 px-3 text-xs font-medium",
                     active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40",
@@ -787,11 +787,11 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
               { v: "compact", label: "Compact" },
               { v: "categorized", label: "Categorized" },
             ] as const).map((opt) => {
-              const active = (data.skillsViewMode ?? "compact") === opt.v;
+              const active = (data.skillsViewMode ?? data.skillsView ?? "compact") === opt.v;
               return (
                 <button
                   key={opt.v}
-                  onClick={() => onPatch({ skillsViewMode: opt.v })}
+                  onClick={() => onPatch({ skillsViewMode: opt.v, skillsView: opt.v })}
                   className={cn(
                     "inline-flex items-center justify-center rounded-md border h-9 px-3 text-xs font-medium",
                     active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40",
@@ -802,7 +802,7 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
               );
             })}
           </div>
-          {(data.skillsViewMode ?? "compact") === "categorized" && (
+          {(data.skillsViewMode ?? data.skillsView ?? "compact") === "categorized" && (
             <button
               type="button"
               onClick={() => {
@@ -829,12 +829,12 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
                 { v: "count", label: "Count", hint: "Equal number of items per column" },
                 { v: "chars", label: "Chars", hint: "Weight by raw character count" },
               ] as const).map((opt) => {
-                const active = (data.skillsBalanceStrategy ?? "length") === opt.v;
+                const active = (data.skillsBalanceStrategy ?? data.balanceStrategy ?? "length") === opt.v;
                 return (
                   <button
                     key={opt.v}
                     title={opt.hint}
-                    onClick={() => onPatch({ skillsBalanceStrategy: opt.v })}
+                    onClick={() => onPatch({ skillsBalanceStrategy: opt.v, balanceStrategy: opt.v })}
                     className={cn(
                       "inline-flex items-center justify-center rounded-md border h-9 px-2 text-xs font-medium",
                       active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40",
@@ -848,7 +848,7 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
             <div className="mt-3 flex items-center justify-between gap-2">
               <Label className="text-xs text-muted-foreground">Bias</Label>
               <span className="text-[11px] tabular-nums text-muted-foreground">
-                {(data.skillsBalanceBias ?? 1).toFixed(2)}×
+                {(data.skillsBalanceBias ?? data.skillsBias ?? 1).toFixed(2)}×
               </span>
             </div>
             <input
@@ -856,8 +856,8 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
               min={0.5}
               max={1.5}
               step={0.05}
-              value={data.skillsBalanceBias ?? 1}
-              onChange={(e) => onPatch({ skillsBalanceBias: Number(e.target.value) })}
+              value={data.skillsBalanceBias ?? data.skillsBias ?? 1}
+              onChange={(e) => onPatch({ skillsBalanceBias: Number(e.target.value), skillsBias: Number(e.target.value) })}
               className="mt-1 w-full accent-primary"
               aria-label="Skills balance bias"
             />
@@ -866,11 +866,11 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
               <span>Even</span>
               <span>Spread</span>
             </div>
-            {(data.skillsBalanceStrategy ?? "length") !== "length" ||
-            (data.skillsBalanceBias ?? 1) !== 1 ? (
+            {(data.skillsBalanceStrategy ?? data.balanceStrategy ?? "length") !== "length" ||
+            (data.skillsBalanceBias ?? data.skillsBias ?? 1) !== 1 ? (
               <button
                 type="button"
-                onClick={() => onPatch({ skillsBalanceStrategy: "length", skillsBalanceBias: 1 })}
+                onClick={() => onPatch({ skillsBalanceStrategy: "length", balanceStrategy: "length", skillsBalanceBias: 1, skillsBias: 1 })}
                 className="mt-2 text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
               >
                 Reset to default
