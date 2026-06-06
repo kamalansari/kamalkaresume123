@@ -172,7 +172,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive("/settings")}
+                  isActive={currentPath === "/settings" || currentPath.startsWith("/settings/")}
                   tooltip="Settings"
                   className="h-9 rounded-lg transition-all hover:translate-x-0.5"
                 >
