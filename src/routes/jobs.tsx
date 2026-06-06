@@ -484,12 +484,23 @@ function JobCard({
         </button>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground items-center">
         {job.location && (
           <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location}</span>
         )}
         {job.is_remote && <Badge variant="secondary" className="h-5 text-[10px]">Remote</Badge>}
         <span className="inline-flex items-center gap-1"><IndianRupee className="h-3 w-3" />{formatSalary(job.salary_min, job.salary_max).replace("₹", "")}</span>
+        <Badge
+          variant="outline"
+          className={cn(
+            "h-5 text-[10px] px-1.5",
+            job.source === "Naukri"
+              ? "border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/10"
+              : "border-sky-500/40 text-sky-700 dark:text-sky-300 bg-sky-500/10"
+          )}
+        >
+          {job.source}
+        </Badge>
       </div>
 
       {job.skills.length > 0 && (
