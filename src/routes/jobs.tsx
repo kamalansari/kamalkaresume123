@@ -140,6 +140,7 @@ function JobsPage() {
   const saveFn = useServerFn(saveJob);
   const unsaveFn = useServerFn(unsaveJob);
   const syncFn = useServerFn(triggerJobSync);
+  const statusFn = useServerFn(getProviderStatus);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
