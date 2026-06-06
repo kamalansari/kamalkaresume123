@@ -1101,13 +1101,16 @@ export function Builder() {
         ? `Tailored from Primary, saved as "${name}"`
         : `Tailored resume saved as "${name}"`;
       if (collected.length > 0) {
+        announce(`${baseMsg}. ${collected.length} bullet${collected.length === 1 ? "" : "s"} strengthened.`);
         toast.success(`${baseMsg} · ${collected.length} bullet${collected.length === 1 ? "" : "s"} strengthened`, {
           action: { label: "View changes", onClick: () => setVerbChangesOpen(true) },
         });
       } else {
+        announce(baseMsg);
         toast.success(baseMsg);
       }
     } catch {
+      announce("Network error while tailoring resume.");
       toast.error("Network error.");
     } finally {
       setGenerating(false);
