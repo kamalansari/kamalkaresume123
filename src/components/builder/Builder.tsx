@@ -257,12 +257,13 @@ export function Builder() {
   const [verbChanges, setVerbChanges] = useState<VerbChange[]>([]);
   const [verbChangesOpen, setVerbChangesOpen] = useState(false);
 
-  // ---- Undo/Redo for section ordering & custom section edits ----
-  type SectionsSnapshot = { sectionOrder: SectionId[]; customSections: CustomSection[]; sidebarSections: SectionId[] | undefined };
-  const [sectionsPast, setSectionsPast] = useState<SectionsSnapshot[]>([]);
-  const [sectionsFuture, setSectionsFuture] = useState<SectionsSnapshot[]>([]);
-  const lastPushRef = useRef<{ at: number; key: string } | null>(null);
+  // ---- Undo/Redo for the entire resume ----
+  const [sectionsPast, setSectionsPast] = useState<ResumeData[]>([]);
+  const [sectionsFuture, setSectionsFuture] = useState<ResumeData[]>([]);
   const dataRef = useRef(data);
+  const lastSnapshotRef = useRef<ResumeData>(data);
+  const suppressHistoryRef = useRef(false);
+  const historyTimerRef = useRef<number | null>(null);
   useEffect(() => { dataRef.current = data; }, [data]);
 
   // Transient highlight for the most recently moved/added section in the preview.
@@ -271,63 +272,69 @@ export function Builder() {
   const flashMoved = (id: SectionId) => {
     if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
     setFlashSection(null);
-    // Re-set on next frame so the animation restarts even if the same id flashes twice in a row.
     window.requestAnimationFrame(() => {
       setFlashSection(id);
       flashTimerRef.current = window.setTimeout(() => setFlashSection(null), 1200);
     });
   };
 
-  const snapshotNow = (): SectionsSnapshot => ({
-    sectionOrder: [...dataRef.current.sectionOrder],
-    customSections: (dataRef.current.customSections ?? []).map(c => ({ ...c })),
-    sidebarSections: dataRef.current.sidebarSections ? [...dataRef.current.sidebarSections] : undefined,
-  });
-
-  const pushSectionsHistory = (coalesceKey = "") => {
-    const now = Date.now();
-    const last = lastPushRef.current;
-    if (coalesceKey && last && last.key === coalesceKey && now - last.at < 800) {
-      lastPushRef.current = { at: now, key: coalesceKey };
+  // Debounce-capture history snapshots whenever `data` changes (excluding undo/redo applications).
+  useEffect(() => {
+    if (suppressHistoryRef.current) {
+      suppressHistoryRef.current = false;
+      lastSnapshotRef.current = data;
       return;
     }
-    lastPushRef.current = { at: now, key: coalesceKey };
-    setSectionsPast(p => [...p.slice(-49), snapshotNow()]);
-    setSectionsFuture([]);
-  };
+    if (historyTimerRef.current) window.clearTimeout(historyTimerRef.current);
+    historyTimerRef.current = window.setTimeout(() => {
+      const prev = lastSnapshotRef.current;
+      if (prev === data) return;
+      setSectionsPast(p => [...p.slice(-49), prev]);
+      setSectionsFuture([]);
+      lastSnapshotRef.current = data;
+    }, 400);
+    return () => {
+      if (historyTimerRef.current) window.clearTimeout(historyTimerRef.current);
+    };
+  }, [data]);
 
-  const applySectionsSnapshot = (s: SectionsSnapshot) => {
-    setData(d => ({ ...d, sectionOrder: s.sectionOrder, customSections: s.customSections, sidebarSections: s.sidebarSections }));
+  // Kept for API compatibility with callers that previously coalesced section history.
+  const pushSectionsHistory = (_coalesceKey = "") => {
+    if (historyTimerRef.current) window.clearTimeout(historyTimerRef.current);
+    const prev = lastSnapshotRef.current;
+    if (prev === dataRef.current) return;
+    setSectionsPast(p => [...p.slice(-49), prev]);
+    setSectionsFuture([]);
+    lastSnapshotRef.current = dataRef.current;
   };
 
   const undoSections = () => {
     if (sectionsPast.length === 0) return;
     const prev = sectionsPast[sectionsPast.length - 1];
-    const current = snapshotNow();
+    const current = dataRef.current;
     setSectionsPast(p => p.slice(0, -1));
     setSectionsFuture(f => [current, ...f]);
-    applySectionsSnapshot(prev);
-    lastPushRef.current = null;
+    suppressHistoryRef.current = true;
+    setData(prev);
   };
 
   const redoSections = () => {
     if (sectionsFuture.length === 0) return;
     const next = sectionsFuture[0];
-    const current = snapshotNow();
+    const current = dataRef.current;
     setSectionsFuture(f => f.slice(1));
     setSectionsPast(p => [...p, current]);
-    applySectionsSnapshot(next);
-    lastPushRef.current = null;
+    suppressHistoryRef.current = true;
+    setData(next);
   };
 
-  // Keyboard shortcuts: Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z
+  // Keyboard shortcuts: Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, Ctrl/Cmd+Y
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.ctrlKey || e.metaKey;
       if (!mod) return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
-      // Don't hijack undo inside text inputs / contentEditable — let native edit history handle it.
       if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
       if (e.key.toLowerCase() === "z") {
         e.preventDefault();
@@ -341,6 +348,7 @@ export function Builder() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [sectionsPast, sectionsFuture]);
+
 
   // Opening-from-URL UX: skeleton + retry when ?open=ID arrives but the
   // resume isn't in local store yet (e.g. cloud sync hasn't pulled).
