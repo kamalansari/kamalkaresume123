@@ -527,60 +527,7 @@ export function ResumeDocument({
       skills: data.skills ? (
         <SidebarFlashWrap key="skills" flash={flashSection === "skills"}>
           <SidebarBlock title="Skills" headingFont={headingFont} dark={!compact}>
-            {ed ? (
-              <ul
-                key={`sb-skills-${data.skills}`}
-                contentEditable
-                suppressContentEditableWarning
-                data-preview-edit="skills"
-                className="preview-editable"
-                onClick={(e) => e.stopPropagation()}
-                onBlur={(e) => {
-                  const lines = e.currentTarget.innerText
-                    .split("\n")
-                    .map((s) => s.replace(/^[•\-\u2022]\s*/, "").trim())
-                    .filter(Boolean);
-                  // Persist with newlines so each skill stays on its own
-                  // line when re-rendered (parseSkills already splits on
-                  // commas AND newlines, so existing data keeps working).
-                  ed.onUpdate({ skills: lines.join("\n") });
-                }}
-                style={{
-                  margin: 0,
-                  paddingLeft: 14,
-                  listStyle: "disc",
-                  listStylePosition: "outside",
-                  textIndent: 0,
-                }}
-              >
-                {parseSkills(data.skills).map((s, i) => (
-                  <li key={i} style={{ marginBottom: 5, paddingLeft: 2, fontWeight: 400, lineHeight: 1.45 }}>
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              parseSkillGroups(data.skills).map((g, gi) => (
-                <div key={gi} style={{ marginBottom: 10 }}>
-                  {g.heading && <div style={{ fontWeight: 600, marginBottom: 4 }}>{g.heading}</div>}
-                  <ul
-                    style={{
-                      margin: 0,
-                      paddingLeft: 14,
-                      listStyle: "disc",
-                      listStylePosition: "outside",
-                      textIndent: 0,
-                    }}
-                  >
-                    {g.items.map((s, i) => (
-                      <li key={i} style={{ marginBottom: 5, paddingLeft: 2, fontWeight: 400, lineHeight: 1.45 }}>
-                        {s}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))
-            )}
+            <SkillsGridContent data={data} ed={ed} dark={!compact} />
           </SidebarBlock>
         </SidebarFlashWrap>
       ) : null,
