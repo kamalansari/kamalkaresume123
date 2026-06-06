@@ -98,7 +98,7 @@ function JobsPage() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const profile = useMemo(getResumeProfile, []);
+  const profile = useMemo(() => buildResumeProfile(), []);
 
   const filters = { search, location, workMode, experience, minSalaryLpa: minSalary };
 
