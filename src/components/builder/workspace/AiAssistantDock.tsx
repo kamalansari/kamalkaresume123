@@ -212,8 +212,13 @@ export function AiAssistantDock({ data, atsScore }: { data: ResumeData; atsScore
               </div>
             ))}
             {loading && (
-              <div className="mr-auto inline-flex items-center gap-2 rounded-2xl rounded-bl-md bg-secondary px-3 py-2 text-sm text-muted-foreground">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Thinking…
+              <div
+                role="status"
+                aria-live="polite"
+                className="mr-auto inline-flex items-center gap-2 rounded-2xl rounded-bl-md bg-secondary px-3 py-2 text-sm text-muted-foreground"
+              >
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                <span>Nova is thinking…</span>
               </div>
             )}
           </div>
