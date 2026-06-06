@@ -117,6 +117,20 @@ function JobsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [tab, setTab] = useState<"all" | "saved">("all");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const filtersHydratedRef = useRef(false);
+
+  // Re-hydrate saved filters on mount in case SSR rendered with empty defaults.
+  useEffect(() => {
+    const s = loadStoredFilters();
+    if (s.search !== undefined) setSearch(s.search);
+    if (s.location !== undefined) setLocation(s.location);
+    if (s.company !== undefined) setCompany(s.company);
+    if (s.workMode !== undefined) setWorkMode(s.workMode);
+    if (s.experience !== undefined) setExperience(s.experience);
+    if (s.minSalary !== undefined) setMinSalary(s.minSalary);
+    if (s.source !== undefined) setSource(s.source);
+    filtersHydratedRef.current = true;
+  }, []);
 
   const queryClient = useQueryClient();
   const listFn = useServerFn(listJobs);
@@ -153,6 +167,7 @@ function JobsPage() {
   const filters = { search, location, company, workMode, experience, minSalaryLpa: minSalary, source };
 
   useEffect(() => {
+    if (!filtersHydratedRef.current) return;
     try {
       window.localStorage.setItem(
         FILTERS_STORAGE_KEY,
