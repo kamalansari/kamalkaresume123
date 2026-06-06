@@ -157,6 +157,20 @@ type RemotiveJob = {
   company_logo?: string;
 };
 
+type RemoteOkJob = {
+  id?: string | number;
+  position?: string;
+  company?: string;
+  location?: string;
+  tags?: string[];
+  description?: string;
+  date?: string;
+  url?: string;
+  logo?: string;
+  salary_min?: number;
+  salary_max?: number;
+};
+
 async function fetchJSearch(query: string, location: string, pages: number): Promise<ProviderResult> {
   const key = process.env.RAPIDAPI_KEY;
   if (!key) {
@@ -266,6 +280,39 @@ async function fetchRemotive(query: string): Promise<OutJob[]> {
   }
 }
 
+async function fetchRemoteOk(query: string): Promise<OutJob[]> {
+  try {
+    const res = await fetch("https://remoteok.com/api", { headers: { "user-agent": "ResumeForge/1.0", accept: "application/json" } });
+    if (!res.ok) return [];
+    const data = (await res.json()) as RemoteOkJob[];
+    return data.slice(1).map(j => {
+      const posted = j.date ? Date.parse(j.date) || Date.now() : Date.now();
+      const min = Number(j.salary_min || 0);
+      const max = Number(j.salary_max || 0);
+      const salary = min || max ? formatSalary(min || null, max || null, "USD", "YEAR") : "Not disclosed";
+      return {
+        id: `rok_${j.id ?? j.url}`,
+        title: j.position || "Remote role",
+        company: j.company || "Company",
+        location: j.location || "Remote",
+        experience: "Not specified",
+        salary,
+        postedAgo: timeAgo(posted),
+        postedAt: posted,
+        tags: (j.tags ?? []).slice(0, 6),
+        jd: htmlToText(j.description ?? "").slice(0, 2200),
+        source: "RemoteOK",
+        applyUrl: j.url || "https://remoteok.com/remote-jobs",
+        remote: true,
+        logo: j.logo || undefined,
+      };
+    }).filter(j => isIndiaOrOpenRemote(j.location, j.remote) && relevantToQuery(j, query));
+  } catch (e) {
+    console.warn("[remoteok] error", (e as Error).message);
+    return [];
+  }
+}
+
 // --- ranking ---------------------------------------------------------------
 function rank(jobs: OutJob[], q: { title: string; location: string; keywords: string }): OutJob[] {
   const wantedLoc = q.location.toLowerCase();
@@ -312,7 +359,7 @@ export const Route = createFileRoute("/api/recommend-jobs")({
         } else {
           const q = [title, keywords].filter(Boolean).join(" ");
           const result = await fetchJSearchBroad(q, location);
-          const fallback = result.jobs.length > 0 ? [] : await fetchRemotive(q || title || "jobs");
+          const fallback = result.jobs.length > 0 ? [] : [...await fetchRemotive(q || title || "jobs"), ...await fetchRemoteOk(q || title || "jobs")];
           const all = [...result.jobs, ...fallback];
           providerIssue = result.issue;
           // dedupe by applyUrl + source
