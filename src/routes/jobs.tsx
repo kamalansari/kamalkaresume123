@@ -229,7 +229,7 @@ function JobsPage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-base sm:text-lg font-semibold truncate">Find Jobs</h1>
             <p className="text-xs text-muted-foreground">
-              {total > 0 ? `${total.toLocaleString()} live jobs` : "Live jobs from Adzuna & Naukri"} · cached & refreshed every 6h
+              {total > 0 ? `${total.toLocaleString()} live jobs` : "Live jobs from Adzuna, Naukri, LinkedIn, Indeed, Glassdoor"} · cached & refreshed every 6h
             </p>
           </div>
           <Button
@@ -465,7 +465,7 @@ function EmptyState({
       <Briefcase className="h-12 w-12 mx-auto text-muted-foreground" />
       <h2 className="mt-4 text-lg font-semibold">No jobs match your filters</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Try clearing filters, or refresh the cache to pull the latest Adzuna listings.
+        Try clearing filters, or refresh the cache to pull the latest listings.
       </p>
       {authed && (
         <Button onClick={onRefresh} disabled={refreshing} className="mt-4">
