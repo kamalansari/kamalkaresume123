@@ -182,6 +182,17 @@ export function Builder() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1);
+  // Polite live-region for screen-reader status announcements (AI actions, PDF/DOCX, saves).
+  // We toggle the text via a ref+state pair so the same message can be re-announced; an
+  // explicit blank flush ensures repeated identical statuses still re-fire on assistive tech.
+  const [liveMsg, setLiveMsg] = useState("");
+  const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const announce = (msg: string) => {
+    if (liveTimerRef.current) clearTimeout(liveTimerRef.current);
+    setLiveMsg("");
+    liveTimerRef.current = setTimeout(() => setLiveMsg(msg), 60);
+  };
+  useEffect(() => () => { if (liveTimerRef.current) clearTimeout(liveTimerRef.current); }, []);
   // Mobile view switcher: which panel is visible on screens < lg.
   // 'editor' is the default; bottom nav toggles between editor and preview.
   const [mobileView, setMobileView] = useState<"editor" | "preview">("editor");
@@ -786,7 +797,11 @@ export function Builder() {
 
   const printCurrentResume = () => {
     commitPreviewEdits();
-    requestAnimationFrame(() => window.print());
+    announce("Preparing PDF for download…");
+    requestAnimationFrame(() => {
+      window.print();
+      announce("PDF ready. Use your browser's save dialog to download.");
+    });
   };
 
   // Autosave: continuously sync contentEditable edits in the preview to the
@@ -897,13 +912,20 @@ export function Builder() {
 
   const handleDocx = async () => {
     setExporting(true);
-    try { await exportDocx(commitPreviewEdits()); toast.success("DOCX downloaded"); }
-    catch { toast.error("Could not export DOCX"); }
-    finally { setExporting(false); }
+    announce("Generating DOCX file…");
+    try {
+      await exportDocx(commitPreviewEdits());
+      announce("DOCX downloaded successfully.");
+      toast.success("DOCX downloaded");
+    } catch {
+      announce("Could not export DOCX. Please try again.");
+      toast.error("Could not export DOCX");
+    } finally { setExporting(false); }
   };
 
   const rewriteSummary = async () => {
     setRewriting(true);
+    announce("AI is rewriting your summary…");
     try {
       const res = await authFetch("/api/rewrite-summary", {
         method: "POST",
@@ -916,15 +938,17 @@ export function Builder() {
           experience: data.experience.map(e => ({ title: e.title, company: e.company, bullets: e.bullets })),
         }),
       });
-      if (res.status === 429) { toast.error("Rate limit hit. Please retry in a moment."); return; }
-      if (res.status === 402) { toast.error("AI credits exhausted. Add credits in Workspace settings."); return; }
-      if (!res.ok) { toast.error("Rewrite failed. Please try again."); return; }
+      if (res.status === 429) { announce("Rate limit hit. Please retry shortly."); toast.error("Rate limit hit. Please retry in a moment."); return; }
+      if (res.status === 402) { announce("AI credits exhausted."); toast.error("AI credits exhausted. Add credits in Workspace settings."); return; }
+      if (!res.ok) { announce("Summary rewrite failed."); toast.error("Rewrite failed. Please try again."); return; }
       const json = (await res.json()) as { summary?: string };
       if (json.summary) {
         update("summary", json.summary);
+        announce("Summary rewritten by AI.");
         toast.success("Summary rewritten");
       }
     } catch {
+      announce("Network error while rewriting summary.");
       toast.error("Network error. Please try again.");
     } finally {
       setRewriting(false);
@@ -933,18 +957,20 @@ export function Builder() {
 
   const rewriteWithAI = async (kind: "bullets" | "skills" | "education", text: string, ctx: Record<string, string | undefined>, key: string): Promise<string | null> => {
     setRewritingKey(key);
+    announce(`AI is rewriting your ${kind === "bullets" ? "experience bullets" : kind}…`);
     try {
       const res = await authFetch("/api/rewrite-section", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ kind, text, context: { headline: data.headline, jobDescription: data.jobDescription, skills: data.skills, ...ctx } }),
       });
-      if (res.status === 429) { toast.error("Rate limit hit. Please retry."); return null; }
-      if (res.status === 402) { toast.error("AI credits exhausted."); return null; }
-      if (!res.ok) { toast.error("Rewrite failed."); return null; }
+      if (res.status === 429) { announce("Rate limit hit. Please retry shortly."); toast.error("Rate limit hit. Please retry."); return null; }
+      if (res.status === 402) { announce("AI credits exhausted."); toast.error("AI credits exhausted."); return null; }
+      if (!res.ok) { announce("Rewrite failed."); toast.error("Rewrite failed."); return null; }
       const json = (await res.json()) as { text?: string };
       return json.text ?? null;
     } catch {
+      announce("Network error during rewrite.");
       toast.error("Network error.");
       return null;
     } finally {
@@ -956,14 +982,14 @@ export function Builder() {
     if (kind === "summary") { await rewriteSummary(); return; }
     if (kind === "skills") {
       const out = await rewriteWithAI("skills", data.skills, {}, "skills");
-      if (out) { update("skills", out); toast.success("Skills rewritten"); }
+      if (out) { update("skills", out); announce("Skills rewritten by AI."); toast.success("Skills rewritten"); }
       return;
     }
     if (kind === "experience-bullets" && refId) {
       const e = data.experience.find(x => x.id === refId);
       if (!e) return;
       const out = await rewriteWithAI("bullets", e.bullets, { title: e.title, company: e.company }, `exp-${e.id}`);
-      if (out) { updateExp(e.id, { bullets: normalizeBulletText(out) }); toast.success("Bullets rewritten"); }
+      if (out) { updateExp(e.id, { bullets: normalizeBulletText(out) }); announce("Experience bullets rewritten by AI."); toast.success("Bullets rewritten"); }
     }
   };
 
@@ -1018,6 +1044,7 @@ export function Builder() {
     if (!data.jobDescription.trim()) { toast.error("Paste a job description first."); return; }
     setTailorConfirmOpen(false);
     setGenerating(true);
+    announce("AI is tailoring your resume to the job description. This can take up to 30 seconds…");
     try {
       // Always tailor from Primary Resume if set, and save the result as a NEW resume
       // so the Primary stays untouched.
@@ -1039,9 +1066,9 @@ export function Builder() {
           },
         }),
       });
-      if (res.status === 429) { toast.error("Rate limit hit."); return; }
-      if (res.status === 402) { toast.error("AI credits exhausted."); return; }
-      if (!res.ok) { toast.error("AI tailoring failed."); return; }
+      if (res.status === 429) { announce("Rate limit hit during AI tailoring."); toast.error("Rate limit hit."); return; }
+      if (res.status === 402) { announce("AI credits exhausted."); toast.error("AI credits exhausted."); return; }
+      if (!res.ok) { announce("AI tailoring failed. Please try again."); toast.error("AI tailoring failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
       const verbState = loadCustomVerbs();
       const collected: VerbChange[] = [];
@@ -1074,13 +1101,16 @@ export function Builder() {
         ? `Tailored from Primary, saved as "${name}"`
         : `Tailored resume saved as "${name}"`;
       if (collected.length > 0) {
+        announce(`${baseMsg}. ${collected.length} bullet${collected.length === 1 ? "" : "s"} strengthened.`);
         toast.success(`${baseMsg} · ${collected.length} bullet${collected.length === 1 ? "" : "s"} strengthened`, {
           action: { label: "View changes", onClick: () => setVerbChangesOpen(true) },
         });
       } else {
+        announce(baseMsg);
         toast.success(baseMsg);
       }
     } catch {
+      announce("Network error while tailoring resume.");
       toast.error("Network error.");
     } finally {
       setGenerating(false);
@@ -2319,6 +2349,16 @@ export function Builder() {
 
 
       <AiAssistantDock data={data} atsScore={score.score} />
+
+      {/* Polite ARIA live region for screen-reader status (AI rewrites, PDF/DOCX exports, tailoring). */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {liveMsg}
+      </div>
     </div>
   );
 }
