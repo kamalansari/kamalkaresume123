@@ -139,6 +139,7 @@ function JobsPage() {
   const [expLevel, setExpLevel] = useState<ExpLevelId>("any");
   const [salaryRange, setSalaryRange] = useState<[number, number]>([0, 100]);
   const [minScore, setMinScore] = useState<number>(0);
+  const [sourceTab, setSourceTab] = useState<SourceTab>("all");
 
   const refreshResumes = () => {
     const list = resumeStore.list();
