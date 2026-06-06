@@ -183,34 +183,6 @@ export function StickyToolbar({
           </Button>
         </div>
 
-        <Button
-          variant={previewOnly ? "default" : "outline"}
-          size="sm"
-          className="hidden md:inline-flex h-8"
-          onClick={onTogglePreview}
-          title={previewOnly ? "Switch to edit mode" : "Preview only"}
-        >
-          {previewOnly ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          <span className="hidden sm:inline">{previewOnly ? "Edit" : "Preview"}</span>
-        </Button>
-
-        <Button variant="outline" size="sm" className="hidden md:inline-flex h-8" onClick={share} title="Copy shareable link">
-          <Share2 className="h-4 w-4" />
-          <span className="hidden sm:inline">Share</span>
-        </Button>
-
-        {/* PDF — primary action, always visible */}
-        <Button
-          size="sm"
-          className="h-8 shrink-0"
-          style={{ background: "var(--gradient-hero)", color: "white" }}
-          onClick={onPdf}
-          title="Download as PDF"
-        >
-          <Download className="h-4 w-4" />
-          <span className="hidden sm:inline">PDF</span>
-        </Button>
-
         {/* Mobile overflow sheet — searchable, large tap targets, full labels */}
         <MobileActionsSheet
           previewOnly={previewOnly}
@@ -223,7 +195,6 @@ export function StickyToolbar({
           onZoom={onZoom}
           decZoom={decZoom}
           incZoom={incZoom}
-          share={share}
         />
       </div>
     </div>
