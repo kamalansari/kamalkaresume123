@@ -261,6 +261,7 @@ function JobsPage() {
 
   const clearFilters = () => {
     setSearch(""); setLocation(""); setCompany(""); setWorkMode("any"); setExperience("any"); setMinSalary(0); setSource("all");
+    try { window.localStorage.removeItem(FILTERS_STORAGE_KEY); } catch { /* ignore */ }
   };
 
   const activeFilters = [
