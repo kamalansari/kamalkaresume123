@@ -48,6 +48,7 @@ const { decompressFromEncodedURIComponent } = lzString;
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AiAssistantDock } from "./workspace/AiAssistantDock";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -2015,9 +2016,11 @@ export function Builder() {
           ))}
         </div>
       </nav>
+      <AiAssistantDock data={data} atsScore={score.score} />
     </div>
   );
 }
+
 
 function Card({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (

@@ -1,55 +1,89 @@
-# Highlight moved section in preview
+# Resume Builder Workspace Redesign
 
-## Goal
+A focused redesign of the `/builder` workspace with a warm, friendly Enhancv-inspired aesthetic. Ships in 4 phases so each lands visibly before the next starts.
 
-When a section is reordered (up/down within a column) or moved between columns (left/right / sidebar toggle), briefly highlight it in the live preview so the user can immediately confirm where it landed.
+## Visual direction (Enhancv — warm & friendly)
 
-## Approach
+Updates `src/styles.css` tokens only — does not touch component colors directly.
 
-Track the most-recently-moved section id with a short-lived state in `Builder.tsx`, pass it into `ResumeDocument`, and have `ClickableSection` (which already wraps every section) apply a temporary highlight class.
+- Background: warm off-white `oklch(0.985 0.005 80)` (light) / soft charcoal `oklch(0.18 0.01 60)` (dark)
+- Primary: warm coral `oklch(0.68 0.16 35)` with glow variant
+- Accent: soft sage `oklch(0.78 0.08 160)` for success/score
+- Surfaces: layered cream cards with subtle warm shadows
+- Type: keep Inter body, add display font for headings (loaded via `<link>` in `__root.tsx`)
+- Rounded `1rem` cards, generous padding, soft shadows
 
-### `src/components/builder/Builder.tsx`
+## Phase 1 — 3-panel workspace shell + sticky toolbar
 
-- Add `const [flashSection, setFlashSection] = useState<SectionId | null>(null)`.
-- Add a helper `flash(id: SectionId)` that sets the state and clears it after ~1200 ms via `setTimeout` (cancel previous timer with a ref so rapid moves restart the animation cleanly).
-- Call `flash(id)` from the SectionsPopover callbacks:
-  - `onUpdate(order)` — diff old vs new `sectionOrder`; the moved id is the one whose index changed the most (or simply the first id whose index differs). Flash it.
-  - `onToggleSidebar(id)` — flash `id`.
-  - `onAdd(id)` — flash `id` so newly added sections also pulse.
-- Pass `flashSection` to `<ResumeDocument flashSection={flashSection} ... />` (one preview at a time; if multiple ResumeDocument instances exist for print/preview, only the visible editing one needs it).
+**New files**
+- `src/components/builder/workspace/WorkspaceShell.tsx` — 3-pane grid (sections rail • editor+preview • insights), collapsible left/right
+- `src/components/builder/workspace/StickyToolbar.tsx` — resume name (inline edit), autosave chip, undo/redo, zoom -/+, preview mode toggle (split/editor/preview), share, download PDF
+- `src/components/builder/workspace/SectionTabs.tsx` — horizontally scrollable tabs (Basics, Experience, Education, Skills, Projects, Certifications, Achievements, Languages, Custom) with completion dots + validation badges
+- `src/components/builder/workspace/PreviewModeContext.tsx` — shared zoom + preview-mode state
 
-### `src/components/builder/ResumeDocument.tsx`
+**Edits**
+- `src/components/builder/Builder.tsx` — swap to `WorkspaceShell`, move existing form sections into tab panels
+- `src/routes/builder.tsx` — full-bleed layout (escape default `<main>` padding)
 
-- Add optional prop `flashSection?: SectionId | null`.
-- Forward to `ClickableSection` via the existing `wrap(id, node)` helper: add a `flash` boolean (`flashSection === id`).
-- In `ClickableSection`, when `flash` is true add a CSS class like `preview-flash` alongside `preview-clickable`. Use `key={\`flash-${flash}\`}` (or a small `useEffect` toggle) so the animation re-triggers each time the flag flips on.
-- Sidebar-rendered sections in two-column templates render via `sidebarRenderers` (not via `ClickableSection`). Wrap each sidebar block in a thin `<div data-section-id={id} className={flash ? "preview-flash" : undefined}>` so sidebar reorder/toggle also highlights.
+## Phase 2 — Drag-and-drop section management + insights panel
 
-### `src/styles.css` (or the existing builder stylesheet — locate the `preview-clickable` rule and add next to it)
+**Deps**: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
 
-Add a keyframe + class:
+**New files**
+- `src/components/builder/workspace/SectionManager.tsx` — left-rail list with drag handle, eye (hide), copy (duplicate), lock, "+ custom section"
+- `src/components/builder/workspace/InsightsPanel.tsx` — right panel with 3 tabs: ATS / AI Review / Job Match (wraps existing `AtsPanel`, adds Job Match summary)
+- `src/components/builder/workspace/sectionOrderStore.ts` — local + cloud-synced section order/visibility on the resume record
 
-```css
-@keyframes preview-flash {
-  0%   { background-color: color-mix(in oklab, var(--primary) 28%, transparent); box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 40%, transparent); }
-  100% { background-color: transparent; box-shadow: 0 0 0 0 transparent; }
-}
-.preview-flash {
-  animation: preview-flash 1.1s ease-out;
-  border-radius: 4px;
-}
+**Schema**
+- Section order/visibility lives inside the existing `resumes.data` JSON (no new table needed). Add a `sectionLayout: { id, hidden, locked }[]` field.
+
+## Phase 3 — Floating AI Assistant + Template Gallery
+
+**New files**
+- `src/components/builder/workspace/AiAssistantDock.tsx` — floating button bottom-right, expands to chat dock; reuses existing `/api/nova-chat` route; quick-action chips (Rewrite Summary, Improve Bullets, Generate Skills, ATS Optimize)
+- `src/components/builder/workspace/TemplateGallery.tsx` — modal/sheet opened from toolbar; categorizes existing templates into ATS Optimized / Professional / Executive / Modern / Minimal / Creative; live thumbnail + Apply
+
+**Edits**
+- `src/components/builder/BuilderTopToolbar.tsx` — categorization metadata per template
+
+## Phase 4 — Version History
+
+**Schema migration** (single new table)
+
+```sql
+CREATE TABLE public.resume_versions (
+  id uuid primary key default gen_random_uuid(),
+  resume_id text not null,
+  user_id uuid not null,
+  data jsonb not null,
+  ats_score int,
+  label text,
+  created_at timestamptz not null default now()
+);
+GRANT SELECT, INSERT, DELETE ON public.resume_versions TO authenticated;
+GRANT ALL ON public.resume_versions TO service_role;
+ALTER TABLE public.resume_versions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "owners manage own versions" ON public.resume_versions
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE INDEX ON public.resume_versions (resume_id, created_at DESC);
 ```
 
-(Uses existing `--primary` token; no hard-coded colors.)
+**New files**
+- `src/lib/versions.functions.ts` — `snapshotVersion`, `listVersions`, `restoreVersion` server fns (use `requireSupabaseAuth`)
+- `src/components/builder/workspace/VersionHistorySheet.tsx` — timeline with ATS score per snapshot, Restore + Compare buttons
+- Auto-snapshot on autosave throttled to every 5 min or significant change
 
-## Out of scope
+## Out of scope (this round)
 
-- A "moved to position N" text label or toast — the visual pulse on the new location is enough confirmation.
-- Animating the actual position transition (would require layout animation infrastructure not currently in the preview).
-- Highlighting custom-section reorders (can be added later with the same pattern if needed).
+Dashboard redesign, sidebar/nav redesign, mobile drawer rework, and global app shell stay as-is. Builder workspace is internally mobile-aware (panels collapse, tabs scroll) but the global nav redesign is its own slice.
+
+---
 
 ## Technical notes
 
-- A single `useRef<number | null>` holds the active timeout so consecutive moves restart cleanly without leaking timers.
-- Sidebar sections currently render through plain `<SidebarBlock>` calls (no `ClickableSection`); the wrapper div above adds the highlight without changing layout or click behavior.
-- No data-model changes; `flashSection` is pure transient UI state.
+- Tailwind v4 tokens go in `src/styles.css` `@theme` — no `tailwind.config.js`
+- All section order / visibility persists through existing `resumes.data` JSON via `resumeStore`
+- Version snapshots are the only new DB surface
+- DnD uses `@dnd-kit` (lighter than react-dnd, modern, a11y-friendly)
+- AI dock reuses `/api/nova-chat` — no new backend work
+- Preview zoom uses CSS `transform: scale()` on `ResumeDocument` wrapper
