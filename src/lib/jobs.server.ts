@@ -145,6 +145,24 @@ export type SyncResult = {
   errors: string[];
 };
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 export async function syncAdzunaJobs(opts?: { queries?: string[]; cities?: string[] }): Promise<SyncResult> {
   const appId = process.env.ADZUNA_APP_ID;
   const appKey = process.env.ADZUNA_APP_KEY;
@@ -157,29 +175,28 @@ export async function syncAdzunaJobs(opts?: { queries?: string[]; cities?: strin
   const errors: string[] = [];
   const allRows = new Map<string, UpsertRow>();
 
-  for (const q of queries) {
-    for (const city of cities) {
-      try {
-        const jobs = await callAdzuna(appId, appKey, q, city, 1);
-        for (const j of jobs) {
-          const row = toRow(j);
-          if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
-        }
-      } catch (e) {
-        errors.push(`${q}@${city}: ${(e as Error).message}`);
+  const tasks = queries.flatMap((q) => cities.map((city) => ({ q, city })));
+  await mapWithConcurrency(tasks, 10, async ({ q, city }) => {
+    try {
+      const jobs = await callAdzuna(appId, appKey, q, city, 1);
+      for (const j of jobs) {
+        const row = toRow(j);
+        if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
       }
+    } catch (e) {
+      errors.push(`${q}@${city}: ${(e as Error).message}`);
     }
-  }
+  });
 
   const rows = Array.from(allRows.values());
   let upserted = 0;
-  // batch upsert
-  for (let i = 0; i < rows.length; i += 200) {
-    const slice = rows.slice(i, i + 200);
+  const batches: UpsertRow[][] = [];
+  for (let i = 0; i < rows.length; i += 200) batches.push(rows.slice(i, i + 200));
+  await mapWithConcurrency(batches, 4, async (slice) => {
     const { error } = await supabase.from("jobs").upsert(slice, { onConflict: "external_job_id" });
     if (error) errors.push(`upsert: ${error.message}`);
     else upserted += slice.length;
-  }
+  });
 
   // deactivate expired
   const { data: deactivatedRows, error: deErr } = await supabase
@@ -327,31 +344,34 @@ export async function syncJSearchJobs(opts?: { queries?: string[]; pages?: numbe
   const errors: string[] = [];
   const allRows = new Map<string, UpsertRow>();
 
+  const tasks: { q: string; pub: PublisherConfig; p: number }[] = [];
   for (const q of queries) {
     for (const pub of PUBLISHERS) {
-      for (let p = 1; p <= pages; p++) {
-        try {
-          const jobs = await callJSearch(rapidKey, `${q} ${pub.queryTag}`, p);
-          for (const j of jobs) {
-            if (!pub.match(j)) continue;
-            const row = jsearchToRow(j, pub);
-            if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
-          }
-        } catch (e) {
-          errors.push(`${pub.source} ${q} p${p}: ${(e as Error).message}`);
-        }
-      }
+      for (let p = 1; p <= pages; p++) tasks.push({ q, pub, p });
     }
   }
+  await mapWithConcurrency(tasks, 6, async ({ q, pub, p }) => {
+    try {
+      const jobs = await callJSearch(rapidKey, `${q} ${pub.queryTag}`, p);
+      for (const j of jobs) {
+        if (!pub.match(j)) continue;
+        const row = jsearchToRow(j, pub);
+        if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
+      }
+    } catch (e) {
+      errors.push(`${pub.source} ${q} p${p}: ${(e as Error).message}`);
+    }
+  });
 
   const rows = Array.from(allRows.values());
   let upserted = 0;
-  for (let i = 0; i < rows.length; i += 200) {
-    const slice = rows.slice(i, i + 200);
+  const batches: UpsertRow[][] = [];
+  for (let i = 0; i < rows.length; i += 200) batches.push(rows.slice(i, i + 200));
+  await mapWithConcurrency(batches, 4, async (slice) => {
     const { error } = await supabase.from("jobs").upsert(slice, { onConflict: "external_job_id" });
     if (error) errors.push(`upsert: ${error.message}`);
     else upserted += slice.length;
-  }
+  });
 
   return { fetched: rows.length, upserted, deactivated: 0, errors };
 }
@@ -360,8 +380,7 @@ export async function syncJSearchJobs(opts?: { queries?: string[]; pages?: numbe
 export const syncJSearchNaukriJobs = syncJSearchJobs;
 
 export async function syncAllJobs(): Promise<SyncResult> {
-  const a = await syncAdzunaJobs();
-  const j = await syncJSearchJobs();
+  const [a, j] = await Promise.all([syncAdzunaJobs(), syncJSearchJobs()]);
   return {
     fetched: a.fetched + j.fetched,
     upserted: a.upserted + j.upserted,
