@@ -48,7 +48,13 @@ export type TemplateId =
   | "noir"
   | "editorial"
   | "aurora"
-  | "monochrome";
+  | "monochrome"
+  | "novo-dark"
+  | "marketer-band"
+  | "ats-blue"
+  | "teal-chips"
+  | "hybrid-photo"
+  | "dark-sidebar";
 export type SectionId =
   | "summary"
   | "experience"
