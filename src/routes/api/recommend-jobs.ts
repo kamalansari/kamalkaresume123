@@ -57,6 +57,20 @@ function searchLocations(location: string): string[] {
   return Array.from(new Set(locs.map(l => l.trim()).filter(Boolean))).slice(0, 4);
 }
 
+function isIndiaOrOpenRemote(location: string, remote: boolean): boolean {
+  const loc = location.toLowerCase();
+  if (/india|remote|worldwide|anywhere|global|asia|apac/.test(loc)) return true;
+  return remote && !/usa|united states|canada|brazil|europe|germany|france|uk|united kingdom|australia/.test(loc);
+}
+
+function relevantToQuery(job: Pick<OutJob, "title" | "tags" | "jd">, query: string): boolean {
+  const terms = query.toLowerCase().split(/[\s,+/()-]+/).filter(w => w.length > 2);
+  if (terms.length === 0) return true;
+  const title = job.title.toLowerCase();
+  const hay = `${job.title} ${job.tags.join(" ")} ${job.jd}`.toLowerCase();
+  return terms.some(t => title.includes(t)) || terms.every(t => hay.includes(t));
+}
+
 // --- helpers ---------------------------------------------------------------
 function timeAgo(ms: number): string {
   const s = Math.max(1, Math.floor((Date.now() - ms) / 1000));
@@ -227,7 +241,7 @@ async function fetchRemotive(query: string): Promise<OutJob[]> {
     const res = await fetch(url, { headers: { "user-agent": "ResumeForge/1.0" } });
     if (!res.ok) return [];
     const data = (await res.json()) as { jobs?: RemotiveJob[] };
-    return (data.jobs ?? []).slice(0, 60).map(j => {
+    return (data.jobs ?? []).slice(0, 80).map(j => {
       const posted = j.publication_date ? Date.parse(j.publication_date) || Date.now() : Date.now();
       return {
         id: `rem_${j.id}`,
@@ -245,7 +259,7 @@ async function fetchRemotive(query: string): Promise<OutJob[]> {
         remote: true,
         logo: j.company_logo || undefined,
       };
-    });
+    }).filter(j => isIndiaOrOpenRemote(j.location, j.remote) && relevantToQuery(j, query));
   } catch (e) {
     console.warn("[remotive] error", (e as Error).message);
     return [];
@@ -307,6 +321,8 @@ export const Route = createFileRoute("/api/recommend-jobs")({
           for (const j of all) {
             const k = `${j.source}|${j.applyUrl}`;
             if (!j.applyUrl || seen.has(k)) continue;
+            if (!isIndiaOrOpenRemote(j.location, j.remote)) continue;
+            if (!relevantToQuery(j, q || title)) continue;
             seen.add(k);
             unique.push(j);
           }
