@@ -185,27 +185,34 @@ export const Route = createFileRoute("/api/recommend-jobs")({
             seen.add(j.applyUrl);
             all.push(j);
           }
-          const textFiltered = all.filter(j => {
+          // Hard scope: India-based or remote/worldwide only.
+          const INDIA_RX = /india|mumbai|delhi|bangalore|bengaluru|pune|hyderabad|chennai|kolkata|noida|gurgaon|gurugram|ahmedabad|jaipur|kochi|cochin|trivandrum|thiruvananthapuram|coimbatore|indore|chandigarh|nagpur/i;
+          const REMOTE_RX = /remote|worldwide|anywhere|work from home|wfh/i;
+          const isIndiaOrRemote = (j: OutJob) =>
+            j.remote ||
+            INDIA_RX.test(j.location) ||
+            REMOTE_RX.test(j.location) ||
+            INDIA_RX.test(j.jd) && REMOTE_RX.test(j.jd);
+          const geoScoped = all.filter(isIndiaOrRemote);
+          const textFiltered = geoScoped.filter(j => {
             const hay = `${j.title} ${j.company} ${j.tags.join(" ")} ${j.jd}`;
             return matchesQuery(hay, `${title} ${keywords}`);
           });
           let merged = textFiltered;
           if (location.trim()) {
             const first = location.toLowerCase().split(",")[0].trim();
-            const indiaWanted = /india|mumbai|delhi|bangalore|bengaluru|pune|hyderabad|chennai|kolkata|noida|gurgaon|ahmedabad/.test(location.toLowerCase());
+            const indiaWanted = INDIA_RX.test(location);
             const locFiltered = textFiltered.filter(j => {
               const loc = j.location.toLowerCase();
               if (loc.includes(first)) return true;
-              if (indiaWanted && (loc.includes("india") || loc.includes("worldwide") || loc.includes("anywhere") || j.remote)) return true;
+              if (indiaWanted && (INDIA_RX.test(loc) || REMOTE_RX.test(loc) || j.remote)) return true;
               return false;
             });
-            // Fallback: if location filter wipes everything out, keep all text-matched jobs
-            // (ranking will still prefer matching locations).
+            // Fallback within India/remote scope — never reintroduce other geos.
             merged = locFiltered.length > 0 ? locFiltered : textFiltered;
           }
-          // Last-resort fallback: if even text filter is empty but we did get jobs,
-          // return everything so the user is never staring at a blank screen.
-          if (merged.length === 0 && all.length > 0) merged = all;
+          // Last resort: if text filter wiped results, keep geo-scoped pool.
+          if (merged.length === 0 && geoScoped.length > 0) merged = geoScoped;
           pool = rank(merged, { title, location, keywords });
           CACHE.set(key, { at: Date.now(), jobs: pool });
         }
