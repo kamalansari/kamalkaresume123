@@ -46,6 +46,31 @@ function cacheKey(b: Body) {
   return `${(b.jobTitle ?? "").toLowerCase()}|${(b.location ?? "").toLowerCase()}|${(b.keywords ?? "").toLowerCase()}`;
 }
 
+function searchLocations(location: string): string[] {
+  const parts = location.split(/[,;|]/).map(p => p.trim()).filter(Boolean);
+  const normalized = parts.length > 0 ? parts : ["India"];
+  const hasRemote = normalized.some(p => /remote|work\s*from\s*home|wfh/i.test(p));
+  const hasIndia = normalized.some(p => /india|bharat/i.test(p));
+  const locs = [...normalized.slice(0, 2)];
+  if (!hasIndia) locs.push("India");
+  if (!hasRemote) locs.push("Remote");
+  return Array.from(new Set(locs.map(l => l.trim()).filter(Boolean))).slice(0, 4);
+}
+
+function isIndiaOrOpenRemote(location: string, remote: boolean): boolean {
+  const loc = location.toLowerCase();
+  if (/india|remote|worldwide|anywhere|global|asia|apac/.test(loc)) return true;
+  return remote && loc.trim().length === 0;
+}
+
+function relevantToQuery(job: Pick<OutJob, "title" | "tags" | "jd">, query: string): boolean {
+  const terms = query.toLowerCase().split(/[\s,+/()-]+/).filter(w => w.length > 2);
+  if (terms.length === 0) return true;
+  const title = job.title.toLowerCase();
+  const hay = `${job.title} ${job.tags.join(" ")} ${job.jd}`.toLowerCase();
+  return terms.some(t => title.includes(t)) || terms.every(t => hay.includes(t));
+}
+
 // --- helpers ---------------------------------------------------------------
 function timeAgo(ms: number): string {
   const s = Math.max(1, Math.floor((Date.now() - ms) / 1000));
@@ -119,6 +144,33 @@ type JSearchJob = {
   job_required_skills?: string[] | null;
 };
 
+type RemotiveJob = {
+  id: number | string;
+  url: string;
+  title: string;
+  company_name: string;
+  candidate_required_location?: string;
+  publication_date?: string;
+  salary?: string;
+  description?: string;
+  tags?: string[];
+  company_logo?: string;
+};
+
+type RemoteOkJob = {
+  id?: string | number;
+  position?: string;
+  company?: string;
+  location?: string;
+  tags?: string[];
+  description?: string;
+  date?: string;
+  url?: string;
+  logo?: string;
+  salary_min?: number;
+  salary_max?: number;
+};
+
 async function fetchJSearch(query: string, location: string, pages: number): Promise<ProviderResult> {
   const key = process.env.RAPIDAPI_KEY;
   if (!key) {
@@ -182,6 +234,85 @@ async function fetchJSearch(query: string, location: string, pages: number): Pro
   return { jobs: out };
 }
 
+async function fetchJSearchBroad(query: string, location: string): Promise<ProviderResult> {
+  const all: OutJob[] = [];
+  let issue: ProviderIssue | undefined;
+  for (const loc of searchLocations(location)) {
+    const result = await fetchJSearch(query, loc, 1);
+    if (result.issue) {
+      issue = result.issue;
+      if (result.issue.code === "jsearch_not_subscribed" || result.issue.code === "jsearch_rate_limited") break;
+    }
+    all.push(...result.jobs);
+    if (all.length >= 60) break;
+  }
+  return { jobs: all, issue };
+}
+
+async function fetchRemotive(query: string): Promise<OutJob[]> {
+  const url = `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query || "jobs")}`;
+  try {
+    const res = await fetch(url, { headers: { "user-agent": "ResumeForge/1.0" } });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { jobs?: RemotiveJob[] };
+    return (data.jobs ?? []).slice(0, 80).map(j => {
+      const posted = j.publication_date ? Date.parse(j.publication_date) || Date.now() : Date.now();
+      return {
+        id: `rem_${j.id}`,
+        title: j.title,
+        company: j.company_name,
+        location: j.candidate_required_location || "Remote",
+        experience: "Not specified",
+        salary: j.salary?.trim() || "Not disclosed",
+        postedAgo: timeAgo(posted),
+        postedAt: posted,
+        tags: (j.tags ?? []).slice(0, 6),
+        jd: htmlToText(j.description ?? "").slice(0, 2200),
+        source: "Remotive",
+        applyUrl: j.url,
+        remote: true,
+        logo: j.company_logo || undefined,
+      };
+    }).filter(j => isIndiaOrOpenRemote(j.location, j.remote) && relevantToQuery(j, query));
+  } catch (e) {
+    console.warn("[remotive] error", (e as Error).message);
+    return [];
+  }
+}
+
+async function fetchRemoteOk(query: string): Promise<OutJob[]> {
+  try {
+    const res = await fetch("https://remoteok.com/api", { headers: { "user-agent": "ResumeForge/1.0", accept: "application/json" } });
+    if (!res.ok) return [];
+    const data = (await res.json()) as RemoteOkJob[];
+    return data.slice(1).map(j => {
+      const posted = j.date ? Date.parse(j.date) || Date.now() : Date.now();
+      const min = Number(j.salary_min || 0);
+      const max = Number(j.salary_max || 0);
+      const salary = min || max ? formatSalary(min || null, max || null, "USD", "YEAR") : "Not disclosed";
+      return {
+        id: `rok_${j.id ?? j.url}`,
+        title: j.position || "Remote role",
+        company: j.company || "Company",
+        location: j.location || "Remote",
+        experience: "Not specified",
+        salary,
+        postedAgo: timeAgo(posted),
+        postedAt: posted,
+        tags: (j.tags ?? []).slice(0, 6),
+        jd: htmlToText(j.description ?? "").slice(0, 2200),
+        source: "RemoteOK",
+        applyUrl: j.url || "https://remoteok.com/remote-jobs",
+        remote: true,
+        logo: j.logo || undefined,
+      };
+    }).filter(j => isIndiaOrOpenRemote(j.location, j.remote) && relevantToQuery(j, query));
+  } catch (e) {
+    console.warn("[remoteok] error", (e as Error).message);
+    return [];
+  }
+}
+
 // --- ranking ---------------------------------------------------------------
 function rank(jobs: OutJob[], q: { title: string; location: string; keywords: string }): OutJob[] {
   const wantedLoc = q.location.toLowerCase();
@@ -227,8 +358,15 @@ export const Route = createFileRoute("/api/recommend-jobs")({
           pool = cached.jobs;
         } else {
           const q = [title, keywords].filter(Boolean).join(" ");
-          const result = await fetchJSearch(q, location, 2);
-          const all = result.jobs;
+          const result = await fetchJSearchBroad(q, location);
+          let fallback: OutJob[] = [];
+          if (result.jobs.length === 0) {
+            const fallbackQuery = q || title || "jobs";
+            const remotiveJobs = await fetchRemotive(fallbackQuery);
+            const remoteOkJobs = await fetchRemoteOk(fallbackQuery);
+            fallback = [...remotiveJobs, ...remoteOkJobs];
+          }
+          const all = [...result.jobs, ...fallback];
           providerIssue = result.issue;
           // dedupe by applyUrl + source
           const seen = new Set<string>();
@@ -236,10 +374,13 @@ export const Route = createFileRoute("/api/recommend-jobs")({
           for (const j of all) {
             const k = `${j.source}|${j.applyUrl}`;
             if (!j.applyUrl || seen.has(k)) continue;
+            if (!isIndiaOrOpenRemote(j.location, j.remote)) continue;
+            if (!relevantToQuery(j, q || title)) continue;
             seen.add(k);
             unique.push(j);
           }
           pool = rank(unique, { title, location, keywords });
+          if (pool.length > 0) providerIssue = undefined;
           if (pool.length > 0) CACHE.set(key, { at: Date.now(), jobs: pool });
         }
 
