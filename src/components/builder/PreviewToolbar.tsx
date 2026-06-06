@@ -46,7 +46,7 @@ export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras,
       toast.error("Could not generate share link");
     }
   };
-  const shareName = data.fullName ? `${data.fullName}'s resume` : "my resume";
+  const shareName = data.name ? `${data.name}'s resume` : "my resume";
   const shareVia = (platform: "email" | "twitter" | "linkedin" | "whatsapp" | "facebook") => {
     try {
       const url = buildShareUrl();
