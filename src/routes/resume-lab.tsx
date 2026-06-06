@@ -543,6 +543,7 @@ function ResumeLabPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <TemplatesPopover data={mergedResume} onPick={(id) => setTemplateOverride(id)} />
             <Button size="sm" variant="outline" onClick={downloadPdf} title="Download as PDF">
               <Printer className="h-4 w-4" /> PDF
             </Button>
