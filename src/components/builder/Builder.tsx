@@ -76,6 +76,18 @@ function getCompletionPercent(data: ResumeData) {
   return Math.round((done / total) * 100);
 }
 
+function sameSkillSet(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const counts = new Map<string, number>();
+  for (const item of a) counts.set(item, (counts.get(item) ?? 0) + 1);
+  for (const item of b) {
+    const count = counts.get(item) ?? 0;
+    if (count <= 0) return false;
+    count === 1 ? counts.delete(item) : counts.set(item, count - 1);
+  }
+  return counts.size === 0;
+}
+
 /**
  * Wraps the resume preview and scales the 8.5in document down to fit the
  * container width on smaller viewports. The wrapper itself reports the
@@ -777,7 +789,10 @@ export function Builder() {
       if (kind === "skills") {
         const value = el.innerText;
         const displayed = parseSkills(source.skills).join(" | ");
-        if (value !== displayed && value !== source.skills) { next = { ...next, skills: value }; dirty = true; }
+        if (value !== displayed && value !== source.skills && !sameSkillSet(parseSkills(value), parseSkills(source.skills))) {
+          next = { ...next, skills: value };
+          dirty = true;
+        }
       }
       if (kind === "experience-bullets") {
         const id = el.dataset.previewExpId;

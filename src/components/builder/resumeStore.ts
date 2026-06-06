@@ -40,11 +40,38 @@ function looksLikeResumeData(value: Record<string, unknown>) {
   return "summary" in value || "experience" in value || "skills" in value || "headline" in value;
 }
 
+function normalizeSkillsLayoutSettings(data: ResumeData): ResumeData {
+  const withAliases = data as ResumeData & {
+    mobileSkillsColumns?: ResumeData["skillsColumnsMobile"];
+    skillsView?: ResumeData["skillsViewMode"];
+    balanceStrategy?: ResumeData["skillsBalanceStrategy"];
+    skillsBias?: ResumeData["skillsBalanceBias"];
+    textStyle?: ResumeData["skillsTextStyle"];
+  };
+  const skillsColumnsMobile = withAliases.skillsColumnsMobile ?? withAliases.mobileSkillsColumns;
+  const skillsViewMode = withAliases.skillsViewMode ?? withAliases.skillsView;
+  const skillsBalanceStrategy = withAliases.skillsBalanceStrategy ?? withAliases.balanceStrategy;
+  const skillsBalanceBias = withAliases.skillsBalanceBias ?? withAliases.skillsBias;
+  const skillsTextStyle = withAliases.skillsTextStyle ?? withAliases.textStyle;
+  return {
+    ...data,
+    ...(skillsColumnsMobile ? { skillsColumnsMobile, mobileSkillsColumns: skillsColumnsMobile } : {}),
+    ...(skillsViewMode ? { skillsViewMode, skillsView: skillsViewMode } : {}),
+    ...(skillsBalanceStrategy
+      ? { skillsBalanceStrategy, balanceStrategy: skillsBalanceStrategy }
+      : {}),
+    ...(typeof skillsBalanceBias === "number"
+      ? { skillsBalanceBias, skillsBias: skillsBalanceBias }
+      : {}),
+    ...(skillsTextStyle ? { skillsTextStyle, textStyle: skillsTextStyle } : {}),
+  };
+}
+
 function normalizeEntry(value: unknown): SavedResume | null {
   if (!isRecord(value)) return null;
   const rawData = isRecord(value.data) ? value.data : looksLikeResumeData(value) ? value : null;
   if (!rawData) return null;
-  const data = { ...defaultResume, ...(rawData as Partial<ResumeData>) };
+  const data = normalizeSkillsLayoutSettings({ ...defaultResume, ...(rawData as Partial<ResumeData>) });
   const id = typeof value.id === "string" && value.id.trim() ? value.id : newId();
   const name =
     isRecord(value.data) && typeof value.name === "string" && value.name.trim()
@@ -155,7 +182,9 @@ function read(): SavedResume[] {
 
 function write(list: SavedResume[]) {
   if (typeof window === "undefined") return;
-  const safeList = compactList(list);
+  const safeList = compactList(
+    list.map((entry) => ({ ...entry, data: normalizeSkillsLayoutSettings(entry.data) })),
+  );
   localStorage.setItem(KEY, JSON.stringify(safeList));
   if (safeList.length > 0) {
     localStorage.setItem(BACKUP_KEY, JSON.stringify(safeList));
@@ -169,7 +198,7 @@ function readDraft(): ResumeData | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
-    return raw ? (JSON.parse(raw) as ResumeData) : null;
+    return raw ? normalizeSkillsLayoutSettings({ ...defaultResume, ...(JSON.parse(raw) as ResumeData) }) : null;
   } catch {
     return null;
   }
@@ -177,7 +206,7 @@ function readDraft(): ResumeData | null {
 
 function writeDraft(data: ResumeData) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(normalizeSkillsLayoutSettings(data)));
 }
 
 function readPrimary(): string | null {
@@ -201,12 +230,13 @@ export const resumeStore = {
     return read().find((r) => r.id === id);
   },
   upsert(entry: SavedResume) {
+    const normalizedEntry = { ...entry, data: normalizeSkillsLayoutSettings(entry.data) };
     const list = read();
-    const idx = list.findIndex((r) => r.id === entry.id);
-    if (idx >= 0) list[idx] = entry;
-    else list.push(entry);
+    const idx = list.findIndex((r) => r.id === normalizedEntry.id);
+    if (idx >= 0) list[idx] = normalizedEntry;
+    else list.push(normalizedEntry);
     write(list);
-    void syncUpsert(entry);
+    void syncUpsert(normalizedEntry);
   },
   remove(id: string) {
     write(read().filter((r) => r.id !== id));
