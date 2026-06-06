@@ -220,16 +220,18 @@ function ResumeLabPage() {
   // The exact resume that the preview renders AND that downloads (PDF/DOCX)
   // use, so "what you see is what you get".
   const mergedResume: ResumeData = useMemo(() => {
-    if (!result) return { ...resume, jobDescription: jd || resume.jobDescription };
-    return {
-      ...resume,
-      headline: result.headline ?? resume.headline,
-      summary: result.summary ?? resume.summary,
-      skills: result.skills != null ? normalizeSkills(result.skills) : resume.skills,
-      experience: mergeExperience(resume.experience, result.experience),
-      jobDescription: jd || resume.jobDescription,
-    };
-  }, [resume, result, jd]);
+    const base: ResumeData = !result
+      ? { ...resume, jobDescription: jd || resume.jobDescription }
+      : {
+          ...resume,
+          headline: result.headline ?? resume.headline,
+          summary: result.summary ?? resume.summary,
+          skills: result.skills != null ? normalizeSkills(result.skills) : resume.skills,
+          experience: mergeExperience(resume.experience, result.experience),
+          jobDescription: jd || resume.jobDescription,
+        };
+    return templateOverride ? { ...base, template: templateOverride } : base;
+  }, [resume, result, jd, templateOverride]);
 
   const downloadPdf = () => {
     // Print CSS hides .no-print and renders .print-area only — the
