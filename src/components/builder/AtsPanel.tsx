@@ -391,6 +391,7 @@ function AtsScoreView({
           score={score}
           onAddExtraKeywords={onAddExtraKeywords}
           onOneClickOptimize={onOneClickOptimize}
+          onApplyBaselineFix={onApplyBaselineFix}
           optimizing={optimizing}
         />
       </>
