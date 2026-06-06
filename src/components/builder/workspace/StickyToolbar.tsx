@@ -14,6 +14,7 @@ import {
   Loader2,
   MoreHorizontal,
   Pencil as PencilIcon,
+  X,
 } from "lucide-react";
 import {
   Sheet,
@@ -396,15 +397,35 @@ function MobileActionsSheet({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search actions…"
-              className="h-11 pl-9 text-base"
+              className="h-11 pl-9 pr-9 text-base"
             />
+            {query.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-2 pb-[env(safe-area-inset-bottom)]">
           {filtered.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-              No actions match “{query}”.
-            </p>
+            <div className="px-4 py-10 text-center">
+              <Search className="mx-auto h-8 w-8 text-muted-foreground/60 mb-3" aria-hidden="true" />
+              <p className="text-sm font-medium text-foreground">No actions match “{query}”</p>
+              <p className="text-xs text-muted-foreground mt-1">Try a different keyword or clear the search.</p>
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent/80 transition-colors"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+                Clear search
+              </button>
+            </div>
           ) : (
             groups.map((g) => {
               const items = filtered.filter(a => a.group === g);
