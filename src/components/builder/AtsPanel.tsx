@@ -75,6 +75,7 @@ export function AtsPanel({
           onAppendBulletsToFirstExperience={onAppendBulletsToFirstExperience}
           onAddExtraKeywords={onAddExtraKeywords}
           onOneClickOptimize={onOneClickOptimize}
+          onApplyBaselineFix={onApplyBaselineFix}
           optimizing={optimizing}
         />
       )}
