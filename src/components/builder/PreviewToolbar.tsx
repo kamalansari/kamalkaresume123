@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2, Columns2, Wand2 } from "lucide-react";
+import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2, Columns2, Wand2, Link2, Mail, Twitter, Linkedin, MessageCircle, Facebook } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
