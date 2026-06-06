@@ -203,6 +203,7 @@ function JobsPage() {
     experience !== "any" && EXPERIENCE_OPTIONS.find((e) => e.id === experience)?.label,
     minSalary > 0 && `${minSalary}+ LPA`,
     location && `📍 ${location}`,
+    source !== "all" && `Source: ${source}`,
   ].filter(Boolean) as string[];
 
   return (
