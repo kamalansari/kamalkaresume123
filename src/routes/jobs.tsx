@@ -19,7 +19,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   listJobs, saveJob, unsaveJob, listSavedJobs, triggerJobSync,
-  type JobRow,
+  getProviderStatus,
+  type JobRow, type ProviderStatus,
 } from "@/lib/jobs.functions";
 import {
   buildResumeProfile, scoreJobBreakdown, describeLevel,
@@ -139,6 +140,7 @@ function JobsPage() {
   const saveFn = useServerFn(saveJob);
   const unsaveFn = useServerFn(unsaveJob);
   const syncFn = useServerFn(triggerJobSync);
+  const statusFn = useServerFn(getProviderStatus);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
@@ -191,6 +193,12 @@ function JobsPage() {
     queryFn: () => savedFn(),
     enabled: authed,
     staleTime: 30_000,
+  });
+
+  const statusQuery = useQuery({
+    queryKey: ["providerStatus"],
+    queryFn: () => statusFn(),
+    staleTime: 300_000,
   });
 
   const savedIds = useMemo(
@@ -416,6 +424,7 @@ function JobsPage() {
 
       {/* Content */}
       <main className="container max-w-7xl mx-auto px-4 py-6">
+        <ProviderStatusBanner query={statusQuery} />
         {jobsQuery.isLoading && tab === "all" ? (
           <SkeletonGrid />
         ) : visibleList.length === 0 ? (
@@ -744,5 +753,90 @@ function MatchPopoverBody({ breakdown }: { breakdown: MatchBreakdown }) {
         </p>
       </div>
     </>
+  );
+}
+
+function ProviderStatusBanner({
+  query,
+}: {
+  query: ReturnType<typeof useQuery<{ providers: ProviderStatus[] }>>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  if (query.isLoading || !query.data) return null;
+
+  const providers = query.data.providers;
+  const anyIssue = providers.some((p) => p.status !== "available");
+  if (!anyIssue && !expanded) {
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        className="mb-4 w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition"
+      >
+        <span className="inline-flex items-center gap-1">
+          {providers.map((p) => (
+            <span
+              key={p.name}
+              className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {p.name} <span className="text-muted-foreground">({p.count})</span>
+            </span>
+          ))}
+        </span>
+        <span className="ml-auto text-[11px] underline">Show details</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="mb-4 rounded-lg border bg-muted/30 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">Job source status</p>
+        <button
+          onClick={() => setExpanded((s) => !s)}
+          className="text-xs text-muted-foreground hover:text-foreground underline"
+        >
+          {expanded ? "Hide details" : "Show details"}
+        </button>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {providers.map((p) => {
+          const ok = p.status === "available";
+          const dot = ok
+            ? "bg-emerald-500"
+            : p.status === "not_subscribed"
+            ? "bg-amber-500"
+            : "bg-rose-500";
+          const reason =
+            p.status === "missing_credentials"
+              ? "API key not configured"
+              : p.status === "not_subscribed"
+              ? "Subscription required on RapidAPI"
+              : p.status === "error"
+              ? "API error"
+              : undefined;
+          return (
+            <div
+              key={p.name}
+              className="flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-xs"
+            >
+              <span className={cn("h-2 w-2 rounded-full", dot)} />
+              <span className="font-medium">{p.name}</span>
+              {ok ? (
+                <span className="text-muted-foreground">{p.count} jobs</span>
+              ) : (
+                <span className="text-rose-600 dark:text-rose-400">{reason}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {providers.some((p) => p.status === "not_subscribed") && (
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Naukri, LinkedIn, Indeed and Glassdoor listings come through JSearch on RapidAPI.
+          Subscribe to the JSearch API to enable them.
+        </p>
+      )}
+    </div>
   );
 }
