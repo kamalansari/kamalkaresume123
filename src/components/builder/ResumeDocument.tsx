@@ -153,18 +153,20 @@ function SkillsGridContent({
     return buckets;
   };
 
+  const isPlain = textStyle === "plain";
+  const isSingleCol = desktopCols === 1;
+
   const chipStyle: React.CSSProperties = {
-    display: "block",
-    width: "100%",
+    display: "inline-block",
     maxWidth: "100%",
     minWidth: 0,
     boxSizing: "border-box",
-    padding: textStyle === "plain" ? 0 : "2px 8px",
-    border: textStyle === "plain" ? undefined : "1px solid currentColor",
-    borderColor: dark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.12)",
-    borderRadius: textStyle === "plain" ? 0 : 4,
-    fontSize: "0.95em",
-    lineHeight: 1.35,
+    padding: isPlain ? 0 : "2px 10px",
+    border: isPlain ? undefined : "1px solid currentColor",
+    borderColor: dark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.14)",
+    borderRadius: isPlain ? 0 : 999,
+    fontSize: "0.92em",
+    lineHeight: 1.4,
     breakInside: "avoid",
     pageBreakInside: "avoid",
     background: "transparent",
@@ -173,10 +175,21 @@ function SkillsGridContent({
     wordBreak: "break-word",
   };
 
+  // Modern strategy:
+  //  - single column → inline wrap (chips flow side-by-side, denser, scannable)
+  //  - multi column  → balanced grid (each chip on its own row inside its column)
+  const inlineWrapStyle: React.CSSProperties = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px",
+    alignItems: "center",
+    minWidth: 0,
+    width: "100%",
+  };
   const gridStyle: React.CSSProperties = {
     display: "grid",
     gridTemplateColumns: `repeat(${desktopCols}, minmax(0, 1fr))`,
-    gap: "6px",
+    gap: isSingleCol ? "8px" : "6px 16px",
     alignItems: "start",
     minWidth: 0,
     width: "100%",
@@ -184,12 +197,25 @@ function SkillsGridContent({
   };
   const columnStyle: React.CSSProperties = {
     display: "grid",
-    gap: "6px",
+    gap: "4px",
     alignContent: "start",
     minWidth: 0,
     breakInside: "avoid",
     pageBreakInside: "avoid",
   };
+  const headingStyle: React.CSSProperties = {
+    fontWeight: 700,
+    fontSize: "0.92em",
+    letterSpacing: "0.02em",
+    textTransform: "uppercase",
+    opacity: 0.85,
+    marginBottom: 2,
+    paddingBottom: 2,
+    borderBottom: `1px solid ${dark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.1)"}`,
+    overflowWrap: "anywhere",
+    wordBreak: "break-word",
+  };
+
   const editableProps = ed
     ? {
         contentEditable: true,
@@ -210,6 +236,21 @@ function SkillsGridContent({
     : {};
 
   const renderFlat = (items: string[]) => {
+    if (isSingleCol) {
+      return (
+        <div
+          data-skills-list
+          data-skills-balanced
+          data-skills-column-count={1}
+          {...editableProps}
+          style={inlineWrapStyle}
+        >
+          {items.map((s, i) => (
+            <span key={i} style={chipStyle}>{s}</span>
+          ))}
+        </div>
+      );
+    }
     const columns = balanceIntoColumns(items, (s) => s, desktopCols);
     return (
       <div
@@ -230,18 +271,29 @@ function SkillsGridContent({
     );
   };
 
+  const renderGroup = (g: { heading?: string; items: string[] }, key: React.Key) => (
+    <div key={key} style={{ display: "grid", gap: "4px", minWidth: 0, breakInside: "avoid", pageBreakInside: "avoid" }}>
+      {g.heading && <div style={headingStyle}>{g.heading}</div>}
+      <div style={inlineWrapStyle}>
+        {g.items.map((s, i) => <span key={i} style={chipStyle}>{s}</span>)}
+      </div>
+    </div>
+  );
+
   const renderGroups = (gs: { heading?: string; items: string[] }[]) => {
+    if (isSingleCol) {
+      return (
+        <div data-skills-list data-skills-column-count={1} style={{ display: "grid", gap: "10px", width: "100%" }}>
+          {gs.map((g, i) => renderGroup(g, i))}
+        </div>
+      );
+    }
     const columns = balanceIntoColumns(gs, (g) => (g.heading ? g.heading + " " : "") + g.items.join(" "), desktopCols);
     return (
       <div data-skills-list data-skills-balanced data-skills-column-count={desktopCols} style={gridStyle}>
         {columns.map((col, ci) => (
-          <div key={ci} style={columnStyle}>
-            {col.map((g, gi) => (
-              <div key={gi} style={{ display: "grid", gap: "6px", minWidth: 0, breakInside: "avoid", pageBreakInside: "avoid" }}>
-                {g.heading && <div style={{ fontWeight: 700, fontSize: "0.95em", overflowWrap: "anywhere", wordBreak: "break-word" }}>{g.heading}</div>}
-                {g.items.map((s, i) => <span key={i} style={chipStyle}>{s}</span>)}
-              </div>
-            ))}
+          <div key={ci} style={{ ...columnStyle, gap: "10px" }}>
+            {col.map((g, gi) => renderGroup(g, `${ci}-${gi}`))}
           </div>
         ))}
       </div>
