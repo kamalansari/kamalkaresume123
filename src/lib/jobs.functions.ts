@@ -49,7 +49,11 @@ export const listJobs = createServerFn({ method: "POST" })
 
     if (data.search.trim()) {
       const s = data.search.trim();
-      q = q.or(`title.ilike.%${s}%,company_name.ilike.%${s}%,description.ilike.%${s}%`);
+      q = q.or(`title.ilike.%${s}%,description.ilike.%${s}%`);
+    }
+    if (data.company.trim()) {
+      const c = data.company.trim();
+      q = q.ilike("company_name", `%${c}%`);
     }
     if (data.location.trim()) {
       const l = data.location.trim();
