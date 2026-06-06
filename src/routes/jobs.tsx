@@ -43,6 +43,13 @@ type Job = {
   logo?: string;
 };
 
+type ProviderIssue = {
+  code: string;
+  message: string;
+  detail?: string;
+  status?: number;
+};
+
 type SourceTab = "all" | "linkedin" | "naukri" | "career";
 const SOURCE_TABS: { id: SourceTab; label: string; match: (src: string) => boolean }[] = [
   { id: "linkedin", label: "LinkedIn", match: s => /linkedin/i.test(s) },
@@ -117,6 +124,7 @@ function JobsPage() {
   const [hasMore, setHasMore] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
+  const [providerIssue, setProviderIssue] = useState<ProviderIssue | null>(null);
   const [activeRoleTab, setActiveRoleTab] = useState("Data Analyst");
   const [scoreJob, setScoreJob] = useState<Job | null>(null);
   const [scoreResume, setScoreResume] = useState<ResumeData | null>(null);
@@ -196,10 +204,11 @@ function JobsPage() {
       });
       if (res.status === 429) { toast.error("Rate limit hit. Retry shortly."); return; }
       if (!res.ok) { toast.error("Search failed."); return; }
-      const out = (await res.json()) as { jobs?: Job[]; total?: number; hasMore?: boolean; fetchedAt?: number };
+      const out = (await res.json()) as { jobs?: Job[]; total?: number; hasMore?: boolean; fetchedAt?: number; providerIssue?: ProviderIssue };
       const nextJobs = normalizeJobs(out.jobs ?? []);
       const merged = append ? [...jobs, ...nextJobs] : nextJobs;
       setJobs(merged);
+      setProviderIssue(out.providerIssue ?? null);
       setTotalResults(out.total ?? merged.length);
       setHasMore(!!out.hasMore);
       setPage(pageNum);
@@ -213,7 +222,8 @@ function JobsPage() {
       } catch { /* ignore */ }
       if (!append) {
         setRoleFilter(new Set()); setExpLevel("any"); setMinScore(0); setSalaryRange([0, 100]);
-        toast.success(`${out.total ?? nextJobs.length} live jobs found`);
+        if (out.providerIssue) toast.error(out.providerIssue.message);
+        else toast.success(`${out.total ?? nextJobs.length} live jobs found`);
       }
     } catch { toast.error("Network error."); }
     finally { append ? setLoadingMore(false) : setLoading(false); }
@@ -710,7 +720,7 @@ function JobsPage() {
         )}
 
         {!loading && jobs.length === 0 && (
-          <EmptyState jobTitle={jobTitle} location={location} onSuggest={(t, l) => { setJobTitle(t); if (l) setLocation(l); setTimeout(searchJobs, 0); }} />
+          <EmptyState jobTitle={jobTitle} location={location} issue={providerIssue} onSuggest={(t, l) => { setJobTitle(t); if (l) setLocation(l); setTimeout(searchJobs, 0); }} />
         )}
 
         {!loading && jobs.length > 0 && filteredJobs.length === 0 && (
@@ -1290,7 +1300,7 @@ function sourceTone(src?: string): string {
   }
 }
 
-function EmptyState({ jobTitle, location, onSuggest }: { jobTitle: string; location: string; onSuggest: (title: string, loc?: string) => void }) {
+function EmptyState({ jobTitle, location, issue, onSuggest }: { jobTitle: string; location: string; issue?: ProviderIssue | null; onSuggest: (title: string, loc?: string) => void }) {
   const suggestions = [
     { title: jobTitle || "Data Analyst", loc: "Remote" },
     { title: "Software Engineer", loc: "Bangalore" },
@@ -1304,10 +1314,12 @@ function EmptyState({ jobTitle, location, onSuggest }: { jobTitle: string; locat
       <Briefcase className="h-10 w-10 mx-auto text-muted-foreground" />
       <div>
         <p className="font-semibold">
-          {hasSearched ? `No live jobs found for "${jobTitle}"${location ? ` in ${location}` : ""}` : "Search for live jobs"}
+          {issue ? issue.message : hasSearched ? `No live jobs found for "${jobTitle}"${location ? ` in ${location}` : ""}` : "Search for live jobs"}
         </p>
         <p className="text-sm text-muted-foreground mt-1">
-          {hasSearched
+          {issue?.detail
+            ? issue.detail
+            : hasSearched
             ? "Try a broader title, drop the location, or pick a suggestion below."
             : "Enter a role above, or try one of these popular searches:"}
         </p>

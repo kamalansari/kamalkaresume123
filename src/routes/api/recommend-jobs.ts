@@ -28,6 +28,15 @@ type OutJob = {
   logo?: string;
 };
 
+type ProviderIssue = {
+  code: "missing_rapidapi_key" | "jsearch_not_subscribed" | "jsearch_rate_limited" | "jsearch_unavailable";
+  message: string;
+  detail?: string;
+  status?: number;
+};
+
+type ProviderResult = { jobs: OutJob[]; issue?: ProviderIssue };
+
 // --- tiny in-memory cache (per-worker) -------------------------------------
 type CacheEntry = { at: number; jobs: OutJob[] };
 const CACHE = new Map<string, CacheEntry>();
@@ -110,9 +119,11 @@ type JSearchJob = {
   job_required_skills?: string[] | null;
 };
 
-async function fetchJSearch(query: string, location: string, pages: number): Promise<OutJob[]> {
+async function fetchJSearch(query: string, location: string, pages: number): Promise<ProviderResult> {
   const key = process.env.RAPIDAPI_KEY;
-  if (!key) return [];
+  if (!key) {
+    return { jobs: [], issue: { code: "missing_rapidapi_key", message: "Job search is not configured yet.", detail: "Add RAPIDAPI_KEY to enable JSearch live listings." } };
+  }
   const q = [query, location].filter(Boolean).join(" in ") || "jobs";
   const out: OutJob[] = [];
   try {
@@ -121,8 +132,15 @@ async function fetchJSearch(query: string, location: string, pages: number): Pro
       { headers: { "x-rapidapi-key": key, "x-rapidapi-host": "jsearch.p.rapidapi.com" } },
     );
     if (!res.ok) {
-      console.warn("[jsearch] status", res.status, (await res.text()).slice(0, 200));
-      return [];
+      const detail = (await res.text()).slice(0, 300);
+      console.warn("[jsearch] status", res.status, detail);
+      if (res.status === 403 && /not subscribed/i.test(detail)) {
+        return { jobs: [], issue: { code: "jsearch_not_subscribed", message: "JSearch is not enabled for this RapidAPI key.", detail: "Subscribe this key to the JSearch API on RapidAPI, then retry the search.", status: res.status } };
+      }
+      if (res.status === 429) {
+        return { jobs: [], issue: { code: "jsearch_rate_limited", message: "JSearch rate limit reached.", detail: "Please wait a moment or upgrade the RapidAPI plan, then retry.", status: res.status } };
+      }
+      return { jobs: [], issue: { code: "jsearch_unavailable", message: "JSearch could not return jobs right now.", detail, status: res.status } };
     }
     const data = (await res.json()) as { data?: JSearchJob[] };
     for (const j of data.data ?? []) {
@@ -159,8 +177,9 @@ async function fetchJSearch(query: string, location: string, pages: number): Pro
     }
   } catch (e) {
     console.warn("[jsearch] error", (e as Error).message);
+    return { jobs: [], issue: { code: "jsearch_unavailable", message: "Job search provider is temporarily unavailable.", detail: (e as Error).message } };
   }
-  return out;
+  return { jobs: out };
 }
 
 // --- ranking ---------------------------------------------------------------
@@ -202,12 +221,15 @@ export const Route = createFileRoute("/api/recommend-jobs")({
 
         const key = cacheKey(body);
         let pool: OutJob[];
+        let providerIssue: ProviderIssue | undefined;
         const cached = CACHE.get(key);
         if (cached && Date.now() - cached.at < CACHE_TTL) {
           pool = cached.jobs;
         } else {
           const q = [title, keywords].filter(Boolean).join(" ");
-          const all = await fetchJSearch(q, location, 2);
+          const result = await fetchJSearch(q, location, 2);
+          const all = result.jobs;
+          providerIssue = result.issue;
           // dedupe by applyUrl + source
           const seen = new Set<string>();
           const unique: OutJob[] = [];
@@ -231,6 +253,7 @@ export const Route = createFileRoute("/api/recommend-jobs")({
           hasMore: start + slice.length < pool.length,
           fetchedAt: Date.now(),
           provider: "JSearch",
+          providerIssue,
         });
       },
     },
