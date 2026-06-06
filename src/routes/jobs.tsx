@@ -720,7 +720,7 @@ function JobsPage() {
         )}
 
         {!loading && jobs.length === 0 && (
-          <EmptyState jobTitle={jobTitle} location={location} onSuggest={(t, l) => { setJobTitle(t); if (l) setLocation(l); setTimeout(searchJobs, 0); }} />
+          <EmptyState jobTitle={jobTitle} location={location} issue={providerIssue} onSuggest={(t, l) => { setJobTitle(t); if (l) setLocation(l); setTimeout(searchJobs, 0); }} />
         )}
 
         {!loading && jobs.length > 0 && filteredJobs.length === 0 && (
@@ -1300,7 +1300,7 @@ function sourceTone(src?: string): string {
   }
 }
 
-function EmptyState({ jobTitle, location, onSuggest }: { jobTitle: string; location: string; onSuggest: (title: string, loc?: string) => void }) {
+function EmptyState({ jobTitle, location, issue, onSuggest }: { jobTitle: string; location: string; issue?: ProviderIssue | null; onSuggest: (title: string, loc?: string) => void }) {
   const suggestions = [
     { title: jobTitle || "Data Analyst", loc: "Remote" },
     { title: "Software Engineer", loc: "Bangalore" },
@@ -1314,10 +1314,12 @@ function EmptyState({ jobTitle, location, onSuggest }: { jobTitle: string; locat
       <Briefcase className="h-10 w-10 mx-auto text-muted-foreground" />
       <div>
         <p className="font-semibold">
-          {hasSearched ? `No live jobs found for "${jobTitle}"${location ? ` in ${location}` : ""}` : "Search for live jobs"}
+          {issue ? issue.message : hasSearched ? `No live jobs found for "${jobTitle}"${location ? ` in ${location}` : ""}` : "Search for live jobs"}
         </p>
         <p className="text-sm text-muted-foreground mt-1">
-          {hasSearched
+          {issue?.detail
+            ? issue.detail
+            : hasSearched
             ? "Try a broader title, drop the location, or pick a suggestion below."
             : "Enter a role above, or try one of these popular searches:"}
         </p>
