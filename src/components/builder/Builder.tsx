@@ -850,6 +850,14 @@ export function Builder() {
     if (typeof document === "undefined") return source;
     const root = document.getElementById("resume-preview");
     if (!root) return source;
+    // If the preview is not actually rendered (e.g. mobile editor view hides it
+    // via Tailwind `hidden`), `innerText` reads back "" for every editable
+    // element. Committing that would wipe summary/experience right before
+    // printing or exporting. Bail out and trust the existing state.
+    if (root.offsetParent === null && getComputedStyle(root).display === "none") {
+      return source;
+    }
+
 
     let next = source;
     let dirty = false;
