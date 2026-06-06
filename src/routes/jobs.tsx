@@ -90,6 +90,7 @@ const FILTERS_STORAGE_KEY = "jobs.filters.v1";
 type StoredFilters = {
   search: string;
   location: string;
+  company: string;
   workMode: WorkMode;
   experience: ExpId;
   minSalary: number;
@@ -108,6 +109,7 @@ function JobsPage() {
   const [authed, setAuthed] = useState<boolean>(false);
   const [search, setSearch] = useState(initial.search ?? "");
   const [location, setLocation] = useState(initial.location ?? "");
+  const [company, setCompany] = useState(initial.company ?? "");
   const [workMode, setWorkMode] = useState<WorkMode>(initial.workMode ?? "any");
   const [experience, setExperience] = useState<ExpId>(initial.experience ?? "any");
   const [minSalary, setMinSalary] = useState<number>(initial.minSalary ?? 0);
@@ -148,16 +150,16 @@ function JobsPage() {
     };
   }, []);
 
-  const filters = { search, location, workMode, experience, minSalaryLpa: minSalary, source };
+  const filters = { search, location, company, workMode, experience, minSalaryLpa: minSalary, source };
 
   useEffect(() => {
     try {
       window.localStorage.setItem(
         FILTERS_STORAGE_KEY,
-        JSON.stringify({ search, location, workMode, experience, minSalary, source }),
+        JSON.stringify({ search, location, company, workMode, experience, minSalary, source }),
       );
     } catch { /* ignore quota */ }
-  }, [search, location, workMode, experience, minSalary, source]);
+  }, [search, location, company, workMode, experience, minSalary, source]);
 
   const jobsQuery = useInfiniteQuery({
     queryKey: ["jobs", filters],
@@ -234,7 +236,7 @@ function JobsPage() {
     : rankedJobs;
 
   const clearFilters = () => {
-    setSearch(""); setLocation(""); setWorkMode("any"); setExperience("any"); setMinSalary(0); setSource("all");
+    setSearch(""); setLocation(""); setCompany(""); setWorkMode("any"); setExperience("any"); setMinSalary(0); setSource("all");
   };
 
   const activeFilters = [
@@ -242,6 +244,7 @@ function JobsPage() {
     experience !== "any" && EXPERIENCE_OPTIONS.find((e) => e.id === experience)?.label,
     minSalary > 0 && `${minSalary}+ LPA`,
     location && `📍 ${location}`,
+    company && `🏢 ${company}`,
     source !== "all" && `Source: ${source}`,
   ].filter(Boolean) as string[];
 
@@ -279,7 +282,7 @@ function JobsPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search title, company, skill…"
+                placeholder="Search title, skill…"
                 className="pl-9"
               />
             </div>
@@ -289,6 +292,15 @@ function JobsPage() {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Location"
+                className="pl-9"
+              />
+            </div>
+            <div className="relative w-44 hidden sm:block">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="Company"
                 className="pl-9"
               />
             </div>
@@ -307,6 +319,10 @@ function JobsPage() {
               <div className="sm:hidden">
                 <Label className="text-xs">Location</Label>
                 <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Any city" />
+              </div>
+              <div className="sm:hidden">
+                <Label className="text-xs">Company</Label>
+                <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Any company" />
               </div>
               <div>
                 <Label className="text-xs">Work mode</Label>

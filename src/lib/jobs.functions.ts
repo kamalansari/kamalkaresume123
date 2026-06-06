@@ -28,6 +28,7 @@ export type JobRow = {
 const ListInput = z.object({
   search: z.string().max(200).optional().default(""),
   location: z.string().max(200).optional().default(""),
+  company: z.string().max(200).optional().default(""),
   workMode: z.enum(["any", "remote", "hybrid", "onsite"]).optional().default("any"),
   experience: z.enum(["any", "fresher", "1-3", "3-5", "5-8", "8+"]).optional().default("any"),
   minSalaryLpa: z.number().min(0).max(200).optional().default(0),
@@ -48,7 +49,11 @@ export const listJobs = createServerFn({ method: "POST" })
 
     if (data.search.trim()) {
       const s = data.search.trim();
-      q = q.or(`title.ilike.%${s}%,company_name.ilike.%${s}%,description.ilike.%${s}%`);
+      q = q.or(`title.ilike.%${s}%,description.ilike.%${s}%`);
+    }
+    if (data.company.trim()) {
+      const c = data.company.trim();
+      q = q.ilike("company_name", `%${c}%`);
     }
     if (data.location.trim()) {
       const l = data.location.trim();
