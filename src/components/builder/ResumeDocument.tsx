@@ -1179,6 +1179,7 @@ function SummarySection({
   headingFont: string;
   ed?: EditableHandlers;
 }) {
+  const summaryAlign = data.summaryAlign ?? (data.justifyText ? "justify" : "left");
   return (
     <Section title="Summary" accent={accent} headingFont={headingFont} ed={ed} kind="summary">
       {ed ? (
@@ -1190,12 +1191,12 @@ function SummarySection({
           className="preview-editable"
           onClick={(e) => e.stopPropagation()}
           onBlur={(e) => ed.onUpdate({ summary: e.currentTarget.innerText })}
-          style={{ textAlign: "justify" }}
+          style={{ textAlign: summaryAlign }}
         >
           {data.summary}
         </p>
       ) : (
-        <p style={{ textAlign: "justify" }}>
+        <p style={{ textAlign: summaryAlign }}>
           <InlineText text={data.summary} />
         </p>
       )}
@@ -1214,6 +1215,7 @@ function ExperienceSection({
   headingFont: string;
   ed?: EditableHandlers;
 }) {
+  const expAlign = data.experienceAlign ?? (data.justifyText ? "justify" : "left");
   return (
     <Section title="Experience" accent={accent} headingFont={headingFont}>
       {data.experience.map((e) => (
@@ -1263,7 +1265,7 @@ function ExperienceSection({
                 marginTop: 10,
                 marginLeft: 0,
                 paddingLeft: 0,
-                textAlign: "justify",
+                textAlign: expAlign,
                 display: "block",
                 columnCount: 1,
                 lineHeight: 1.5,
@@ -1288,7 +1290,7 @@ function ExperienceSection({
                       display: "block",
                       width: "100%",
                       breakInside: "avoid",
-                      textAlign: "justify",
+                      textAlign: expAlign,
                     }}
                   >
                     • {b}
@@ -1301,7 +1303,7 @@ function ExperienceSection({
                 marginTop: 10,
                 marginLeft: 0,
                 paddingLeft: 0,
-                textAlign: "justify",
+                textAlign: expAlign,
                 display: "block",
                 columnCount: 1,
               }}
@@ -1318,7 +1320,7 @@ function ExperienceSection({
                       display: "block",
                       width: "100%",
                       breakInside: "avoid",
-                      textAlign: "justify",
+                      textAlign: expAlign,
                     }}
                   >
                     • <InlineText text={b} />
