@@ -219,13 +219,33 @@ export async function exportDocx(data: ResumeData) {
         new Paragraph({ children: [new TextRun({ text: t, size: 18, color: sidebarText })] })
       ),
       new Paragraph({ children: [new TextRun({ text: "" })] }),
-      ...(data.skills ? [
-        new Paragraph({ children: [new TextRun({ text: "SKILLS", bold: true, size: 18, color: sidebarText, characterSpacing: 30 })] }),
-        ...parseSkills(data.skills).map(s =>
-          new Paragraph({ children: [new TextRun({ text: `• ${s}`, size: 18, color: sidebarText })] })
-        ),
-        new Paragraph({ children: [new TextRun({ text: "" })] }),
-      ] : []),
+      ...(data.skills ? (() => {
+        const groups = visibleSkillGroups(data);
+        if (!groups.length) return [] as Paragraph[];
+        const hasHeadings = groups.some(g => g.heading);
+        const block: Paragraph[] = [
+          new Paragraph({ children: [new TextRun({ text: "SKILLS", bold: true, size: 18, color: sidebarText, characterSpacing: 30 })] }),
+        ];
+        if (!hasHeadings) {
+          for (const s of groups.flatMap(g => g.items)) {
+            block.push(new Paragraph({ children: [new TextRun({ text: `• ${s}`, size: 18, color: sidebarText })] }));
+          }
+        } else {
+          groups.forEach((g, gi) => {
+            if (g.heading) {
+              block.push(new Paragraph({
+                spacing: { before: gi === 0 ? 0 : 100, after: 20 },
+                children: [new TextRun({ text: g.heading.toUpperCase(), bold: true, size: 17, color: sidebarText, characterSpacing: 20 })],
+              }));
+            }
+            for (const s of g.items) {
+              block.push(new Paragraph({ children: [new TextRun({ text: `• ${s}`, size: 18, color: sidebarText })] }));
+            }
+          });
+        }
+        block.push(new Paragraph({ children: [new TextRun({ text: "" })] }));
+        return block;
+      })() : []),
       ...(data.languages?.length ? [
         new Paragraph({ children: [new TextRun({ text: "LANGUAGES", bold: true, size: 18, color: sidebarText, characterSpacing: 30 })] }),
         ...data.languages.map(l =>
