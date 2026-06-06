@@ -221,12 +221,15 @@ export const Route = createFileRoute("/api/recommend-jobs")({
 
         const key = cacheKey(body);
         let pool: OutJob[];
+        let providerIssue: ProviderIssue | undefined;
         const cached = CACHE.get(key);
         if (cached && Date.now() - cached.at < CACHE_TTL) {
           pool = cached.jobs;
         } else {
           const q = [title, keywords].filter(Boolean).join(" ");
-          const all = await fetchJSearch(q, location, 2);
+          const result = await fetchJSearch(q, location, 2);
+          const all = result.jobs;
+          providerIssue = result.issue;
           // dedupe by applyUrl + source
           const seen = new Set<string>();
           const unique: OutJob[] = [];
@@ -250,6 +253,7 @@ export const Route = createFileRoute("/api/recommend-jobs")({
           hasMore: start + slice.length < pool.length,
           fetchedAt: Date.now(),
           provider: "JSearch",
+          providerIssue,
         });
       },
     },
