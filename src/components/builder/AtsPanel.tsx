@@ -15,12 +15,18 @@ import { authFetch } from "@/lib/authFetch";
 
 type Tab = "resume" | "ats" | "nova";
 
+export type BaselineFixPatch = {
+  extraKeywords?: string[];
+  rewrites?: { id: string; bullets: string }[];
+};
+
 export function AtsPanel({
   data,
   onClose,
   onAppendBulletsToFirstExperience,
   onAddExtraKeywords,
   onOneClickOptimize,
+  onApplyBaselineFix,
   optimizing,
 }: {
   data: ResumeData;
@@ -28,6 +34,7 @@ export function AtsPanel({
   onAppendBulletsToFirstExperience: (bullets: string[], targetExperienceId?: string) => void;
   onAddExtraKeywords: (kw: string[]) => void;
   onOneClickOptimize: () => void;
+  onApplyBaselineFix?: (patch: BaselineFixPatch) => void;
   optimizing: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("ats");
