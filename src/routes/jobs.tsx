@@ -660,10 +660,7 @@ function JobsPage() {
         )}
 
         {!loading && jobs.length === 0 && (
-          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-            <Briefcase className="h-8 w-8 mx-auto text-muted-foreground" />
-            <p className="mt-2 text-sm text-muted-foreground">Click <b>Search Jobs</b> to fetch AI-curated recommendations.</p>
-          </div>
+          <EmptyState jobTitle={jobTitle} location={location} onSuggest={(t, l) => { setJobTitle(t); if (l) setLocation(l); setTimeout(searchJobs, 0); }} />
         )}
 
         {!loading && jobs.length > 0 && filteredJobs.length === 0 && (
@@ -675,21 +672,34 @@ function JobsPage() {
         )}
 
         {!loading && filteredJobs.length > 0 && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredJobs.map(({ job, score }) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                resume={activeResume}
-                liveScore={score}
-                onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }}
-                onNova={() => askNova(job)}
-                onApply={() => openApply(job)}
-                isSaved={savedJobIds.has(job.id)}
-                onToggleSave={() => toggleSaveJob(job)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredJobs.map(({ job, score }) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  resume={activeResume}
+                  liveScore={score}
+                  onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }}
+                  onNova={() => askNova(job)}
+                  onApply={() => openApply(job)}
+                  isSaved={savedJobIds.has(job.id)}
+                  onToggleSave={() => toggleSaveJob(job)}
+                />
+              ))}
+            </div>
+            {loadingMore && (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-border bg-card h-44 animate-pulse" />
+                ))}
+              </div>
+            )}
+            {hasMore && <div ref={sentinelRef} className="h-10" aria-hidden />}
+            {!hasMore && jobs.length > 0 && (
+              <div className="text-center text-xs text-muted-foreground py-6">You've reached the end · {totalResults} live jobs</div>
+            )}
+          </>
         )}
       </div>
 
