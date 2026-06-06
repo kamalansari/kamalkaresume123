@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2, Columns2, Wand2 } from "lucide-react";
+import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2, Columns2, Wand2, Link2, Mail, Twitter, Linkedin, MessageCircle, Facebook } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,16 +34,61 @@ const TWO_COL_TEMPLATES = new Set([
 ]);
 
 export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras, onUpdate }: Props) {
-  const share = async () => {
+  const buildShareUrl = () => {
+    const payload = compressToEncodedURIComponent(JSON.stringify(getData?.() ?? data));
+    return `${window.location.origin}/builder#r=${payload}`;
+  };
+  const copyLink = async () => {
     try {
-      const payload = compressToEncodedURIComponent(JSON.stringify(getData?.() ?? data));
-      const url = `${window.location.origin}/builder#r=${payload}`;
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(buildShareUrl());
       toast.success("Share link copied to clipboard");
     } catch {
       toast.error("Could not generate share link");
     }
   };
+  const shareName = data.name ? `${data.name}'s resume` : "my resume";
+  const shareVia = (platform: "email" | "twitter" | "linkedin" | "whatsapp" | "facebook") => {
+    try {
+      const url = buildShareUrl();
+      const text = `Check out ${shareName}`;
+      const enc = encodeURIComponent;
+      let target = "";
+      switch (platform) {
+        case "email":
+          target = `mailto:?subject=${enc(text)}&body=${enc(text + "\n\n" + url)}`;
+          break;
+        case "twitter":
+          target = `https://twitter.com/intent/tweet?text=${enc(text)}&url=${enc(url)}`;
+          break;
+        case "linkedin":
+          target = `https://www.linkedin.com/sharing/share-offsite/?url=${enc(url)}`;
+          break;
+        case "whatsapp":
+          target = `https://wa.me/?text=${enc(text + " " + url)}`;
+          break;
+        case "facebook":
+          target = `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}`;
+          break;
+      }
+      window.open(target, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error("Could not open share window");
+    }
+  };
+  const nativeShare = async () => {
+    try {
+      const url = buildShareUrl();
+      if (navigator.share) {
+        await navigator.share({ title: shareName, text: `Check out ${shareName}`, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Share link copied to clipboard");
+      }
+    } catch {
+      // user cancelled or unsupported
+    }
+  };
+
   const scale = data.printScale ?? 1;
   const sidebarWidth = data.sidebarWidth ?? 2.55;
   const autoFit = data.sidebarAutoFit !== false;
@@ -111,9 +156,41 @@ export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras,
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        <Button size="sm" variant="outline" onClick={share} title="Copy shareable link">
-          <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share</span>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline" title="Share resume">
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Share</span>
+              <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onClick={copyLink}>
+              <Link2 className="h-4 w-4" /> Copy link
+            </DropdownMenuItem>
+            {typeof navigator !== "undefined" && "share" in navigator && (
+              <DropdownMenuItem onClick={nativeShare}>
+                <Share2 className="h-4 w-4" /> Share via device…
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={() => shareVia("email")}>
+              <Mail className="h-4 w-4" /> Email
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => shareVia("linkedin")}>
+              <Linkedin className="h-4 w-4" /> LinkedIn
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => shareVia("twitter")}>
+              <Twitter className="h-4 w-4" /> X / Twitter
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => shareVia("whatsapp")}>
+              <MessageCircle className="h-4 w-4" /> WhatsApp
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => shareVia("facebook")}>
+              <Facebook className="h-4 w-4" /> Facebook
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button size="sm" variant="outline" onClick={onPdf} title="Print">
           <Printer className="h-4 w-4" /> <span className="hidden sm:inline">Print</span>
         </Button>
