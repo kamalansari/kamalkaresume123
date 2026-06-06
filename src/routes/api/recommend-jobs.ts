@@ -60,7 +60,7 @@ function searchLocations(location: string): string[] {
 function isIndiaOrOpenRemote(location: string, remote: boolean): boolean {
   const loc = location.toLowerCase();
   if (/india|remote|worldwide|anywhere|global|asia|apac/.test(loc)) return true;
-  return remote && !/usa|united states|canada|brazil|europe|germany|france|uk|united kingdom|australia/.test(loc);
+  return remote && loc.trim().length === 0;
 }
 
 function relevantToQuery(job: Pick<OutJob, "title" | "tags" | "jd">, query: string): boolean {
