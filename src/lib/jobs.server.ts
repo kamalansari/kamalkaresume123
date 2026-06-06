@@ -344,31 +344,34 @@ export async function syncJSearchJobs(opts?: { queries?: string[]; pages?: numbe
   const errors: string[] = [];
   const allRows = new Map<string, UpsertRow>();
 
+  const tasks: { q: string; pub: PublisherConfig; p: number }[] = [];
   for (const q of queries) {
     for (const pub of PUBLISHERS) {
-      for (let p = 1; p <= pages; p++) {
-        try {
-          const jobs = await callJSearch(rapidKey, `${q} ${pub.queryTag}`, p);
-          for (const j of jobs) {
-            if (!pub.match(j)) continue;
-            const row = jsearchToRow(j, pub);
-            if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
-          }
-        } catch (e) {
-          errors.push(`${pub.source} ${q} p${p}: ${(e as Error).message}`);
-        }
-      }
+      for (let p = 1; p <= pages; p++) tasks.push({ q, pub, p });
     }
   }
+  await mapWithConcurrency(tasks, 6, async ({ q, pub, p }) => {
+    try {
+      const jobs = await callJSearch(rapidKey, `${q} ${pub.queryTag}`, p);
+      for (const j of jobs) {
+        if (!pub.match(j)) continue;
+        const row = jsearchToRow(j, pub);
+        if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
+      }
+    } catch (e) {
+      errors.push(`${pub.source} ${q} p${p}: ${(e as Error).message}`);
+    }
+  });
 
   const rows = Array.from(allRows.values());
   let upserted = 0;
-  for (let i = 0; i < rows.length; i += 200) {
-    const slice = rows.slice(i, i + 200);
+  const batches: UpsertRow[][] = [];
+  for (let i = 0; i < rows.length; i += 200) batches.push(rows.slice(i, i + 200));
+  await mapWithConcurrency(batches, 4, async (slice) => {
     const { error } = await supabase.from("jobs").upsert(slice, { onConflict: "external_job_id" });
     if (error) errors.push(`upsert: ${error.message}`);
     else upserted += slice.length;
-  }
+  });
 
   return { fetched: rows.length, upserted, deactivated: 0, errors };
 }
@@ -377,8 +380,7 @@ export async function syncJSearchJobs(opts?: { queries?: string[]; pages?: numbe
 export const syncJSearchNaukriJobs = syncJSearchJobs;
 
 export async function syncAllJobs(): Promise<SyncResult> {
-  const a = await syncAdzunaJobs();
-  const j = await syncJSearchJobs();
+  const [a, j] = await Promise.all([syncAdzunaJobs(), syncJSearchJobs()]);
   return {
     fetched: a.fetched + j.fetched,
     upserted: a.upserted + j.upserted,
