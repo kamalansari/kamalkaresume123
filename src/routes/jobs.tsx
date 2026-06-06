@@ -261,6 +261,7 @@ function JobsPage() {
 
   const clearFilters = () => {
     setSearch(""); setLocation(""); setCompany(""); setWorkMode("any"); setExperience("any"); setMinSalary(0); setSource("all");
+    try { window.localStorage.removeItem(FILTERS_STORAGE_KEY); } catch { /* ignore */ }
   };
 
   const activeFilters = [
@@ -433,7 +434,10 @@ function JobsPage() {
             onRefresh={() => syncMut.mutate()}
             refreshing={syncMut.isPending}
             authed={authed}
+            hasFilters={activeFilters.length > 0 || !!search.trim()}
+            onClearFilters={clearFilters}
           />
+
         ) : (
           <>
             {!hasResumeData && (
@@ -515,8 +519,8 @@ function SkeletonGrid() {
 }
 
 function EmptyState({
-  tab, onRefresh, refreshing, authed,
-}: { tab: "all" | "saved"; onRefresh: () => void; refreshing: boolean; authed: boolean }) {
+  tab, onRefresh, refreshing, authed, hasFilters, onClearFilters,
+}: { tab: "all" | "saved"; onRefresh: () => void; refreshing: boolean; authed: boolean; hasFilters: boolean; onClearFilters: () => void }) {
   if (tab === "saved") {
     return (
       <div className="text-center py-16 max-w-md mx-auto">
@@ -533,17 +537,27 @@ function EmptyState({
       <Briefcase className="h-12 w-12 mx-auto text-muted-foreground" />
       <h2 className="mt-4 text-lg font-semibold">No jobs match your filters</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Try clearing filters, or refresh the cache to pull the latest listings.
+        {hasFilters
+          ? "Clear your filters to see all cached jobs, or refresh to pull the latest listings."
+          : "Refresh the cache to pull the latest listings."}
       </p>
-      {authed && (
-        <Button onClick={onRefresh} disabled={refreshing} className="mt-4">
-          <RefreshCw className={cn("h-4 w-4 mr-2", refreshing && "animate-spin")} />
-          Refresh now
-        </Button>
-      )}
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        {hasFilters && (
+          <Button variant="outline" onClick={onClearFilters}>
+            Clear filters
+          </Button>
+        )}
+        {authed && (
+          <Button onClick={onRefresh} disabled={refreshing}>
+            <RefreshCw className={cn("h-4 w-4 mr-2", refreshing && "animate-spin")} />
+            Refresh now
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
+
 
 function extractExperienceLabel(job: JobRow, level: string): string {
   const text = `${job.title ?? ""} ${job.description ?? ""}`;
