@@ -21,9 +21,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { resumeStore, newId } from "@/components/builder/resumeStore";
-import { defaultResume, type ResumeData, type Experience } from "@/components/builder/types";
+import { defaultResume, type ResumeData, type Experience, type TemplateId } from "@/components/builder/types";
 import { computeScore } from "@/components/builder/atsScore";
 import { ResumeDocument } from "@/components/builder/ResumeDocument";
+import { TemplatesPopover } from "@/components/builder/BuilderTopToolbar";
 import { exportDocx } from "@/components/builder/exportDocx";
 import { normalizeBulletText, splitBulletLines } from "@/lib/resumeText";
 import { extractResumeText } from "@/lib/importResume";
@@ -71,6 +72,7 @@ function ResumeLabPage() {
   const [dragOver, setDragOver] = useState(false);
   const [applyPromptOpen, setApplyPromptOpen] = useState(false);
   const [savedResumeName, setSavedResumeName] = useState("");
+  const [templateOverride, setTemplateOverride] = useState<TemplateId | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -218,16 +220,18 @@ function ResumeLabPage() {
   // The exact resume that the preview renders AND that downloads (PDF/DOCX)
   // use, so "what you see is what you get".
   const mergedResume: ResumeData = useMemo(() => {
-    if (!result) return { ...resume, jobDescription: jd || resume.jobDescription };
-    return {
-      ...resume,
-      headline: result.headline ?? resume.headline,
-      summary: result.summary ?? resume.summary,
-      skills: result.skills != null ? normalizeSkills(result.skills) : resume.skills,
-      experience: mergeExperience(resume.experience, result.experience),
-      jobDescription: jd || resume.jobDescription,
-    };
-  }, [resume, result, jd]);
+    const base: ResumeData = !result
+      ? { ...resume, jobDescription: jd || resume.jobDescription }
+      : {
+          ...resume,
+          headline: result.headline ?? resume.headline,
+          summary: result.summary ?? resume.summary,
+          skills: result.skills != null ? normalizeSkills(result.skills) : resume.skills,
+          experience: mergeExperience(resume.experience, result.experience),
+          jobDescription: jd || resume.jobDescription,
+        };
+    return templateOverride ? { ...base, template: templateOverride } : base;
+  }, [resume, result, jd, templateOverride]);
 
   const downloadPdf = () => {
     // Print CSS hides .no-print and renders .print-area only — the
@@ -539,6 +543,7 @@ function ResumeLabPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <TemplatesPopover data={mergedResume} onPick={(id) => setTemplateOverride(id)} />
             <Button size="sm" variant="outline" onClick={downloadPdf} title="Download as PDF">
               <Printer className="h-4 w-4" /> PDF
             </Button>
