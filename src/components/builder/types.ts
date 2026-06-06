@@ -169,6 +169,15 @@ export type ResumeData = {
   // - "categorized" : groups parsed by "Heading: a, b" are rendered as
   //                   labeled blocks (Programming & Analytics, BI & Reporting…).
   skillsViewMode?: "compact" | "categorized";
+  // Strategy used by the deterministic column balancer in the Skills section.
+  // - "length" : weight ≈ wrapped line count (default; balances visual height)
+  // - "count"  : every item weighs 1 (equal items per column)
+  // - "chars"  : raw character count (long items dominate proportionally)
+  skillsBalanceStrategy?: "length" | "count" | "chars";
+  // Optional multiplier applied to each item's weight after the strategy
+  // computes it. Used to bias the balancer toward filling earlier columns
+  // (<1) or spreading more aggressively (>1). Range 0.5–1.5, default 1.
+  skillsBalanceBias?: number;
   // Optional per-resume override of which section ids appear in the sidebar.
   // When undefined, the template default (TEMPLATE_SIDEBAR_DEFAULTS) is used.
   sidebarSections?: SectionId[];
