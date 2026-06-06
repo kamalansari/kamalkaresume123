@@ -43,6 +43,13 @@ type Job = {
   logo?: string;
 };
 
+type ProviderIssue = {
+  code: string;
+  message: string;
+  detail?: string;
+  status?: number;
+};
+
 type SourceTab = "all" | "linkedin" | "naukri" | "career";
 const SOURCE_TABS: { id: SourceTab; label: string; match: (src: string) => boolean }[] = [
   { id: "linkedin", label: "LinkedIn", match: s => /linkedin/i.test(s) },
@@ -117,6 +124,7 @@ function JobsPage() {
   const [hasMore, setHasMore] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
+  const [providerIssue, setProviderIssue] = useState<ProviderIssue | null>(null);
   const [activeRoleTab, setActiveRoleTab] = useState("Data Analyst");
   const [scoreJob, setScoreJob] = useState<Job | null>(null);
   const [scoreResume, setScoreResume] = useState<ResumeData | null>(null);
@@ -196,10 +204,11 @@ function JobsPage() {
       });
       if (res.status === 429) { toast.error("Rate limit hit. Retry shortly."); return; }
       if (!res.ok) { toast.error("Search failed."); return; }
-      const out = (await res.json()) as { jobs?: Job[]; total?: number; hasMore?: boolean; fetchedAt?: number };
+      const out = (await res.json()) as { jobs?: Job[]; total?: number; hasMore?: boolean; fetchedAt?: number; providerIssue?: ProviderIssue };
       const nextJobs = normalizeJobs(out.jobs ?? []);
       const merged = append ? [...jobs, ...nextJobs] : nextJobs;
       setJobs(merged);
+      setProviderIssue(out.providerIssue ?? null);
       setTotalResults(out.total ?? merged.length);
       setHasMore(!!out.hasMore);
       setPage(pageNum);
@@ -213,7 +222,8 @@ function JobsPage() {
       } catch { /* ignore */ }
       if (!append) {
         setRoleFilter(new Set()); setExpLevel("any"); setMinScore(0); setSalaryRange([0, 100]);
-        toast.success(`${out.total ?? nextJobs.length} live jobs found`);
+        if (out.providerIssue) toast.error(out.providerIssue.message);
+        else toast.success(`${out.total ?? nextJobs.length} live jobs found`);
       }
     } catch { toast.error("Network error."); }
     finally { append ? setLoadingMore(false) : setLoading(false); }
