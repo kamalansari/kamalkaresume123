@@ -156,9 +156,41 @@ export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras,
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        <Button size="sm" variant="outline" onClick={share} title="Copy shareable link">
-          <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share</span>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline" title="Share resume">
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Share</span>
+              <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onClick={copyLink}>
+              <Link2 className="h-4 w-4" /> Copy link
+            </DropdownMenuItem>
+            {typeof navigator !== "undefined" && "share" in navigator && (
+              <DropdownMenuItem onClick={nativeShare}>
+                <Share2 className="h-4 w-4" /> Share via device…
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={() => shareVia("email")}>
+              <Mail className="h-4 w-4" /> Email
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => shareVia("linkedin")}>
+              <Linkedin className="h-4 w-4" /> LinkedIn
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => shareVia("twitter")}>
+              <Twitter className="h-4 w-4" /> X / Twitter
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => shareVia("whatsapp")}>
+              <MessageCircle className="h-4 w-4" /> WhatsApp
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => shareVia("facebook")}>
+              <Facebook className="h-4 w-4" /> Facebook
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button size="sm" variant="outline" onClick={onPdf} title="Print">
           <Printer className="h-4 w-4" /> <span className="hidden sm:inline">Print</span>
         </Button>
