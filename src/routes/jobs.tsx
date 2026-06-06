@@ -197,7 +197,7 @@ function JobsPage() {
 
   const statusQuery = useQuery({
     queryKey: ["providerStatus"],
-    queryFn: () => statusFn(),
+    queryFn: () => statusFn({ data: {} }),
     staleTime: 300_000,
   });
 
