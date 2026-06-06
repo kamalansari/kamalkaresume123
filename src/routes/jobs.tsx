@@ -34,9 +34,16 @@ type Job = {
   experience: string;
   salary: string;
   postedAgo: string;
+  postedAt?: number;
   tags: string[];
   jd: string;
+  source?: string;
+  applyUrl?: string;
+  remote?: boolean;
 };
+
+const CACHE_KEY = "rf:jobsCache:v2";
+const PAGE_SIZE = 20;
 
 const INDUSTRIES = ["All industries", "IT Services", "Banking & Finance", "Healthcare", "E-commerce", "Manufacturing", "Education", "Consulting", "Media"];
 const ROLES = ["All roles", "Software Engineering", "Data & Analytics", "Product", "Design", "Marketing", "Sales", "Operations", "HR"];
