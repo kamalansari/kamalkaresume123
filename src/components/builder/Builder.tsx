@@ -2087,7 +2087,11 @@ export function Builder() {
                   <Gauge className="h-4 w-4" /> Open ATS analysis · {score.score}
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-0">
+              <SheetContent side="right" id="ats-sheet" aria-labelledby="ats-sheet-title" aria-describedby="ats-sheet-desc" className="w-full sm:max-w-md overflow-y-auto p-0">
+                <VisuallyHidden>
+                  <SheetTitle id="ats-sheet-title">ATS analysis</SheetTitle>
+                  <SheetDescription id="ats-sheet-desc">Review your resume's ATS score, keyword matches, and recommended improvements.</SheetDescription>
+                </VisuallyHidden>
                 <div className="p-4">
                   <AtsPanel
                     data={data}
