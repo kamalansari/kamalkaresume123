@@ -1,7 +1,8 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/react";
 import { ResumeDocument } from "./ResumeDocument";
-import { defaultResume } from "./types";
+import { defaultResume, type ResumeData } from "./types";
+import { resumeStore } from "./resumeStore";
 import { SIDEBAR_MAX_IN } from "./sidebarAutoFit";
 
 /**
@@ -14,7 +15,10 @@ import { SIDEBAR_MAX_IN } from "./sidebarAutoFit";
  * happy-dom does no layout, so we don't try to assert visual overflow here.
  */
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 function renderTwoCol(overrides: Partial<typeof defaultResume>) {
   return render(
@@ -64,5 +68,61 @@ describe("ResumeDocument two-column layout", () => {
     const { container } = renderTwoCol({ sidebarWidth: 0.5, sidebarAutoFit: false });
     const grid = container.querySelector(".resume-layout-grid") as HTMLElement;
     expect(grid.style.gridTemplateColumns).toBe("2.1in 1fr");
+  });
+});
+
+function skillsSignature(container: HTMLElement) {
+  const grid = container.querySelector("[data-skills-list][data-skills-balanced]") as HTMLElement;
+  expect(grid).toBeTruthy();
+  return {
+    display: grid.style.display,
+    gap: grid.style.gap,
+    columns: grid.style.gridTemplateColumns,
+    mobile: grid.style.getPropertyValue("--skills-cols-mobile"),
+    text: grid.textContent?.replace(/\s+/g, " ").trim(),
+  };
+}
+
+describe("ResumeDocument skills persistence layout", () => {
+  it("renders editor, saved, loaded, and duplicated resumes with identical skills grid settings", () => {
+    const data: ResumeData = {
+      ...defaultResume,
+      template: "classic",
+      sectionOrder: ["skills"],
+      skills:
+        "Python, SQL, Tableau, Power BI, Airflow, Data Modeling, Extremely Long Analytics Skill Name That Must Wrap Safely",
+      skillsColumns: 4,
+      skillsColumnsMobile: 2,
+      mobileSkillsColumns: 2,
+      skillsViewMode: "compact",
+      skillsView: "compact",
+      skillsBalanceStrategy: "chars",
+      balanceStrategy: "chars",
+      skillsBalanceBias: 1.25,
+      skillsBias: 1.25,
+      skillsTextStyle: "chips",
+      textStyle: "chips",
+    };
+
+    const editor = render(
+      <ResumeDocument
+        data={data}
+        editable
+        handlers={{ onUpdate: () => {}, onUpdateExperienceBullets: () => {}, onRewrite: () => {} }}
+      />,
+    );
+    const editorSig = skillsSignature(editor.container);
+    cleanup();
+
+    resumeStore.upsert({ id: "skills-layout", name: "Skills layout", updatedAt: Date.now(), data });
+    const loaded = resumeStore.get("skills-layout")!;
+    const copy = resumeStore.duplicate("skills-layout", "Skills layout copy")!;
+
+    const savedRender = render(<ResumeDocument data={loaded.data} />);
+    expect(skillsSignature(savedRender.container)).toEqual(editorSig);
+    cleanup();
+
+    const duplicateRender = render(<ResumeDocument data={copy.data} />);
+    expect(skillsSignature(duplicateRender.container)).toEqual(editorSig);
   });
 });
