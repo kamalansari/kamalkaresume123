@@ -48,6 +48,7 @@ const { decompressFromEncodedURIComponent } = lzString;
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { AiAssistantDock } from "./workspace/AiAssistantDock";
 import { StickyToolbar } from "./workspace/StickyToolbar";
 
@@ -62,6 +63,13 @@ function getSectionCompletion(data: ResumeData) {
     extras: data.projects.length > 0 || data.certifications.length > 0 || data.awards.length > 0 || data.languages.length > 0 || data.customSections.length > 0,
     target: !!(data.jobDescription?.trim()),
   };
+}
+
+function getCompletionPercent(data: ResumeData) {
+  const c = getSectionCompletion(data);
+  const total = Object.keys(c).length;
+  const done = Object.values(c).filter(Boolean).length;
+  return Math.round((done / total) * 100);
 }
 
 /**
@@ -1604,6 +1612,14 @@ export function Builder() {
       )}>
         {/* Editor */}
         <div className={cn("no-print", mobileView !== "editor" && "hidden lg:block")}>
+          {/* Resume Completion Progress */}
+          <div className="mb-3 rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-soft)]">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Resume Completion</span>
+              <span className="text-xs font-semibold text-primary">{getCompletionPercent(data)}%</span>
+            </div>
+            <Progress value={getCompletionPercent(data)} className="h-2" />
+          </div>
           <Tabs defaultValue="basics" className="w-full">
             <div className="sticky top-16 z-10 -mx-1 px-1 pb-2 pt-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
               <TabsList
