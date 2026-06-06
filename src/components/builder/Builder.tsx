@@ -587,12 +587,10 @@ export function Builder() {
   const printSavedPdf = (id: string) => {
     const entry = resumeStore.get(id);
     if (!entry) { toast.error("Resume not found"); return; }
-    flushSync(() => {
-      setData({ ...defaultResume, ...entry.data });
-      setCurrentId(entry.id);
-      setCurrentName(entry.name);
-    });
-    requestAnimationFrame(() => window.print());
+    setData({ ...defaultResume, ...entry.data });
+    setCurrentId(entry.id);
+    setCurrentName(entry.name);
+    printResumeData(entry.data);
   };
 
   const openRenameFor = (id: string, name: string) => {
