@@ -446,6 +446,7 @@ export function Builder() {
     if (!currentId) { setNameDraft(data.name ? `${data.name}'s resume` : "Untitled resume"); setSaveAsOpen(true); return; }
     resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data });
     resumeStore.saveDraft(data);
+    historyStore.push(currentId, data, `Saved "${currentName}"`);
     refreshList();
     toast.success(`Saved "${currentName}"`);
   };
@@ -455,12 +456,14 @@ export function Builder() {
     const id = newId();
     resumeStore.upsert({ id, name: trimmed, updatedAt: Date.now(), data });
     resumeStore.saveDraft(data);
+    historyStore.push(id, data, `Created "${trimmed}"`);
     setCurrentId(id);
     setCurrentName(trimmed);
     setSaveAsOpen(false);
     refreshList();
     toast.success(`Saved as "${trimmed}"`);
   };
+
 
   const loadSaved = (id: string) => {
     const entry = resumeStore.get(id);
