@@ -217,6 +217,7 @@ export const getProviderStatus = createServerFn({ method: "POST" })
 
     const rapidKey = process.env.RAPIDAPI_KEY;
     let jsearchStatus: ProviderStatus["status"] = "missing_credentials";
+    let jsearchDetail = "";
     if (rapidKey) {
       try {
         const url = `https://jsearch.p.rapidapi.com/search?query=developer%20in%20India&page=1&num_pages=1&country=in&date_posted=month`;
@@ -225,19 +226,23 @@ export const getProviderStatus = createServerFn({ method: "POST" })
             "X-RapidAPI-Key": rapidKey,
             "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
           },
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(8000),
         });
         if (res.ok) {
           jsearchStatus = "available";
         } else {
           const body = await res.text().catch(() => "");
+          jsearchDetail = `HTTP ${res.status}: ${body.slice(0, 160)}`;
+          console.warn(`[providerStatus] jsearch ${jsearchDetail}`);
           if (isRapidApiSubscriptionError(res.status, body)) {
             jsearchStatus = "not_subscribed";
           } else {
             jsearchStatus = "error";
           }
         }
-      } catch {
+      } catch (e) {
+        jsearchDetail = (e as Error).message;
+        console.warn(`[providerStatus] jsearch threw: ${jsearchDetail}`);
         jsearchStatus = "error";
       }
     }
