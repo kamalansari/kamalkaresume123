@@ -98,16 +98,6 @@ export function StickyToolbar({
     onZoom(ZOOMS[Math.min(ZOOMS.length - 1, i < 0 ? ZOOMS.length - 1 : i + 1)]);
   };
 
-  const share = async () => {
-    try {
-      const payload = compressToEncodedURIComponent(JSON.stringify(getData()));
-      const url = `${window.location.origin}/builder#r=${payload}`;
-      await navigator.clipboard.writeText(url);
-      toast.success("Share link copied to clipboard");
-    } catch {
-      toast.error("Could not generate share link");
-    }
-  };
 
   const savedLabel = saving
     ? "Saving…"
