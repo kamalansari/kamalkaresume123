@@ -925,6 +925,7 @@ export function Builder() {
 
   const rewriteSummary = async () => {
     setRewriting(true);
+    announce("AI is rewriting your summary…");
     try {
       const res = await authFetch("/api/rewrite-summary", {
         method: "POST",
@@ -937,15 +938,17 @@ export function Builder() {
           experience: data.experience.map(e => ({ title: e.title, company: e.company, bullets: e.bullets })),
         }),
       });
-      if (res.status === 429) { toast.error("Rate limit hit. Please retry in a moment."); return; }
-      if (res.status === 402) { toast.error("AI credits exhausted. Add credits in Workspace settings."); return; }
-      if (!res.ok) { toast.error("Rewrite failed. Please try again."); return; }
+      if (res.status === 429) { announce("Rate limit hit. Please retry shortly."); toast.error("Rate limit hit. Please retry in a moment."); return; }
+      if (res.status === 402) { announce("AI credits exhausted."); toast.error("AI credits exhausted. Add credits in Workspace settings."); return; }
+      if (!res.ok) { announce("Summary rewrite failed."); toast.error("Rewrite failed. Please try again."); return; }
       const json = (await res.json()) as { summary?: string };
       if (json.summary) {
         update("summary", json.summary);
+        announce("Summary rewritten by AI.");
         toast.success("Summary rewritten");
       }
     } catch {
+      announce("Network error while rewriting summary.");
       toast.error("Network error. Please try again.");
     } finally {
       setRewriting(false);
