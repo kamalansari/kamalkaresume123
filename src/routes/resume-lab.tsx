@@ -29,6 +29,12 @@ import { normalizeBulletText, splitBulletLines } from "@/lib/resumeText";
 import { extractResumeText } from "@/lib/importResume";
 
 export const Route = createFileRoute("/resume-lab")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    jd: typeof search.jd === "string" ? search.jd : undefined,
+    company: typeof search.company === "string" ? search.company : undefined,
+    jobUrl: typeof search.jobUrl === "string" ? search.jobUrl : undefined,
+    jobTitle: typeof search.jobTitle === "string" ? search.jobTitle : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Resume Lab — JD-aligned AI rewrite" },
@@ -48,8 +54,9 @@ type AlignResult = {
 };
 
 function ResumeLabPage() {
+  const search = Route.useSearch();
   const [resume, setResume] = useState<ResumeData>(defaultResume);
-  const [jd, setJd] = useState("");
+  const [jd, setJd] = useState(search.jd ?? "");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<AlignResult | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -62,6 +69,8 @@ function ResumeLabPage() {
   const [extracted, setExtracted] = useState<JdMeta | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [applyPromptOpen, setApplyPromptOpen] = useState(false);
+  const [savedResumeName, setSavedResumeName] = useState("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -175,9 +184,22 @@ function ResumeLabPage() {
   useEffect(() => {
     const primary = resumeStore.getPrimary();
     const draft = resumeStore.getDraft();
-    if (primary?.data) setResume(primary.data);
-    else if (draft) setResume(draft);
-  }, []);
+    const base = primary?.data ?? draft ?? null;
+    if (base) setResume(base);
+    if (search.company) {
+      const profileName = (base?.name ?? defaultResume.name ?? "Resume").trim();
+      const stamp = new Date().toLocaleDateString();
+      setTailoredName(`${profileName} - ${search.company} - ${stamp}`);
+    }
+  }, [search.company]);
+
+  // Auto-show save dialog once alignment completes if the user arrived via Apply Now
+  useEffect(() => {
+    if (result && search.jobUrl && !confirmOpen && !applyPromptOpen) {
+      setConfirmOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   const beforeScore = useMemo(() => computeScore({ ...resume, jobDescription: jd }).score, [resume, jd]);
   const afterScore = useMemo(() => {
@@ -274,7 +296,11 @@ function ResumeLabPage() {
     resumeStore.saveDraft(merged);
     setConfirmOpen(false);
     setTailoredName("");
+    setSavedResumeName(name);
     toast.success(`Saved as new resume "${name}" — Primary is untouched`);
+    if (search.jobUrl) {
+      setApplyPromptOpen(true);
+    }
   };
 
   return (
@@ -554,6 +580,29 @@ function ResumeLabPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmApply}>Save as new resume</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={applyPromptOpen} onOpenChange={setApplyPromptOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apply for this job now?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your tailored resume{savedResumeName ? ` "${savedResumeName}"` : ""} is saved.
+              {search.jobTitle ? ` Open the application page for ${search.jobTitle}${search.company ? ` at ${search.company}` : ""}?` : " Open the application page in a new tab?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Not now</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (search.jobUrl) window.open(search.jobUrl, "_blank", "noopener,noreferrer");
+                setApplyPromptOpen(false);
+              }}
+            >
+              Apply now
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -675,9 +675,17 @@ function JobCard({
             <Sparkles className="h-3 w-3 mr-1" />Ask Nova
           </Button>
           <Button asChild size="sm" className="h-7 px-3 text-xs">
-            <a href={job.redirect_url} target="_blank" rel="noopener noreferrer">
+            <Link
+              to="/resume-lab"
+              search={{
+                jd: (job.description ?? "").slice(0, 8000),
+                company: job.company_name ?? "",
+                jobUrl: job.redirect_url,
+                jobTitle: job.title,
+              }}
+            >
               Apply Now
-            </a>
+            </Link>
           </Button>
         </div>
       </div>
