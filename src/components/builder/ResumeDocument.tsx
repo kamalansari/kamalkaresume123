@@ -1211,35 +1211,57 @@ function SkillsSection({
   if (template === "two-column" || template === "sidebar-right" || template === "compact-two")
     return null;
   const groups = parseSkillGroups(data.skills);
+  const flatSkills = parseSkills(data.skills);
   const hasHeadings = groups.some((g) => g.heading);
-  const desktopCols = data.skillsColumns;
-  const mobileCols = data.skillsColumnsMobile ?? 1;
-  const listStyle: React.CSSProperties = {
-    margin: 0,
-    paddingLeft: 16,
-    listStyle: "disc",
-    listStylePosition: "outside",
-    columnGap: "1.25rem",
+  const mode: "compact" | "categorized" =
+    data.skillsViewMode ?? (hasHeadings ? "categorized" : "compact");
+  // Default to 3 columns on desktop and 2 on mobile for a tight, modern
+  // ATS-friendly grid (~50% less vertical space than a single bullet list).
+  const desktopCols = data.skillsColumns ?? 3;
+  const mobileCols = data.skillsColumnsMobile ?? 2;
+
+  const columnsStyle: React.CSSProperties = {
+    columnCount: desktopCols,
+    columnGap: "0.9rem",
     columnFill: "balance",
     orphans: 2,
     widows: 2,
-    ...(desktopCols
-      ? { columnCount: desktopCols }
-      : { columnWidth: "11rem" }),
     ["--skills-cols-mobile" as any]: mobileCols,
   };
-  const liStyle: React.CSSProperties = {
-    paddingLeft: 0,
+
+  const chipStyle: React.CSSProperties = {
+    display: "inline-block",
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "2px 8px",
     marginBottom: 4,
-    lineHeight: 1.45,
+    border: "1px solid currentColor",
+    borderColor: "rgba(0,0,0,0.12)",
+    borderRadius: 4,
+    fontSize: "0.95em",
+    lineHeight: 1.35,
     breakInside: "avoid",
     pageBreakInside: "avoid",
-    display: "list-item",
-    fontWeight: 400,
+    background: "transparent",
   };
+
+  const renderChips = (items: string[], keyPrefix = "") => (
+    <div data-skills-list style={columnsStyle}>
+      {items.map((s, i) => (
+        <span key={`${keyPrefix}${i}`} style={chipStyle}>
+          {s}
+        </span>
+      ))}
+    </div>
+  );
+
   return (
     <Section title="Skills" accent={accent} headingFont={headingFont} ed={ed} kind="skills">
       {ed ? (
+        // Editable mode keeps a contentEditable list so blur-to-save still
+        // works. Bullets are hidden; items render as chips to match the
+        // read-only look. Categories ("Heading: a, b") are preserved as
+        // plain lines so ATS keeps them machine-readable.
         <ul
           key={`skills-${data.skills}`}
           contentEditable
@@ -1255,37 +1277,33 @@ function SkillsSection({
               .filter(Boolean);
             ed.onUpdate({ skills: lines.join("\n") });
           }}
-          style={listStyle}
+          style={{ ...columnsStyle, listStyle: "none", padding: 0, margin: 0 }}
         >
-          {parseSkills(data.skills).map((s, i) => (
-            <li key={i} style={liStyle}>
+          {flatSkills.map((s, i) => (
+            <li key={i} style={{ ...chipStyle, display: "block" }}>
               {s}
             </li>
           ))}
         </ul>
-      ) : hasHeadings ? (
-        <div>
+      ) : mode === "categorized" && hasHeadings ? (
+        <div style={columnsStyle}>
           {groups.map((g, gi) => (
-            <div key={gi} style={{ marginBottom: 6 }}>
-              {g.heading && <div style={{ fontWeight: 700, marginBottom: 2 }}>{g.heading}</div>}
-              <ul data-skills-list style={listStyle}>
-                {g.items.map((s, i) => (
-                  <li key={i} style={liStyle}>
-                    {s}
-                  </li>
-                ))}
-              </ul>
+            <div key={gi} style={{ breakInside: "avoid", pageBreakInside: "avoid", marginBottom: 8 }}>
+              {g.heading && (
+                <div style={{ fontWeight: 700, marginBottom: 3, fontSize: "0.95em" }}>
+                  {g.heading}
+                </div>
+              )}
+              {g.items.map((s, i) => (
+                <span key={i} style={chipStyle}>
+                  {s}
+                </span>
+              ))}
             </div>
           ))}
         </div>
       ) : (
-        <ul data-skills-list style={listStyle}>
-          {parseSkills(data.skills).map((s, i) => (
-            <li key={i} style={liStyle}>
-              {s}
-            </li>
-          ))}
-        </ul>
+        renderChips(flatSkills)
       )}
     </Section>
   );
