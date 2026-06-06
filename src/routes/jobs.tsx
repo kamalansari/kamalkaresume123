@@ -1023,8 +1023,12 @@ function JobCard({ job, resume, onScore, onNova, onApply, liveScore, isSaved, on
     <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3 hover:border-[var(--navy-light)] hover:shadow-[var(--shadow-soft)] transition-all">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-md bg-[var(--navy-light)]/10 text-[var(--navy-light)] font-bold flex items-center justify-center shrink-0">
-            {(job.company || "?").charAt(0).toUpperCase()}
+          <div className="h-10 w-10 rounded-md bg-[var(--navy-light)]/10 text-[var(--navy-light)] font-bold flex items-center justify-center shrink-0 overflow-hidden">
+            {job.logo ? (
+              <img src={job.logo} alt={job.company} className="h-full w-full object-contain" loading="lazy" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            ) : (
+              (job.company || "?").charAt(0).toUpperCase()
+            )}
           </div>
           <div className="min-w-0">
             <div className="font-semibold truncate">{job.title}</div>
