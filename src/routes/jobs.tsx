@@ -1031,7 +1031,15 @@ function JobCard({ job, resume, onScore, onNova, onApply, liveScore, isSaved, on
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>Source: Naukri</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className={cn(
+            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            sourceTone(job.source),
+          )}>
+            <Globe className="h-2.5 w-2.5" /> {job.source || "Live"}
+          </span>
+          {job.remote && <span className="text-[10px]">· Remote</span>}
+        </span>
         <button type="button" onClick={onScore} className="inline-flex items-center gap-1 rounded-full bg-[var(--navy-light)]/10 text-[var(--navy-light)] px-2.5 py-1 hover:bg-[var(--navy-light)]/20">
           <Gauge className="h-3 w-3" /> Check Score
         </button>
