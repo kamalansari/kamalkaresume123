@@ -892,17 +892,22 @@ export function Builder() {
     return next;
   };
 
+  const printResumeData = (resume: ResumeData) => {
+    flushSync(() => setPrintData({ ...defaultResume, ...resume }));
+    announce("Preparing PDF for download…");
+    requestAnimationFrame(() => {
+      window.print();
+      requestAnimationFrame(() => setPrintData(null));
+      announce("PDF ready. Use your browser's save dialog to download.");
+    });
+  };
+
   const printCurrentResume = () => {
     // Make sure the preview is mounted/visible so contentEditable reads back
     // real text in commitPreviewEdits (innerText returns "" for display:none).
     setMobileView("preview");
     requestAnimationFrame(() => {
-      commitPreviewEdits();
-      announce("Preparing PDF for download…");
-      requestAnimationFrame(() => {
-        window.print();
-        announce("PDF ready. Use your browser's save dialog to download.");
-      });
+      printResumeData(commitPreviewEdits());
     });
   };
 
