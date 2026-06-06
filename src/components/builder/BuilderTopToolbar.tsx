@@ -976,6 +976,58 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
             </button>
           </div>
         </div>
+
+        <AlignPicker
+          label="Summary alignment"
+          value={data.summaryAlign ?? (data.justifyText ? "justify" : "left")}
+          onChange={(v) => onPatch({ summaryAlign: v })}
+        />
+        <AlignPicker
+          label="Experience alignment"
+          value={data.experienceAlign ?? (data.justifyText ? "justify" : "left")}
+          onChange={(v) => onPatch({ experienceAlign: v })}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function AlignPicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: "left" | "justify" | "center";
+  onChange: (v: "left" | "justify" | "center") => void;
+}) {
+  const opts: { id: "left" | "justify" | "center"; icon: React.ReactNode; label: string }[] = [
+    { id: "left", icon: <AlignLeft className="h-4 w-4" />, label: "Left" },
+    { id: "justify", icon: <AlignJustify className="h-4 w-4" />, label: "Justify" },
+    { id: "center", icon: <AlignCenter className="h-4 w-4" />, label: "Center" },
+  ];
+  return (
+    <div>
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <div className="mt-2 flex gap-2">
+        {opts.map((o) => (
+          <button
+            key={o.id}
+            onClick={() => onChange(o.id)}
+            className={cn(
+              "flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-2 text-xs font-medium",
+              value === o.id
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border hover:border-foreground/40",
+            )}
+          >
+            {o.icon} {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
       </PopoverContent>
     </Popover>
   );
