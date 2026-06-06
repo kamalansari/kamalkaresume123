@@ -407,16 +407,34 @@ function JobsPage() {
   const expRange = EXPERIENCE_LEVELS.find(l => l.id === expLevel)!;
 
   const filteredJobs = useMemo(() => {
+    const tabDef = SOURCE_TABS.find(t => t.id === sourceTab);
     return scoredJobs
       .filter(s => {
+        if (sourceTab !== "all" && tabDef && !tabDef.match(s.job.source ?? "")) return false;
         if (roleFilter.size > 0) {
           const key = s.job.title.split(/[-–|·,(]/)[0].trim() || s.job.title;
           if (!roleFilter.has(key)) return false;
         }
         if (expLevel !== "any") {
-          // Overlap test between job's experience range and selected level range
           if (s.exp.max < expRange.min || s.exp.min > expRange.max) return false;
         }
+        if (s.salary) {
+          if (s.salary.max < salaryRange[0] || s.salary.min > salaryRange[1]) return false;
+        }
+        if (s.score < minScore) return false;
+        return true;
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [scoredJobs, sourceTab, roleFilter, expLevel, expRange, salaryRange, minScore]);
+
+  const sourceCounts = useMemo(() => {
+    const counts: Record<SourceTab, number> = { all: scoredJobs.length, linkedin: 0, naukri: 0, career: 0 };
+    for (const { job } of scoredJobs) {
+      const src = job.source ?? "";
+      for (const tab of SOURCE_TABS) if (tab.id !== "all" && tab.match(src)) counts[tab.id]++;
+    }
+    return counts;
+  }, [scoredJobs]);
         if (s.salary) {
           if (s.salary.max < salaryRange[0] || s.salary.min > salaryRange[1]) return false;
         }
