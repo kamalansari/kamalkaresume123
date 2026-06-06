@@ -25,7 +25,6 @@ import { Route as ApiRoadmapRouteImport } from './routes/api/roadmap'
 import { Route as ApiRewriteSummaryRouteImport } from './routes/api/rewrite-summary'
 import { Route as ApiRewriteSnippetRouteImport } from './routes/api/rewrite-snippet'
 import { Route as ApiRewriteSectionRouteImport } from './routes/api/rewrite-section'
-import { Route as ApiRecommendJobsRouteImport } from './routes/api/recommend-jobs'
 import { Route as ApiParseResumeRouteImport } from './routes/api/parse-resume'
 import { Route as ApiNovaChatRouteImport } from './routes/api/nova-chat'
 import { Route as ApiKeywordBulletsRouteImport } from './routes/api/keyword-bullets'
@@ -117,11 +116,6 @@ const ApiRewriteSectionRoute = ApiRewriteSectionRouteImport.update({
   path: '/api/rewrite-section',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRecommendJobsRoute = ApiRecommendJobsRouteImport.update({
-  id: '/api/recommend-jobs',
-  path: '/api/recommend-jobs',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiParseResumeRoute = ApiParseResumeRouteImport.update({
   id: '/api/parse-resume',
   path: '/api/parse-resume',
@@ -196,7 +190,6 @@ export interface FileRoutesByFullPath {
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/parse-resume': typeof ApiParseResumeRoute
-  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -225,7 +218,6 @@ export interface FileRoutesByTo {
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/parse-resume': typeof ApiParseResumeRoute
-  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -255,7 +247,6 @@ export interface FileRoutesById {
   '/api/keyword-bullets': typeof ApiKeywordBulletsRoute
   '/api/nova-chat': typeof ApiNovaChatRoute
   '/api/parse-resume': typeof ApiParseResumeRoute
-  '/api/recommend-jobs': typeof ApiRecommendJobsRoute
   '/api/rewrite-section': typeof ApiRewriteSectionRoute
   '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
@@ -286,7 +277,6 @@ export interface FileRouteTypes {
     | '/api/keyword-bullets'
     | '/api/nova-chat'
     | '/api/parse-resume'
-    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
@@ -315,7 +305,6 @@ export interface FileRouteTypes {
     | '/api/keyword-bullets'
     | '/api/nova-chat'
     | '/api/parse-resume'
-    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
@@ -344,7 +333,6 @@ export interface FileRouteTypes {
     | '/api/keyword-bullets'
     | '/api/nova-chat'
     | '/api/parse-resume'
-    | '/api/recommend-jobs'
     | '/api/rewrite-section'
     | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
@@ -374,7 +362,6 @@ export interface RootRouteChildren {
   ApiKeywordBulletsRoute: typeof ApiKeywordBulletsRoute
   ApiNovaChatRoute: typeof ApiNovaChatRoute
   ApiParseResumeRoute: typeof ApiParseResumeRoute
-  ApiRecommendJobsRoute: typeof ApiRecommendJobsRoute
   ApiRewriteSectionRoute: typeof ApiRewriteSectionRoute
   ApiRewriteSnippetRoute: typeof ApiRewriteSnippetRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
@@ -495,13 +482,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRewriteSectionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/recommend-jobs': {
-      id: '/api/recommend-jobs'
-      path: '/api/recommend-jobs'
-      fullPath: '/api/recommend-jobs'
-      preLoaderRoute: typeof ApiRecommendJobsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/parse-resume': {
       id: '/api/parse-resume'
       path: '/api/parse-resume'
@@ -598,7 +578,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiKeywordBulletsRoute: ApiKeywordBulletsRoute,
   ApiNovaChatRoute: ApiNovaChatRoute,
   ApiParseResumeRoute: ApiParseResumeRoute,
-  ApiRecommendJobsRoute: ApiRecommendJobsRoute,
   ApiRewriteSectionRoute: ApiRewriteSectionRoute,
   ApiRewriteSnippetRoute: ApiRewriteSnippetRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
@@ -607,3 +586,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
