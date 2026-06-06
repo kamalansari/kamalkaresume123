@@ -1229,10 +1229,23 @@ function SkillsSection({
   // Walk items in their ORIGINAL order and place each into the currently
   // shortest column (ties → left-most). This preserves reading order while
   // keeping column heights within one item of each other.
+  // Strategy + bias come from resume settings so users can tune behavior
+  // without code changes. Defaults preserve previous "length" behavior.
+  const balanceStrategy = data.skillsBalanceStrategy ?? "length";
+  const balanceBias = Math.min(1.5, Math.max(0.5, data.skillsBalanceBias ?? 1));
+
   const estimateWeight = (text: string, cols: number) => {
-    const cpl = Math.max(10, Math.floor(60 / Math.max(1, cols)));
-    const lines = Math.max(1, Math.ceil(text.length / cpl));
-    return lines + 0.35;
+    let raw: number;
+    if (balanceStrategy === "count") {
+      raw = 1;
+    } else if (balanceStrategy === "chars") {
+      raw = Math.max(1, text.length);
+    } else {
+      // "length": rough wrapped-line estimate per column width.
+      const cpl = Math.max(10, Math.floor(60 / Math.max(1, cols)));
+      raw = Math.max(1, Math.ceil(text.length / cpl)) + 0.35;
+    }
+    return raw * balanceBias;
   };
 
   const balanceIntoColumns = <T,>(
