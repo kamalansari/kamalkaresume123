@@ -1984,6 +1984,7 @@ export function Builder() {
             update("extraKeywords", merged);
           }}
           onOneClickOptimize={generateFromJD}
+          onApplyBaselineFix={applyBaselineFix}
           optimizing={generating}
         />
         </div>
