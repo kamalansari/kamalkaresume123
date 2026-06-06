@@ -182,13 +182,14 @@ export async function syncAdzunaJobs(opts?: { queries?: string[]; cities?: strin
   }
 
   // deactivate expired
-  const { error: deErr, count } = await supabase
+  const { data: deactivatedRows, error: deErr } = await supabase
     .from("jobs")
     .update({ is_active: false })
     .lt("expires_at", new Date().toISOString())
     .eq("is_active", true)
-    .select("*", { count: "exact", head: true });
+    .select("id");
   if (deErr) errors.push(`deactivate: ${deErr.message}`);
+  const count = deactivatedRows?.length ?? 0;
 
   return { fetched: rows.length, upserted, deactivated: count ?? 0, errors };
 }

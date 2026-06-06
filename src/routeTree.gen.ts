@@ -35,6 +35,7 @@ import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-fro
 import { Route as ApiExtractJdRouteImport } from './routes/api/extract-jd'
 import { Route as ApiAlignResumeRouteImport } from './routes/api/align-resume'
 import { Route as AdminSkillDictionaryRouteImport } from './routes/admin.skill-dictionary'
+import { Route as ApiPublicHooksFetchJobsRouteImport } from './routes/api/public/hooks/fetch-jobs'
 
 const RoadmapRoute = RoadmapRouteImport.update({
   id: '/roadmap',
@@ -166,6 +167,11 @@ const AdminSkillDictionaryRoute = AdminSkillDictionaryRouteImport.update({
   path: '/admin/skill-dictionary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksFetchJobsRoute = ApiPublicHooksFetchJobsRouteImport.update({
+  id: '/api/public/hooks/fetch-jobs',
+  path: '/api/public/hooks/fetch-jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
   '/api/roadmap': typeof ApiRoadmapRoute
+  '/api/public/hooks/fetch-jobs': typeof ApiPublicHooksFetchJobsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -222,6 +229,7 @@ export interface FileRoutesByTo {
   '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
   '/api/roadmap': typeof ApiRoadmapRoute
+  '/api/public/hooks/fetch-jobs': typeof ApiPublicHooksFetchJobsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -251,6 +259,7 @@ export interface FileRoutesById {
   '/api/rewrite-snippet': typeof ApiRewriteSnippetRoute
   '/api/rewrite-summary': typeof ApiRewriteSummaryRoute
   '/api/roadmap': typeof ApiRoadmapRoute
+  '/api/public/hooks/fetch-jobs': typeof ApiPublicHooksFetchJobsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -281,6 +290,7 @@ export interface FileRouteTypes {
     | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
     | '/api/roadmap'
+    | '/api/public/hooks/fetch-jobs'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
     | '/api/roadmap'
+    | '/api/public/hooks/fetch-jobs'
   id:
     | '__root__'
     | '/'
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
     | '/api/rewrite-snippet'
     | '/api/rewrite-summary'
     | '/api/roadmap'
+    | '/api/public/hooks/fetch-jobs'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -366,6 +378,7 @@ export interface RootRouteChildren {
   ApiRewriteSnippetRoute: typeof ApiRewriteSnippetRoute
   ApiRewriteSummaryRoute: typeof ApiRewriteSummaryRoute
   ApiRoadmapRoute: typeof ApiRoadmapRoute
+  ApiPublicHooksFetchJobsRoute: typeof ApiPublicHooksFetchJobsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -552,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSkillDictionaryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/fetch-jobs': {
+      id: '/api/public/hooks/fetch-jobs'
+      path: '/api/public/hooks/fetch-jobs'
+      fullPath: '/api/public/hooks/fetch-jobs'
+      preLoaderRoute: typeof ApiPublicHooksFetchJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -582,17 +602,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRewriteSnippetRoute: ApiRewriteSnippetRoute,
   ApiRewriteSummaryRoute: ApiRewriteSummaryRoute,
   ApiRoadmapRoute: ApiRoadmapRoute,
+  ApiPublicHooksFetchJobsRoute: ApiPublicHooksFetchJobsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
