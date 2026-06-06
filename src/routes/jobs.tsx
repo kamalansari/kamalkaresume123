@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Search, Filter, MapPin, Briefcase, Calendar, Building2, Tag, Bookmark, Sparkles, Loader2, ArrowLeft, ExternalLink, Gauge, ChevronDown, Download, ChevronRight, FileText, Wand2, MessageSquare } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Search, Filter, MapPin, Briefcase, Calendar, Building2, Tag, Bookmark, Sparkles, Loader2, ArrowLeft, ExternalLink, Gauge, ChevronDown, Download, ChevronRight, FileText, Wand2, MessageSquare, RefreshCw, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,9 +34,16 @@ type Job = {
   experience: string;
   salary: string;
   postedAgo: string;
+  postedAt?: number;
   tags: string[];
   jd: string;
+  source?: string;
+  applyUrl?: string;
+  remote?: boolean;
 };
+
+const CACHE_KEY = "rf:jobsCache:v2";
+const PAGE_SIZE = 20;
 
 const INDUSTRIES = ["All industries", "IT Services", "Banking & Finance", "Healthcare", "E-commerce", "Manufacturing", "Education", "Consulting", "Media"];
 const ROLES = ["All roles", "Software Engineering", "Data & Analytics", "Product", "Design", "Marketing", "Sales", "Operations", "HR"];
@@ -96,6 +103,11 @@ function JobsPage() {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [activeRoleTab, setActiveRoleTab] = useState("Data Analyst");
   const [scoreJob, setScoreJob] = useState<Job | null>(null);
   const [scoreResume, setScoreResume] = useState<ResumeData | null>(null);
@@ -111,6 +123,7 @@ function JobsPage() {
   const [applySavedResume, setApplySavedResume] = useState<SavedResume | null>(null);
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(() => loadSavedJobIds());
   const navigate = useNavigate();
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Client-side filter state for recommended-jobs panel
   const [roleFilter, setRoleFilter] = useState<Set<string>>(new Set());
@@ -134,6 +147,22 @@ function JobsPage() {
 
   useEffect(() => {
     refreshResumes();
+    // Hydrate from session cache for snappy initial load
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const c = JSON.parse(raw) as { jobs: Job[]; total: number; page: number; hasMore: boolean; fetchedAt: number; jobTitle: string; location: string };
+        if (c.jobs?.length) {
+          setJobs(c.jobs);
+          setTotalResults(c.total ?? c.jobs.length);
+          setPage(c.page ?? 1);
+          setHasMore(!!c.hasMore);
+          setFetchedAt(c.fetchedAt ?? Date.now());
+          if (c.jobTitle) { setJobTitle(c.jobTitle); setActiveRoleTab(c.jobTitle); }
+          if (c.location) setLocation(c.location);
+        }
+      }
+    } catch { /* ignore */ }
   }, []);
 
   const activeResume: ResumeData = useMemo(() => {
@@ -146,37 +175,58 @@ function JobsPage() {
 
   const filterCount = [industry !== INDUSTRIES[0], role !== ROLES[0], datePosted !== "All time", alias, keywords].filter(Boolean).length;
 
-  const searchJobs = async () => {
+  const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
     if (!jobTitle.trim()) { toast.error("Enter a job title."); return; }
-    setLoading(true);
-    setActiveRoleTab(jobTitle);
+    append ? setLoadingMore(true) : setLoading(true);
     try {
       const res = await authFetch("/api/recommend-jobs", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          jobTitle, experience, location,
-          industry: industry === INDUSTRIES[0] ? "" : industry,
-          roleCategory: role === ROLES[0] ? "" : role,
-          datePosted, keywords,
-          resume: { headline: activeResume.headline, skills: activeResume.skills, summary: activeResume.summary },
-        }),
+        body: JSON.stringify({ jobTitle, experience, location, keywords, page: pageNum, pageSize: PAGE_SIZE }),
       });
       if (res.status === 429) { toast.error("Rate limit hit. Retry shortly."); return; }
-      if (res.status === 402) { toast.error("AI credits exhausted."); return; }
       if (!res.ok) { toast.error("Search failed."); return; }
-      const out = (await res.json()) as { jobs?: Job[] };
+      const out = (await res.json()) as { jobs?: Job[]; total?: number; hasMore?: boolean; fetchedAt?: number };
       const nextJobs = normalizeJobs(out.jobs ?? []);
-      setJobs(nextJobs);
-      // Reset client filters on a fresh search so users see all results first.
-      setRoleFilter(new Set());
-      setExpLevel("any");
-      setMinScore(0);
-      setSalaryRange([0, 100]);
-      toast.success(`${nextJobs.length} jobs matched`);
+      const merged = append ? [...jobs, ...nextJobs] : nextJobs;
+      setJobs(merged);
+      setTotalResults(out.total ?? merged.length);
+      setHasMore(!!out.hasMore);
+      setPage(pageNum);
+      const stamp = out.fetchedAt ?? Date.now();
+      setFetchedAt(stamp);
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          jobs: merged, total: out.total ?? merged.length, page: pageNum, hasMore: !!out.hasMore,
+          fetchedAt: stamp, jobTitle, location,
+        }));
+      } catch { /* ignore */ }
+      if (!append) {
+        setRoleFilter(new Set()); setExpLevel("any"); setMinScore(0); setSalaryRange([0, 100]);
+        toast.success(`${out.total ?? nextJobs.length} live jobs found`);
+      }
     } catch { toast.error("Network error."); }
-    finally { setLoading(false); }
-  };
+    finally { append ? setLoadingMore(false) : setLoading(false); }
+  }, [jobTitle, experience, location, keywords, jobs]);
+
+  const searchJobs = useCallback(() => {
+    setActiveRoleTab(jobTitle);
+    fetchPage(1, false);
+  }, [fetchPage, jobTitle]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!hasMore || loading || loadingMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) fetchPage(page + 1, true);
+    }, { rootMargin: "400px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, loading, loadingMore, page, fetchPage]);
+
+
 
   const askNova = async (job: Job, question?: string) => {
     setNovaJob(job);
@@ -267,8 +317,13 @@ function JobsPage() {
     }
   };
 
+  const applyToJob = (job: Job) => {
+    const url = job.applyUrl || naukriUrl(job.title);
+    window.open(url, "_blank", "noreferrer");
+  };
+
   const openNaukriAndClose = () => {
-    if (applyJob) window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
+    if (applyJob) applyToJob(applyJob);
     setApplyJob(null);
   };
 
@@ -459,12 +514,20 @@ function JobsPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display text-lg font-semibold">
-              Recommended Jobs{" "}
+              {totalResults > 0 ? `${totalResults} Live Jobs Found` : "Live Job Matches"}{" "}
               <span className="text-sm font-normal text-muted-foreground">
-                ({filteredJobs.length}{filteredJobs.length !== jobs.length ? ` of ${jobs.length}` : ""} jobs{location ? ` in ${location}` : ""})
+                ({filteredJobs.length}{filteredJobs.length !== jobs.length ? ` of ${jobs.length} loaded` : " shown"}{location ? ` · ${location}` : ""})
               </span>
             </h2>
-            <p className="text-xs text-muted-foreground">AI-generated previews for demo — verified listings via "Apply Now" on Naukri.</p>
+            <p className="text-xs text-muted-foreground inline-flex items-center gap-2">
+              <Globe className="h-3 w-3" /> Live listings from Remotive &amp; Arbeitnow · ranked by your resume
+              {fetchedAt && <span>· Updated {formatStamp(fetchedAt)}</span>}
+              {jobs.length > 0 && (
+                <button onClick={searchJobs} className="ml-1 inline-flex items-center gap-1 text-[var(--navy-light)] hover:underline">
+                  <RefreshCw className="h-3 w-3" /> Refresh
+                </button>
+              )}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {/* Resume selector */}
@@ -597,10 +660,7 @@ function JobsPage() {
         )}
 
         {!loading && jobs.length === 0 && (
-          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-            <Briefcase className="h-8 w-8 mx-auto text-muted-foreground" />
-            <p className="mt-2 text-sm text-muted-foreground">Click <b>Search Jobs</b> to fetch AI-curated recommendations.</p>
-          </div>
+          <EmptyState jobTitle={jobTitle} location={location} onSuggest={(t, l) => { setJobTitle(t); if (l) setLocation(l); setTimeout(searchJobs, 0); }} />
         )}
 
         {!loading && jobs.length > 0 && filteredJobs.length === 0 && (
@@ -612,21 +672,34 @@ function JobsPage() {
         )}
 
         {!loading && filteredJobs.length > 0 && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredJobs.map(({ job, score }) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                resume={activeResume}
-                liveScore={score}
-                onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }}
-                onNova={() => askNova(job)}
-                onApply={() => openApply(job)}
-                isSaved={savedJobIds.has(job.id)}
-                onToggleSave={() => toggleSaveJob(job)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredJobs.map(({ job, score }) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  resume={activeResume}
+                  liveScore={score}
+                  onScore={() => { refreshResumes(); setScoreResume(getLatestResume(activeResumeId, activeResume)); setScoreJob(job); }}
+                  onNova={() => askNova(job)}
+                  onApply={() => openApply(job)}
+                  isSaved={savedJobIds.has(job.id)}
+                  onToggleSave={() => toggleSaveJob(job)}
+                />
+              ))}
+            </div>
+            {loadingMore && (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-border bg-card h-44 animate-pulse" />
+                ))}
+              </div>
+            )}
+            {hasMore && <div ref={sentinelRef} className="h-10" aria-hidden />}
+            {!hasMore && jobs.length > 0 && (
+              <div className="text-center text-xs text-muted-foreground py-6">You've reached the end · {totalResults} live jobs</div>
+            )}
+          </>
         )}
       </div>
 
@@ -777,7 +850,7 @@ function JobsPage() {
               variant="ghost"
               disabled={applyLoading}
               onClick={() => {
-                if (applyJob) window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
+                if (applyJob) applyToJob(applyJob);
                 setApplyJob(null);
               }}
             >
@@ -793,7 +866,7 @@ function JobsPage() {
               Edit in builder
             </Button>
             <Button onClick={openNaukriAndClose} className="bg-[var(--navy-light)] text-white hover:opacity-95">
-              <ExternalLink className="h-3.5 w-3.5" /> Yes, apply on Naukri
+              <ExternalLink className="h-3.5 w-3.5" /> Apply on {applyJob?.source || "source"}
             </Button>
           </>)}
           </DialogFooter>
@@ -850,7 +923,7 @@ function normalizeJobs(items: Job[]): Job[] {
   return items.map((job, index) => {
     const title = text(job.title, "Recommended Role");
     const tags = Array.isArray(job.tags) ? job.tags.filter(Boolean).map(String) : [];
-    const normalized = {
+    const normalized: Job = {
       id: text(job.id, `job_${index + 1}`),
       title,
       company: text(job.company, "Hiring company"),
@@ -858,8 +931,12 @@ function normalizeJobs(items: Job[]): Job[] {
       experience: text(job.experience, "Experience not specified"),
       salary: text(job.salary, "Not disclosed"),
       postedAgo: text(job.postedAgo, "Recently posted"),
+      postedAt: typeof job.postedAt === "number" ? job.postedAt : undefined,
       tags,
       jd: text(job.jd),
+      source: text(job.source, ""),
+      applyUrl: text(job.applyUrl, ""),
+      remote: !!job.remote,
     };
     return { ...normalized, jd: normalized.jd || getJobScoringText(normalized) };
   });
@@ -958,7 +1035,15 @@ function JobCard({ job, resume, onScore, onNova, onApply, liveScore, isSaved, on
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>Source: Naukri</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className={cn(
+            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            sourceTone(job.source),
+          )}>
+            <Globe className="h-2.5 w-2.5" /> {job.source || "Live"}
+          </span>
+          {job.remote && <span className="text-[10px]">· Remote</span>}
+        </span>
         <button type="button" onClick={onScore} className="inline-flex items-center gap-1 rounded-full bg-[var(--navy-light)]/10 text-[var(--navy-light)] px-2.5 py-1 hover:bg-[var(--navy-light)]/20">
           <Gauge className="h-3 w-3" /> Check Score
         </button>
@@ -1128,4 +1213,61 @@ function buildSectionMap(resume: ResumeData): Map<string, string[]> {
     }
   }
   return map;
+}
+
+function formatStamp(ms: number): string {
+  const s = Math.max(1, Math.floor((Date.now() - ms) / 1000));
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  try { return new Date(ms).toLocaleString(); } catch { return ""; }
+}
+
+function sourceTone(src?: string): string {
+  switch ((src || "").toLowerCase()) {
+    case "remotive": return "bg-emerald-500/10 text-emerald-700 border-emerald-500/30";
+    case "arbeitnow": return "bg-blue-500/10 text-blue-700 border-blue-500/30";
+    case "linkedin": return "bg-sky-500/10 text-sky-700 border-sky-500/30";
+    case "indeed": return "bg-indigo-500/10 text-indigo-700 border-indigo-500/30";
+    case "naukri": return "bg-orange-500/10 text-orange-700 border-orange-500/30";
+    case "foundit": return "bg-purple-500/10 text-purple-700 border-purple-500/30";
+    default: return "bg-secondary text-foreground border-border";
+  }
+}
+
+function EmptyState({ jobTitle, location, onSuggest }: { jobTitle: string; location: string; onSuggest: (title: string, loc?: string) => void }) {
+  const suggestions = [
+    { title: jobTitle || "Data Analyst", loc: "Remote" },
+    { title: "Software Engineer", loc: "Bangalore" },
+    { title: "Product Manager", loc: "India" },
+    { title: "Frontend Developer", loc: "Remote" },
+    { title: "DevOps Engineer", loc: "Hyderabad" },
+  ];
+  const hasSearched = !!jobTitle.trim();
+  return (
+    <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center space-y-4">
+      <Briefcase className="h-10 w-10 mx-auto text-muted-foreground" />
+      <div>
+        <p className="font-semibold">
+          {hasSearched ? `No live jobs found for "${jobTitle}"${location ? ` in ${location}` : ""}` : "Search for live jobs"}
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {hasSearched
+            ? "Try a broader title, drop the location, or pick a suggestion below."
+            : "Enter a role above, or try one of these popular searches:"}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2 justify-center">
+        {suggestions.map(s => (
+          <button
+            key={s.title + s.loc}
+            onClick={() => onSuggest(s.title, s.loc)}
+            className="text-xs px-3 py-1.5 rounded-full border border-border bg-background hover:border-[var(--navy-light)] hover:text-[var(--navy-light)] transition-colors"
+          >
+            {s.title} <span className="opacity-60">· {s.loc}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
