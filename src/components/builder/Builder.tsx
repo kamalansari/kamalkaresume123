@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Share2, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye, LayoutTemplate, Wrench, GraduationCap, Trophy, Target, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Share2, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye, LayoutTemplate, Wrench, GraduationCap, Trophy, Target, AlertCircle, History as HistoryIcon } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, TEMPLATE_SIDEBAR_DEFAULTS, SIDEBAR_ELIGIBLE, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId, type CustomSection } from "./types";
 import { computeScore, jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
@@ -42,6 +42,8 @@ import { MonthYearPicker, DateRangePicker } from "./MonthYearPicker";
 import { SavedResumesGallery } from "./SavedResumesGallery";
 import { TemplatesPopover, SectionsPopover, StylePopover } from "./BuilderTopToolbar";
 import { SectionReorderBar } from "./SectionReorderBar";
+import { HistoryDialog } from "./HistoryDialog";
+import { historyStore } from "./historyStore";
 import { SelectionFormatToolbar } from "./SelectionFormatToolbar";
 import { ExperienceSection, autoActionVerbs, autoActionVerbsDetailed, loadCustomVerbs } from "./ExperienceSection";
 import lzString from "lz-string";
@@ -176,6 +178,7 @@ export function Builder() {
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1);
   // Mobile view switcher: which panel is visible on screens < lg.
   // 'editor' is the default; bottom nav toggles between editor and preview.
@@ -443,6 +446,7 @@ export function Builder() {
     if (!currentId) { setNameDraft(data.name ? `${data.name}'s resume` : "Untitled resume"); setSaveAsOpen(true); return; }
     resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data });
     resumeStore.saveDraft(data);
+    historyStore.push(currentId, data, `Saved "${currentName}"`);
     refreshList();
     toast.success(`Saved "${currentName}"`);
   };
@@ -452,12 +456,14 @@ export function Builder() {
     const id = newId();
     resumeStore.upsert({ id, name: trimmed, updatedAt: Date.now(), data });
     resumeStore.saveDraft(data);
+    historyStore.push(id, data, `Created "${trimmed}"`);
     setCurrentId(id);
     setCurrentName(trimmed);
     setSaveAsOpen(false);
     refreshList();
     toast.success(`Saved as "${trimmed}"`);
   };
+
 
   const loadSaved = (id: string) => {
     const entry = resumeStore.get(id);
@@ -1285,6 +1291,15 @@ export function Builder() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setHistoryOpen(true)}
+              title={currentId ? "Version history" : "Save this resume to start tracking versions"}
+            >
+              <HistoryIcon className="h-4 w-4" /> <span className="hidden sm:inline">History</span>
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8">
@@ -1441,6 +1456,17 @@ export function Builder() {
         onZoom={setPreviewZoom}
         previewOnly={!inlineEdit}
         onTogglePreview={() => setInlineEdit(v => !v)}
+      />
+
+      <HistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        resumeId={currentId}
+        resumeName={currentName}
+        onRestore={(restored) => {
+          if (currentId) historyStore.push(currentId, data, `Before restore of "${currentName}"`);
+          setData({ ...defaultResume, ...restored });
+        }}
       />
 
 
