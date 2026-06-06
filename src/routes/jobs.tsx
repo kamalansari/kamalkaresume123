@@ -536,9 +536,6 @@ function JobCard({
             Apply <ExternalLink className="h-3 w-3 ml-1.5" />
           </a>
         </Button>
-        {!score && (
-          <span className="text-xs text-muted-foreground">{timeAgo(job.created_date)}</span>
-        )}
       </div>
     </article>
   );
