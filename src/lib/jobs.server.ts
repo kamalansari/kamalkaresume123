@@ -195,7 +195,7 @@ export async function syncAdzunaJobs(opts?: { queries?: string[]; cities?: strin
 }
 
 // ───────────────────────── JSearch (RapidAPI) ─────────────────────────
-// Used to surface Naukri.com jobs (Adzuna India does not include naukri).
+// Surfaces jobs from Naukri, LinkedIn, Indeed, and Glassdoor (Adzuna India does not include these).
 
 type JSearchJob = {
   job_id: string;
@@ -217,13 +217,55 @@ type JSearchJob = {
 
 type JSearchResponse = { data?: JSearchJob[] };
 
+type PublisherConfig = {
+  source: string;
+  idPrefix: string;
+  queryTag: string;
+  match: (j: JSearchJob) => boolean;
+};
+
+const PUBLISHERS: PublisherConfig[] = [
+  {
+    source: "Naukri",
+    idPrefix: "naukri",
+    queryTag: "via Naukri",
+    match: (j) =>
+      (j.job_publisher ?? "").toLowerCase().includes("naukri") ||
+      (j.job_apply_link ?? "").toLowerCase().includes("naukri.com"),
+  },
+  {
+    source: "LinkedIn",
+    idPrefix: "linkedin",
+    queryTag: "via LinkedIn",
+    match: (j) =>
+      (j.job_publisher ?? "").toLowerCase().includes("linkedin") ||
+      (j.job_apply_link ?? "").toLowerCase().includes("linkedin.com"),
+  },
+  {
+    source: "Indeed",
+    idPrefix: "indeed",
+    queryTag: "via Indeed",
+    match: (j) =>
+      (j.job_publisher ?? "").toLowerCase().includes("indeed") ||
+      (j.job_apply_link ?? "").toLowerCase().includes("indeed.com"),
+  },
+  {
+    source: "Glassdoor",
+    idPrefix: "glassdoor",
+    queryTag: "via Glassdoor",
+    match: (j) =>
+      (j.job_publisher ?? "").toLowerCase().includes("glassdoor") ||
+      (j.job_apply_link ?? "").toLowerCase().includes("glassdoor."),
+  },
+];
+
 async function callJSearch(
   rapidKey: string,
   query: string,
   page: number,
 ): Promise<JSearchJob[]> {
   const params = new URLSearchParams({
-    query: `${query} in India via Naukri`,
+    query: `${query} in India`,
     page: String(page),
     num_pages: "1",
     country: "in",
@@ -246,17 +288,11 @@ async function callJSearch(
   return data.data ?? [];
 }
 
-function isNaukri(job: JSearchJob): boolean {
-  const pub = (job.job_publisher ?? "").toLowerCase();
-  const link = (job.job_apply_link ?? "").toLowerCase();
-  return pub.includes("naukri") || link.includes("naukri.com");
-}
-
-function jsearchToRow(job: JSearchJob): UpsertRow {
+function jsearchToRow(job: JSearchJob, pub: PublisherConfig): UpsertRow {
   const description = (job.job_description || "").replace(/\s+/g, " ").trim();
   const loc = [job.job_city, job.job_country].filter(Boolean).join(", ");
   return {
-    external_job_id: `naukri_${job.job_id}`,
+    external_job_id: `${pub.idPrefix}_${job.job_id}`,
     title: job.job_title,
     company_name: job.employer_name ?? null,
     location: loc || null,
@@ -270,7 +306,7 @@ function jsearchToRow(job: JSearchJob): UpsertRow {
     contract_type: null,
     contract_time: job.job_employment_type ?? null,
     created_date: job.job_posted_at_datetime_utc ?? null,
-    source: "Naukri",
+    source: pub.source,
     company_logo: job.employer_logo ?? null,
     skills: extractSkills(`${job.job_title} ${description}`),
     is_remote: Boolean(job.job_is_remote),
@@ -280,7 +316,7 @@ function jsearchToRow(job: JSearchJob): UpsertRow {
   };
 }
 
-export async function syncJSearchNaukriJobs(opts?: { queries?: string[]; pages?: number }): Promise<SyncResult> {
+export async function syncJSearchJobs(opts?: { queries?: string[]; pages?: number }): Promise<SyncResult> {
   const rapidKey = process.env.RAPIDAPI_KEY;
   if (!rapidKey) {
     return { fetched: 0, upserted: 0, deactivated: 0, errors: ["Missing RAPIDAPI_KEY"] };
@@ -292,16 +328,18 @@ export async function syncJSearchNaukriJobs(opts?: { queries?: string[]; pages?:
   const allRows = new Map<string, UpsertRow>();
 
   for (const q of queries) {
-    for (let p = 1; p <= pages; p++) {
-      try {
-        const jobs = await callJSearch(rapidKey, q, p);
-        for (const j of jobs) {
-          if (!isNaukri(j)) continue;
-          const row = jsearchToRow(j);
-          if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
+    for (const pub of PUBLISHERS) {
+      for (let p = 1; p <= pages; p++) {
+        try {
+          const jobs = await callJSearch(rapidKey, `${q} ${pub.queryTag}`, p);
+          for (const j of jobs) {
+            if (!pub.match(j)) continue;
+            const row = jsearchToRow(j, pub);
+            if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
+          }
+        } catch (e) {
+          errors.push(`${pub.source} ${q} p${p}: ${(e as Error).message}`);
         }
-      } catch (e) {
-        errors.push(`${q} p${p}: ${(e as Error).message}`);
       }
     }
   }
@@ -318,13 +356,17 @@ export async function syncJSearchNaukriJobs(opts?: { queries?: string[]; pages?:
   return { fetched: rows.length, upserted, deactivated: 0, errors };
 }
 
+// Back-compat alias
+export const syncJSearchNaukriJobs = syncJSearchJobs;
+
 export async function syncAllJobs(): Promise<SyncResult> {
   const a = await syncAdzunaJobs();
-  const n = await syncJSearchNaukriJobs();
+  const j = await syncJSearchJobs();
   return {
-    fetched: a.fetched + n.fetched,
-    upserted: a.upserted + n.upserted,
-    deactivated: a.deactivated + n.deactivated,
-    errors: [...a.errors.map((e) => `adzuna:${e}`), ...n.errors.map((e) => `naukri:${e}`)],
+    fetched: a.fetched + j.fetched,
+    upserted: a.upserted + j.upserted,
+    deactivated: a.deactivated + j.deactivated,
+    errors: [...a.errors.map((e) => `adzuna:${e}`), ...j.errors.map((e) => `jsearch:${e}`)],
   };
 }
+

@@ -74,6 +74,18 @@ function formatSalary(min: number | null, max: number | null): string {
   return `₹${toLpa((max ?? min)!)}`;
 }
 
+type SourceFilter = "all" | "Adzuna" | "Naukri" | "LinkedIn" | "Indeed" | "Glassdoor";
+
+function sourceBadgeClass(source: string): string {
+  switch (source) {
+    case "Naukri":    return "border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/10";
+    case "LinkedIn":  return "border-blue-500/40 text-blue-700 dark:text-blue-300 bg-blue-500/10";
+    case "Indeed":    return "border-indigo-500/40 text-indigo-700 dark:text-indigo-300 bg-indigo-500/10";
+    case "Glassdoor": return "border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10";
+    default:          return "border-sky-500/40 text-sky-700 dark:text-sky-300 bg-sky-500/10";
+  }
+}
+
 function JobsPage() {
   const [authed, setAuthed] = useState<boolean>(false);
   const [search, setSearch] = useState("");
@@ -81,7 +93,7 @@ function JobsPage() {
   const [workMode, setWorkMode] = useState<WorkMode>("any");
   const [experience, setExperience] = useState<ExpId>("any");
   const [minSalary, setMinSalary] = useState<number>(0);
-  const [source, setSource] = useState<"all" | "Adzuna" | "Naukri">("all");
+  const [source, setSource] = useState<SourceFilter>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [tab, setTab] = useState<"all" | "saved">("all");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -217,7 +229,7 @@ function JobsPage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-base sm:text-lg font-semibold truncate">Find Jobs</h1>
             <p className="text-xs text-muted-foreground">
-              {total > 0 ? `${total.toLocaleString()} live jobs` : "Live jobs from Adzuna & Naukri"} · cached & refreshed every 6h
+              {total > 0 ? `${total.toLocaleString()} live jobs` : "Live jobs from Adzuna, Naukri, LinkedIn, Indeed, Glassdoor"} · cached & refreshed every 6h
             </p>
           </div>
           <Button
@@ -301,12 +313,15 @@ function JobsPage() {
               </div>
               <div>
                 <Label className="text-xs">Source</Label>
-                <Select value={source} onValueChange={(v) => setSource(v as "all" | "Adzuna" | "Naukri")}>
+                <Select value={source} onValueChange={(v) => setSource(v as SourceFilter)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All sources</SelectItem>
                     <SelectItem value="Adzuna">Adzuna</SelectItem>
                     <SelectItem value="Naukri">Naukri</SelectItem>
+                    <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                    <SelectItem value="Indeed">Indeed</SelectItem>
+                    <SelectItem value="Glassdoor">Glassdoor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -450,7 +465,7 @@ function EmptyState({
       <Briefcase className="h-12 w-12 mx-auto text-muted-foreground" />
       <h2 className="mt-4 text-lg font-semibold">No jobs match your filters</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Try clearing filters, or refresh the cache to pull the latest Adzuna listings.
+        Try clearing filters, or refresh the cache to pull the latest listings.
       </p>
       {authed && (
         <Button onClick={onRefresh} disabled={refreshing} className="mt-4">
@@ -505,15 +520,11 @@ function JobCard({
         <span className="inline-flex items-center gap-1"><IndianRupee className="h-3 w-3" />{formatSalary(job.salary_min, job.salary_max).replace("₹", "")}</span>
         <Badge
           variant="outline"
-          className={cn(
-            "h-5 text-[10px] px-1.5",
-            job.source === "Naukri"
-              ? "border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/10"
-              : "border-sky-500/40 text-sky-700 dark:text-sky-300 bg-sky-500/10"
-          )}
+          className={cn("h-5 text-[10px] px-1.5", sourceBadgeClass(job.source))}
         >
           {job.source}
         </Badge>
+
       </div>
 
       {job.skills.length > 0 && (
