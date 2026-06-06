@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+export const AI_ASSISTANT_OPEN_EVENT = "ai-assistant:open";
 import { Sparkles, X, Send, Loader2, Wand2, PenLine, Target, FileText, ListChecks, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
