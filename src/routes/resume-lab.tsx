@@ -55,7 +55,122 @@ function ResumeLabPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [tailoredName, setTailoredName] = useState("");
   const [docxBusy, setDocxBusy] = useState(false);
+  const [jdMode, setJdMode] = useState<"text" | "image" | "pdf">("text");
+  const [ocrBusy, setOcrBusy] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState(0);
+  const [ocrStage, setOcrStage] = useState("");
+  const [extracted, setExtracted] = useState<JdMeta | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const hasPrimary = typeof window !== "undefined" && !!resumeStore.getPrimaryId();
+
+  const handleImageFile = async (file: File) => {
+    const okTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!okTypes.includes(file.type)) {
+      toast.error("Unsupported file. Use JPG, PNG, or WEBP.");
+      return;
+    }
+    if (file.size > 6 * 1024 * 1024) {
+      toast.error("Image too large. Max 6MB.");
+      return;
+    }
+    setOcrBusy(true);
+    setOcrProgress(10);
+    setOcrStage("Reading image…");
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setPreviewUrl(dataUrl);
+      setOcrProgress(35);
+      setOcrStage("Running OCR…");
+      const r = await authFetch("/api/extract-jd", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ imageDataUrl: dataUrl }),
+      });
+      setOcrProgress(80);
+      if (!r.ok) throw new Error(await r.text());
+      const data = (await r.json()) as JdMeta;
+      if (!data.text || !data.text.trim()) {
+        toast.error("Couldn't extract any text. Try a clearer screenshot.");
+        return;
+      }
+      setOcrProgress(100);
+      setOcrStage("Done");
+      setJd(data.text);
+      setExtracted(data);
+      toast.success("Job description extracted from image");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message.slice(0, 140) : "OCR failed");
+    } finally {
+      setTimeout(() => { setOcrBusy(false); setOcrProgress(0); setOcrStage(""); }, 400);
+    }
+  };
+
+  const handlePdfFile = async (file: File) => {
+    const okPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!okPdf) {
+      toast.error("Unsupported file. Upload a PDF.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("PDF too large. Max 10MB.");
+      return;
+    }
+    setOcrBusy(true);
+    setOcrProgress(15);
+    setOcrStage("Reading PDF…");
+    try {
+      const text = await extractResumeText(file);
+      const trimmed = text.trim();
+      if (!trimmed) {
+        toast.error("No text found in PDF. It may be a scanned image — try Upload Image instead.");
+        return;
+      }
+      setOcrProgress(55);
+      setOcrStage("Analyzing JD…");
+      const r = await authFetch("/api/extract-jd", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text: trimmed.slice(0, 60000) }),
+      });
+      setOcrProgress(85);
+      if (!r.ok) throw new Error(await r.text());
+      const data = (await r.json()) as JdMeta;
+      setOcrProgress(100);
+      setJd(data.text || trimmed);
+      setExtracted(data);
+      toast.success("Job description extracted from PDF");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message.slice(0, 140) : "Couldn't read PDF");
+    } finally {
+      setTimeout(() => { setOcrBusy(false); setOcrProgress(0); setOcrStage(""); }, 400);
+    }
+  };
+
+  const analyzePastedText = async () => {
+    if (!jd.trim()) return;
+    setOcrBusy(true);
+    setOcrProgress(50);
+    setOcrStage("Analyzing JD…");
+    try {
+      const r = await authFetch("/api/extract-jd", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text: jd.slice(0, 60000) }),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const data = (await r.json()) as JdMeta;
+      setExtracted(data);
+      toast.success("JD analyzed");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message.slice(0, 140) : "Analyze failed");
+    } finally {
+      setOcrBusy(false); setOcrProgress(0); setOcrStage("");
+    }
+  };
 
   useEffect(() => {
     const primary = resumeStore.getPrimary();
