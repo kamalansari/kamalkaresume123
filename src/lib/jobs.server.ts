@@ -234,6 +234,19 @@ type JSearchJob = {
 
 type JSearchResponse = { data?: JSearchJob[] };
 
+function isRapidApiSubscriptionError(status: number, body: string): boolean {
+  const text = body.toLowerCase();
+  return (
+    status === 403 ||
+    status === 429 ||
+    text.includes("not subscribed") ||
+    text.includes("not subscribe") ||
+    text.includes("you are not subscribed") ||
+    text.includes("subscribe to this api") ||
+    text.includes("not authorized to access this api")
+  );
+}
+
 type PublisherConfig = {
   source: string;
   idPrefix: string;
@@ -298,6 +311,9 @@ async function callJSearch(
   });
   if (!res.ok) {
     const body = (await res.text()).slice(0, 200);
+    if (isRapidApiSubscriptionError(res.status, body)) {
+      throw new Error("JSearch subscription required on RapidAPI");
+    }
     console.warn(`[jsearch] ${res.status} ${query} p${page}: ${body}`);
     return [];
   }
