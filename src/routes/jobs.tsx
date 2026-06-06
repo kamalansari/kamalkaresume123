@@ -320,6 +320,10 @@ function JobsPage() {
                 <Label className="text-xs">Location</Label>
                 <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Any city" />
               </div>
+              <div className="sm:hidden">
+                <Label className="text-xs">Company</Label>
+                <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Any company" />
+              </div>
               <div>
                 <Label className="text-xs">Work mode</Label>
                 <Select value={workMode} onValueChange={(v) => setWorkMode(v as WorkMode)}>
