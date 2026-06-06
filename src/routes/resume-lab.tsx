@@ -296,7 +296,11 @@ function ResumeLabPage() {
     resumeStore.saveDraft(merged);
     setConfirmOpen(false);
     setTailoredName("");
+    setSavedResumeName(name);
     toast.success(`Saved as new resume "${name}" — Primary is untouched`);
+    if (search.jobUrl) {
+      setApplyPromptOpen(true);
+    }
   };
 
   return (
