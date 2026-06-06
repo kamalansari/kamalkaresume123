@@ -98,7 +98,24 @@ function JobsPage() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const profile = useMemo(() => buildResumeProfile(), []);
+  const [profileTick, setProfileTick] = useState(0);
+  const profile = useMemo(() => buildResumeProfile(), [profileTick, authed]);
+  const hasResumeData = profile.skills.length > 0 || profile.titles.length > 0;
+
+  useEffect(() => {
+    // Hydrate on mount (SSR has no localStorage) and react to cross-tab updates.
+    setProfileTick((t) => t + 1);
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key.startsWith("resume")) setProfileTick((t) => t + 1);
+    };
+    window.addEventListener("storage", onStorage);
+    const onFocus = () => setProfileTick((t) => t + 1);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
 
   const filters = { search, location, workMode, experience, minSalaryLpa: minSalary };
 
@@ -323,6 +340,21 @@ function JobsPage() {
           />
         ) : (
           <>
+            {!hasResumeData && (
+              <div className="mb-4 rounded-lg border border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <Sparkles className="h-5 w-5 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Personalised match scores are off</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Add or set a primary resume to rank these jobs by your skills, seniority and title.
+                  </p>
+                </div>
+                <Link to="/builder" className="shrink-0">
+                  <Button size="sm">Open resume builder</Button>
+                </Link>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {visibleList.map(({ job, score, breakdown }) => (
                 <JobCard
@@ -481,23 +513,22 @@ function JobCard({
         </div>
       )}
 
-      {score > 0 && (
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-medium text-foreground inline-flex items-center gap-1">
-              Match {score}%
-              <MatchPopover breakdown={breakdown} />
-            </span>
-            <span className="text-muted-foreground">{timeAgo(job.created_date)}</span>
-          </div>
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className={cn("h-full rounded-full transition-all", tone)}
-              style={{ width: `${score}%` }}
-            />
-          </div>
+      <div className="mt-3">
+        <div className="flex items-center justify-between text-xs mb-1">
+          <span className="font-medium text-foreground inline-flex items-center gap-1">
+            Match {score}%
+            <MatchPopover breakdown={breakdown} />
+          </span>
+          <span className="text-muted-foreground">{timeAgo(job.created_date)}</span>
         </div>
-      )}
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className={cn("h-full rounded-full transition-all", tone)}
+            style={{ width: `${Math.max(score, 2)}%` }}
+          />
+        </div>
+      </div>
+
 
       <div className="mt-auto pt-4 flex items-center gap-2">
         <Button asChild size="sm" className="flex-1">
@@ -505,9 +536,6 @@ function JobCard({
             Apply <ExternalLink className="h-3 w-3 ml-1.5" />
           </a>
         </Button>
-        {!score && (
-          <span className="text-xs text-muted-foreground">{timeAgo(job.created_date)}</span>
-        )}
       </div>
     </article>
   );
