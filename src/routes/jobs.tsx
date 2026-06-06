@@ -987,6 +987,7 @@ function normalizeJobs(items: Job[]): Job[] {
       source: text(job.source, ""),
       applyUrl: text(job.applyUrl, ""),
       remote: !!job.remote,
+      logo: typeof job.logo === "string" && job.logo.trim() ? job.logo : undefined,
     };
     return { ...normalized, jd: normalized.jd || getJobScoringText(normalized) };
   });
