@@ -1215,6 +1215,7 @@ function ExperienceSection({
   headingFont: string;
   ed?: EditableHandlers;
 }) {
+  const expAlign = data.experienceAlign ?? (data.justifyText ? "justify" : "left");
   return (
     <Section title="Experience" accent={accent} headingFont={headingFont}>
       {data.experience.map((e) => (
