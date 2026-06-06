@@ -1615,23 +1615,32 @@ export function Builder() {
                   "lg:grid lg:grid-cols-6 lg:overflow-visible"
                 )}
               >
-                {[
-                  { v: "basics", label: "Basics", icon: User },
-                  { v: "experience", label: "Experience", icon: Briefcase },
-                  { v: "education", label: "Education", icon: IdCard },
-                  { v: "skills", label: "Skills", icon: Star },
-                  { v: "extras", label: "Extras", icon: Plus },
-                  { v: "target", label: "Target", icon: MousePointerClick },
-                ].map(({ v, label, icon: Icon }) => (
-                  <TabsTrigger
-                    key={v}
-                    value={v}
-                    className="snap-start shrink-0 lg:shrink min-w-[104px] lg:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap"
-                  >
-                    <Icon className="h-3.5 w-3.5 opacity-80" />
-                    <span>{label}</span>
-                  </TabsTrigger>
-                ))}
+                {(() => {
+                  const completion = getSectionCompletion(data);
+                  const tabs = [
+                    { v: "basics" as const, label: "Basics", icon: User, done: completion.basics },
+                    { v: "experience" as const, label: "Experience", icon: Briefcase, done: completion.experience },
+                    { v: "education" as const, label: "Education", icon: GraduationCap, done: completion.education },
+                    { v: "skills" as const, label: "Skills", icon: Wrench, done: completion.skills },
+                    { v: "extras" as const, label: "Extras", icon: Trophy, done: completion.extras },
+                    { v: "target" as const, label: "Target", icon: Target, done: completion.target },
+                  ];
+                  return tabs.map(({ v, label, icon: Icon, done }) => (
+                    <TabsTrigger
+                      key={v}
+                      value={v}
+                      className="snap-start shrink-0 lg:shrink min-w-[104px] lg:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap"
+                    >
+                      <Icon className="h-3.5 w-3.5 opacity-80" />
+                      <span>{label}</span>
+                      {done ? (
+                        <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                      ) : (
+                        <AlertCircle className="h-3 w-3 text-amber-500" />
+                      )}
+                    </TabsTrigger>
+                  ));
+                })()}
               </TabsList>
             </div>
             <TabsContent value="basics" className="space-y-6 mt-4">
