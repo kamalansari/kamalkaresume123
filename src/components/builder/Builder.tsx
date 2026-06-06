@@ -65,6 +65,13 @@ function getSectionCompletion(data: ResumeData) {
   };
 }
 
+function getCompletionPercent(data: ResumeData) {
+  const c = getSectionCompletion(data);
+  const total = Object.keys(c).length;
+  const done = Object.values(c).filter(Boolean).length;
+  return Math.round((done / total) * 100);
+}
+
 /**
  * Wraps the resume preview and scales the 8.5in document down to fit the
  * container width on smaller viewports. The wrapper itself reports the
