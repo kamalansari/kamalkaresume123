@@ -891,11 +891,18 @@ export function Builder() {
   };
 
   const printResumeData = (resume: ResumeData) => {
+    document.body.classList.add("resume-print-mode");
+    const cleanup = () => {
+      document.body.classList.remove("resume-print-mode");
+      setPrintData(null);
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
     flushSync(() => setPrintData({ ...defaultResume, ...resume }));
     announce("Preparing PDF for download…");
     requestAnimationFrame(() => {
       window.print();
-      requestAnimationFrame(() => setPrintData(null));
+      window.setTimeout(cleanup, 1000);
       announce("PDF ready. Use your browser's save dialog to download.");
     });
   };
