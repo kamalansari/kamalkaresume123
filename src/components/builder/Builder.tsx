@@ -912,9 +912,15 @@ export function Builder() {
 
   const handleDocx = async () => {
     setExporting(true);
-    try { await exportDocx(commitPreviewEdits()); toast.success("DOCX downloaded"); }
-    catch { toast.error("Could not export DOCX"); }
-    finally { setExporting(false); }
+    announce("Generating DOCX file…");
+    try {
+      await exportDocx(commitPreviewEdits());
+      announce("DOCX downloaded successfully.");
+      toast.success("DOCX downloaded");
+    } catch {
+      announce("Could not export DOCX. Please try again.");
+      toast.error("Could not export DOCX");
+    } finally { setExporting(false); }
   };
 
   const rewriteSummary = async () => {
