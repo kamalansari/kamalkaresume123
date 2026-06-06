@@ -593,11 +593,20 @@ body {
 }
 
 /* Skills list responsive columns: on small screens shrink to user-chosen
-   mobile column count (default 1) so single-column resumes don't compress
+   mobile column count (default 2) so single-column resumes don't compress
    into too-narrow columns on phones. Print uses the desktop setting. */
 @media screen and (max-width: 640px) {
-  [data-skills-list] {
+  [data-skills-list]:not([data-skills-balanced]) {
     column-count: var(--skills-cols-mobile, 2) !important;
     column-width: auto !important;
   }
+  /* Deterministically-balanced grid layouts: override the inline
+     desktop grid-template-columns so mobile uses the mobile setting. The
+     pre-bucketed column count stays the same but flows visually into
+     fewer wider columns; balancing remains stable because each bucket is
+     still rendered as a contiguous block. */
+  [data-skills-list][data-skills-balanced] {
+    grid-template-columns: repeat(var(--skills-cols-mobile, 2), minmax(0, 1fr)) !important;
+  }
 }
+
