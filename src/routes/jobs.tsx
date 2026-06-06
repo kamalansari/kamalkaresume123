@@ -4,8 +4,8 @@ import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import { useServerFn } from "@tanstack/react-start";
 import {
   Search, MapPin, Briefcase, Building2, Bookmark, BookmarkCheck,
-  Sparkles, Loader2, ArrowLeft, ExternalLink, RefreshCw, Filter, X, IndianRupee,
-  Info, Check, CircleDot,
+  Sparkles, Loader2, ArrowLeft, RefreshCw, Filter, X, IndianRupee,
+  Check, CircleDot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -535,32 +535,68 @@ function EmptyState({
   );
 }
 
+function extractExperienceLabel(job: JobRow, level: string): string {
+  const text = `${job.title ?? ""} ${job.description ?? ""}`;
+  // Match patterns like "2-5 years", "1 - 3 yrs", "5+ years"
+  const range = text.match(/(\d{1,2})\s*[-–to]+\s*(\d{1,2})\s*(?:\+)?\s*(?:yrs?|years?)/i);
+  if (range) return `${range[1]}-${range[2]} years`;
+  const plus = text.match(/(\d{1,2})\s*\+\s*(?:yrs?|years?)/i);
+  if (plus) return `${plus[1]}+ years`;
+  const single = text.match(/(\d{1,2})\s*(?:yrs?|years?)/i);
+  if (single) return `${single[1]} years`;
+  if (level === "fresher") return "0-1 years";
+  if (level === "junior") return "1-3 years";
+  if (level === "mid") return "2-5 years";
+  if (level === "senior") return "5-8 years";
+  if (level === "lead") return "8+ years";
+  return "Any experience";
+}
+
+function shortLocation(loc: string | null, isRemote: boolean): string {
+  if (isRemote) return "Remote";
+  if (!loc) return "Location N/A";
+  // Take first segment before comma for compactness
+  return loc.split(",")[0].trim();
+}
+
+function shortSalary(min: number | null, max: number | null): { text: string; disclosed: boolean } {
+  if (!min && !max) return { text: "₹Not disclosed", disclosed: false };
+  const fmt = (n: number) => {
+    if (n >= 100000) return `${Math.round(n / 1000)}K`;
+    return `${n}`;
+  };
+  if (min && max) return { text: `₹${fmt(min)}-${fmt(max)}`, disclosed: true };
+  return { text: `₹${fmt((max ?? min)!)}`, disclosed: true };
+}
+
 function JobCard({
   job, score, breakdown, saved, authed, onToggleSave,
 }: {
   job: JobRow; score: number; breakdown: MatchBreakdown; saved: boolean; authed: boolean; onToggleSave: () => void;
 }) {
   const initial = (job.company_name ?? job.title).charAt(0).toUpperCase();
-  const tone = score >= 75 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-muted-foreground/50";
+  const expLabel = extractExperienceLabel(job, breakdown.seniority.jobLevel);
+  const locLabel = shortLocation(job.location, job.is_remote);
+  const salary = shortSalary(job.salary_min, job.salary_max);
+
   return (
-    <article className="group border rounded-xl p-5 bg-card hover:shadow-lg hover:border-primary/40 transition-all flex flex-col">
+    <article className="group border rounded-xl p-4 bg-card hover:shadow-lg hover:border-primary/40 transition-all flex flex-col">
+      {/* Header: logo + title + company + bookmark */}
       <div className="flex items-start gap-3">
-        <div className="h-11 w-11 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center text-primary font-semibold shrink-0">
+        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center text-primary font-semibold shrink-0 overflow-hidden">
           {job.company_logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={job.company_logo} alt={job.company_name ?? ""} className="h-full w-full object-contain rounded-lg" />
+            <img src={job.company_logo} alt={job.company_name ?? ""} className="h-full w-full object-contain" />
           ) : initial}
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm leading-tight line-clamp-2">{job.title}</h3>
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Building2 className="h-3 w-3 shrink-0" />
-            <span className="truncate">{job.company_name ?? "Confidential"}</span>
-          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground truncate">
+            {job.company_name ?? "Confidential"}
+          </p>
         </div>
         <button
           onClick={onToggleSave}
-          className="shrink-0 p-1.5 rounded-md hover:bg-muted transition"
+          className="shrink-0 p-1 rounded-md hover:bg-muted transition"
           aria-label={saved ? "Unsave job" : "Save job"}
           disabled={!authed}
         >
@@ -570,71 +606,85 @@ function JobCard({
         </button>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground items-center">
-        {job.location && (
-          <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location}</span>
-        )}
-        {job.is_remote && <Badge variant="secondary" className="h-5 text-[10px]">Remote</Badge>}
-        <span className="inline-flex items-center gap-1"><IndianRupee className="h-3 w-3" />{formatSalary(job.salary_min, job.salary_max).replace("₹", "")}</span>
-        <Badge
-          variant="outline"
-          className={cn("h-5 text-[10px] px-1.5", sourceBadgeClass(job.source))}
-        >
-          {job.source}
-        </Badge>
-
+      {/* Chip rows */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border bg-muted/40 text-foreground/80">
+          <Briefcase className="h-3 w-3" />{expLabel}
+        </span>
+        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border bg-muted/40 text-foreground/80">
+          <MapPin className="h-3 w-3" />{locLabel}
+        </span>
       </div>
 
-      {job.skills.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {job.skills.slice(0, 5).map((s) => {
-            const hit = breakdown.skills.matched.includes(s.toLowerCase());
-            return (
-              <span
-                key={s}
-                className={cn(
-                  "text-[10px] px-2 py-0.5 rounded-full border",
-                  hit
-                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-                    : "bg-muted text-muted-foreground border-transparent",
-                )}
-              >
-                {s}
-              </span>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="mt-3">
-        <div className="flex items-center justify-between text-xs mb-1">
-          <span className="font-medium text-foreground inline-flex items-center gap-1">
-            Match {score}%
-            <MatchPopover breakdown={breakdown} />
-          </span>
-          <span className="text-muted-foreground">{timeAgo(job.created_date)}</span>
-        </div>
-        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-          <div
-            className={cn("h-full rounded-full transition-all", tone)}
-            style={{ width: `${Math.max(score, 2)}%` }}
-          />
-        </div>
+      <div className="mt-1.5">
+        <span className={cn(
+          "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border font-medium",
+          salary.disclosed
+            ? "border-primary/30 bg-primary/10 text-primary"
+            : "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300",
+        )}>
+          <IndianRupee className="h-3 w-3" />{salary.text.replace("₹", "")}
+        </span>
       </div>
 
+      {/* Source + Check Score */}
+      <div className="mt-3 flex items-center justify-between gap-2 text-xs">
+        <span className="text-muted-foreground truncate">
+          Source: <span className="font-medium text-foreground">{job.source}</span>
+        </span>
+        <MatchScoreChip score={score} breakdown={breakdown} />
+      </div>
 
-      <div className="mt-auto pt-4 flex items-center gap-2">
-        <Button asChild size="sm" className="flex-1">
-          <a href={job.redirect_url} target="_blank" rel="noopener noreferrer">
-            Apply <ExternalLink className="h-3 w-3 ml-1.5" />
-          </a>
-        </Button>
+      {/* Footer: time ago + actions */}
+      <div className="mt-3 pt-3 border-t flex items-center justify-between gap-2">
+        <span className="text-[11px] text-muted-foreground shrink-0 leading-tight">
+          {timeAgo(job.created_date)}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs">
+            <Link to="/interview">
+              <Sparkles className="h-3 w-3 mr-1" />Ask Nova
+            </Link>
+          </Button>
+          <Button asChild size="sm" className="h-7 px-3 text-xs">
+            <a href={job.redirect_url} target="_blank" rel="noopener noreferrer">
+              Apply Now
+            </a>
+          </Button>
+        </div>
       </div>
     </article>
   );
 }
 
-function MatchPopover({ breakdown }: { breakdown: MatchBreakdown }) {
+function MatchScoreChip({ score, breakdown }: { score: number; breakdown: MatchBreakdown }) {
+  const tone = score >= 75
+    ? "text-emerald-600 dark:text-emerald-300 border-emerald-500/30 bg-emerald-500/10"
+    : score >= 50
+    ? "text-amber-600 dark:text-amber-300 border-amber-500/30 bg-amber-500/10"
+    : "text-muted-foreground border-border bg-muted/40";
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "inline-flex items-center gap-1 px-2 py-1 rounded-md border text-[11px] font-medium hover:opacity-90 transition",
+            tone,
+          )}
+        >
+          <CircleDot className="h-3 w-3" />
+          Check Score · {score}%
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-4 space-y-3">
+        <MatchPopoverBody breakdown={breakdown} />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function MatchPopoverBody({ breakdown }: { breakdown: MatchBreakdown }) {
   const rows = [
     { key: "Skills", data: breakdown.skills, icon: <Sparkles className="h-3.5 w-3.5" /> },
     { key: "Keywords", data: breakdown.keywords, icon: <CircleDot className="h-3.5 w-3.5" /> },
@@ -642,62 +692,51 @@ function MatchPopover({ breakdown }: { breakdown: MatchBreakdown }) {
     { key: "Title", data: breakdown.title, icon: <Check className="h-3.5 w-3.5" /> },
   ] as const;
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="text-muted-foreground hover:text-foreground transition"
-          aria-label="Why this match score?"
-        >
-          <Info className="h-3.5 w-3.5" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold">Match {breakdown.score}%</p>
-            <p className="text-[11px] text-muted-foreground">How your resume stacks up</p>
-          </div>
+    <>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold">Match {breakdown.score}%</p>
+          <p className="text-[11px] text-muted-foreground">How your resume stacks up</p>
         </div>
-        <div className="space-y-2.5">
-          {rows.map(({ key, data, icon }) => {
-            const pct = Math.round((data.earned / data.weight) * 100);
-            return (
-              <div key={key}>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="inline-flex items-center gap-1.5 font-medium">{icon}{key}</span>
-                  <span className="text-muted-foreground">{data.earned}/{data.weight}</span>
-                </div>
-                <Progress value={pct} className="h-1 mt-1" />
+      </div>
+      <div className="space-y-2.5">
+        {rows.map(({ key, data, icon }) => {
+          const pct = Math.round((data.earned / data.weight) * 100);
+          return (
+            <div key={key}>
+              <div className="flex items-center justify-between text-xs">
+                <span className="inline-flex items-center gap-1.5 font-medium">{icon}{key}</span>
+                <span className="text-muted-foreground">{data.earned}/{data.weight}</span>
               </div>
-            );
-          })}
-        </div>
-        <div className="border-t pt-3 space-y-2 text-[11px] leading-relaxed">
-          {breakdown.skills.matched.length > 0 && (
-            <p>
-              <span className="font-medium text-foreground">Matched skills:</span>{" "}
-              <span className="text-muted-foreground">{breakdown.skills.matched.slice(0, 6).join(", ")}</span>
-            </p>
-          )}
-          {breakdown.skills.missing.length > 0 && (
-            <p>
-              <span className="font-medium text-foreground">Missing:</span>{" "}
-              <span className="text-muted-foreground">{breakdown.skills.missing.join(", ")}</span>
-            </p>
-          )}
+              <Progress value={pct} className="h-1 mt-1" />
+            </div>
+          );
+        })}
+      </div>
+      <div className="border-t pt-3 space-y-2 text-[11px] leading-relaxed">
+        {breakdown.skills.matched.length > 0 && (
           <p>
-            <span className="font-medium text-foreground">Seniority:</span>{" "}
-            <span className="text-muted-foreground">
-              Job looks {describeLevel(breakdown.seniority.jobLevel)} · You're {describeLevel(breakdown.seniority.resumeLevel)}. {breakdown.seniority.note}
-            </span>
+            <span className="font-medium text-foreground">Matched skills:</span>{" "}
+            <span className="text-muted-foreground">{breakdown.skills.matched.slice(0, 6).join(", ")}</span>
           </p>
+        )}
+        {breakdown.skills.missing.length > 0 && (
           <p>
-            <span className="font-medium text-foreground">Title:</span>{" "}
-            <span className="text-muted-foreground">{breakdown.title.note}</span>
+            <span className="font-medium text-foreground">Missing:</span>{" "}
+            <span className="text-muted-foreground">{breakdown.skills.missing.join(", ")}</span>
           </p>
-        </div>
-      </PopoverContent>
-    </Popover>
+        )}
+        <p>
+          <span className="font-medium text-foreground">Seniority:</span>{" "}
+          <span className="text-muted-foreground">
+            Job looks {describeLevel(breakdown.seniority.jobLevel)} · You're {describeLevel(breakdown.seniority.resumeLevel)}. {breakdown.seniority.note}
+          </span>
+        </p>
+        <p>
+          <span className="font-medium text-foreground">Title:</span>{" "}
+          <span className="text-muted-foreground">{breakdown.title.note}</span>
+        </p>
+      </div>
+    </>
   );
 }
