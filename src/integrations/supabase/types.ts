@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      job_applications: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          notes: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          category: string | null
+          company_logo: string | null
+          company_name: string | null
+          contract_time: string | null
+          contract_type: string | null
+          country: string | null
+          created_at: string
+          created_date: string | null
+          description: string | null
+          expires_at: string
+          external_job_id: string
+          fetched_at: string
+          id: string
+          is_active: boolean
+          is_remote: boolean
+          location: string | null
+          redirect_url: string
+          salary_currency: string | null
+          salary_max: number | null
+          salary_min: number | null
+          skills: string[]
+          source: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          company_logo?: string | null
+          company_name?: string | null
+          contract_time?: string | null
+          contract_type?: string | null
+          country?: string | null
+          created_at?: string
+          created_date?: string | null
+          description?: string | null
+          expires_at?: string
+          external_job_id: string
+          fetched_at?: string
+          id?: string
+          is_active?: boolean
+          is_remote?: boolean
+          location?: string | null
+          redirect_url: string
+          salary_currency?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          skills?: string[]
+          source?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          company_logo?: string | null
+          company_name?: string | null
+          contract_time?: string | null
+          contract_type?: string | null
+          country?: string | null
+          created_at?: string
+          created_date?: string | null
+          description?: string | null
+          expires_at?: string
+          external_job_id?: string
+          fetched_at?: string
+          id?: string
+          is_active?: boolean
+          is_remote?: boolean
+          location?: string | null
+          redirect_url?: string
+          salary_currency?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          skills?: string[]
+          source?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       resumes: {
         Row: {
           created_at: string
@@ -43,6 +162,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      saved_jobs: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_jobs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
