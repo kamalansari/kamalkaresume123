@@ -29,6 +29,12 @@ import { normalizeBulletText, splitBulletLines } from "@/lib/resumeText";
 import { extractResumeText } from "@/lib/importResume";
 
 export const Route = createFileRoute("/resume-lab")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    jd: typeof search.jd === "string" ? search.jd : undefined,
+    company: typeof search.company === "string" ? search.company : undefined,
+    jobUrl: typeof search.jobUrl === "string" ? search.jobUrl : undefined,
+    jobTitle: typeof search.jobTitle === "string" ? search.jobTitle : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Resume Lab — JD-aligned AI rewrite" },
