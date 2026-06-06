@@ -90,6 +90,168 @@ export type EditableHandlers = {
   rewritingKey?: string | null;
 };
 
+function sameSkillSet(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const counts = new Map<string, number>();
+  for (const item of a) counts.set(item, (counts.get(item) ?? 0) + 1);
+  for (const item of b) {
+    const count = counts.get(item) ?? 0;
+    if (count <= 0) return false;
+    if (count === 1) counts.delete(item);
+    else counts.set(item, count - 1);
+  }
+  return counts.size === 0;
+}
+
+function getSkillsLayout(data: ResumeData, hasHeadings: boolean) {
+  const clampCols = (value: number | undefined, fallback: number, max: number) =>
+    Math.min(max, Math.max(1, value ?? fallback));
+  return {
+    mode: data.skillsViewMode ?? data.skillsView ?? (hasHeadings ? "categorized" : "compact"),
+    desktopCols: clampCols(data.skillsColumns, 3, 4),
+    mobileCols: clampCols(data.skillsColumnsMobile ?? data.mobileSkillsColumns, 2, 2),
+    balanceStrategy: data.skillsBalanceStrategy ?? data.balanceStrategy ?? "length",
+    balanceBias: Math.min(1.5, Math.max(0.5, data.skillsBalanceBias ?? data.skillsBias ?? 1)),
+    textStyle: data.skillsTextStyle ?? data.textStyle ?? "chips",
+  };
+}
+
+function SkillsGridContent({
+  data,
+  ed,
+  dark = false,
+}: {
+  data: ResumeData;
+  ed?: EditableHandlers;
+  dark?: boolean;
+}) {
+  const groups = parseSkillGroups(data.skills);
+  const flatSkills = parseSkills(data.skills);
+  const hasHeadings = groups.some((g) => g.heading);
+  const { mode, desktopCols, mobileCols, balanceStrategy, balanceBias, textStyle } = getSkillsLayout(data, hasHeadings);
+
+  const estimateWeight = (text: string, cols: number) => {
+    let raw: number;
+    if (balanceStrategy === "count") raw = 1;
+    else if (balanceStrategy === "chars") raw = Math.max(1, text.length);
+    else {
+      const cpl = Math.max(10, Math.floor(60 / Math.max(1, cols)));
+      raw = Math.max(1, Math.ceil(text.length / cpl)) + 0.35;
+    }
+    return raw * balanceBias;
+  };
+
+  const balanceIntoColumns = <T,>(items: T[], getText: (t: T) => string, cols: number): T[][] => {
+    const buckets: T[][] = Array.from({ length: cols }, () => []);
+    const heights = new Array(cols).fill(0);
+    for (const item of items) {
+      let target = 0;
+      for (let c = 1; c < cols; c++) if (heights[c] < heights[target]) target = c;
+      buckets[target].push(item);
+      heights[target] += estimateWeight(getText(item), cols);
+    }
+    return buckets;
+  };
+
+  const chipStyle: React.CSSProperties = {
+    display: "block",
+    width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
+    boxSizing: "border-box",
+    padding: textStyle === "plain" ? 0 : "2px 8px",
+    border: textStyle === "plain" ? undefined : "1px solid currentColor",
+    borderColor: dark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.12)",
+    borderRadius: textStyle === "plain" ? 0 : 4,
+    fontSize: "0.95em",
+    lineHeight: 1.35,
+    breakInside: "avoid",
+    pageBreakInside: "avoid",
+    background: "transparent",
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
+    wordBreak: "break-word",
+  };
+
+  const gridStyle: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: `repeat(${desktopCols}, minmax(0, 1fr))`,
+    gap: "6px",
+    alignItems: "start",
+    minWidth: 0,
+    width: "100%",
+    ["--skills-cols-mobile" as any]: mobileCols,
+  };
+  const columnStyle: React.CSSProperties = {
+    display: "grid",
+    gap: "6px",
+    alignContent: "start",
+    minWidth: 0,
+    breakInside: "avoid",
+    pageBreakInside: "avoid",
+  };
+  const editableProps = ed
+    ? {
+        contentEditable: true,
+        suppressContentEditableWarning: true,
+        "data-preview-edit": "skills",
+        className: "preview-editable",
+        onClick: (e: React.MouseEvent) => e.stopPropagation(),
+        onBlur: (e: React.FocusEvent<HTMLDivElement>) => {
+          const lines = e.currentTarget.innerText
+            .split("\n")
+            .map((s) => s.replace(/^[•\-\u2022]\s*/, "").trim())
+            .filter(Boolean);
+          if (!sameSkillSet(parseSkills(lines.join("\n")), parseSkills(data.skills))) {
+            ed.onUpdate({ skills: lines.join("\n") });
+          }
+        },
+      }
+    : {};
+
+  const renderFlat = (items: string[]) => {
+    const columns = balanceIntoColumns(items, (s) => s, desktopCols);
+    return (
+      <div
+        data-skills-list
+        data-skills-balanced
+        data-skills-column-count={desktopCols}
+        {...editableProps}
+        style={gridStyle}
+      >
+        {columns.map((col, ci) => (
+          <div key={ci} style={columnStyle}>
+            {col.map((s, i) => (
+              <span key={`${ci}-${i}`} style={chipStyle}>{s}</span>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderGroups = (gs: { heading?: string; items: string[] }[]) => {
+    const columns = balanceIntoColumns(gs, (g) => (g.heading ? g.heading + " " : "") + g.items.join(" "), desktopCols);
+    return (
+      <div data-skills-list data-skills-balanced data-skills-column-count={desktopCols} style={gridStyle}>
+        {columns.map((col, ci) => (
+          <div key={ci} style={columnStyle}>
+            {col.map((g, gi) => (
+              <div key={gi} style={{ display: "grid", gap: "6px", minWidth: 0, breakInside: "avoid", pageBreakInside: "avoid" }}>
+                {g.heading && <div style={{ fontWeight: 700, fontSize: "0.95em", overflowWrap: "anywhere", wordBreak: "break-word" }}>{g.heading}</div>}
+                {g.items.map((s, i) => <span key={i} style={chipStyle}>{s}</span>)}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  if (ed) return renderFlat(flatSkills);
+  return mode === "categorized" && hasHeadings ? renderGroups(groups) : renderFlat(flatSkills);
+}
+
 export function ResumeDocument({
   data,
   onSectionClick,
