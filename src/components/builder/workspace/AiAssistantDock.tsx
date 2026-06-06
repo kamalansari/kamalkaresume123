@@ -27,6 +27,14 @@ export function AiAssistantDock({ data, atsScore }: { data: ResumeData; atsScore
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
+  // Allow external triggers (e.g. mobile bottom nav) to open the menu.
+  useEffect(() => {
+    const handler = () => { setOpen(false); setMenuOpen(true); };
+    window.addEventListener(AI_ASSISTANT_OPEN_EVENT, handler);
+    return () => window.removeEventListener(AI_ASSISTANT_OPEN_EVENT, handler);
+  }, []);
+
+
   const send = async (text: string) => {
     const content = text.trim();
     if (!content || loading) return;
