@@ -579,6 +579,7 @@ function JobCard({
   const expLabel = extractExperienceLabel(job, breakdown.seniority.jobLevel);
   const locLabel = shortLocation(job.location, job.is_remote);
   const salary = shortSalary(job.salary_min, job.salary_max);
+  const [novaOpen, setNovaOpen] = useState(false);
 
   return (
     <article className="group border rounded-xl p-4 bg-card hover:shadow-lg hover:border-primary/40 transition-all flex flex-col">
