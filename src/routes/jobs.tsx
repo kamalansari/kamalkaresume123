@@ -150,6 +150,15 @@ function JobsPage() {
 
   const filters = { search, location, workMode, experience, minSalaryLpa: minSalary, source };
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        FILTERS_STORAGE_KEY,
+        JSON.stringify({ search, location, workMode, experience, minSalary, source }),
+      );
+    } catch { /* ignore quota */ }
+  }, [search, location, workMode, experience, minSalary, source]);
+
   const jobsQuery = useInfiniteQuery({
     queryKey: ["jobs", filters],
     queryFn: ({ pageParam = 0 }) =>
