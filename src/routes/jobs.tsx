@@ -53,9 +53,8 @@ const WORK_MODES: { id: WorkMode; label: string }[] = [
 
 function getResumeProfile(): { skills: string[]; titles: string[]; text: string } {
   const primary = resumeStore.getPrimary()?.data ?? resumeStore.getDraft() ?? defaultResume;
-  const skills = (primary.skills ?? []).flatMap(s =>
-    typeof s === "string" ? [s] : Array.isArray((s as { items?: string[] }).items) ? (s as { items: string[] }).items : []
-  ).map(s => s.toLowerCase().trim()).filter(Boolean);
+  const rawSkills = typeof primary.skills === "string" ? primary.skills : "";
+  const skills = rawSkills.split(/[,|;·\n]+/).map(s => s.toLowerCase().trim()).filter(Boolean);
   const titles = (primary.experience ?? []).map(e => (e.title ?? "").toLowerCase()).filter(Boolean);
   const text = JSON.stringify(primary).toLowerCase();
   return { skills, titles, text };
