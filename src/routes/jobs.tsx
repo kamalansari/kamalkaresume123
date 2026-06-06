@@ -195,6 +195,12 @@ function JobsPage() {
     staleTime: 30_000,
   });
 
+  const statusQuery = useQuery({
+    queryKey: ["providerStatus"],
+    queryFn: () => statusFn(),
+    staleTime: 300_000,
+  });
+
   const savedIds = useMemo(
     () => new Set((savedQuery.data?.saved ?? []).map((s) => s.job_id)),
     [savedQuery.data],
