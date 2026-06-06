@@ -218,6 +218,7 @@ export function Builder() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1);
+  const [printData, setPrintData] = useState<ResumeData | null>(null);
   // Polite live-region for screen-reader status announcements (AI actions, PDF/DOCX, saves).
   // We toggle the text via a ref+state pair so the same message can be re-announced; an
   // explicit blank flush ensures repeated identical statuses still re-fire on assistive tech.
@@ -586,12 +587,10 @@ export function Builder() {
   const printSavedPdf = (id: string) => {
     const entry = resumeStore.get(id);
     if (!entry) { toast.error("Resume not found"); return; }
-    flushSync(() => {
-      setData({ ...defaultResume, ...entry.data });
-      setCurrentId(entry.id);
-      setCurrentName(entry.name);
-    });
-    requestAnimationFrame(() => window.print());
+    setData({ ...defaultResume, ...entry.data });
+    setCurrentId(entry.id);
+    setCurrentName(entry.name);
+    printResumeData(entry.data);
   };
 
   const openRenameFor = (id: string, name: string) => {
@@ -891,17 +890,28 @@ export function Builder() {
     return next;
   };
 
+  const printResumeData = (resume: ResumeData) => {
+    document.body.classList.add("resume-print-mode");
+    const cleanup = () => {
+      document.body.classList.remove("resume-print-mode");
+      setPrintData(null);
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    flushSync(() => setPrintData({ ...defaultResume, ...resume }));
+    announce("Preparing PDF for download…");
+    requestAnimationFrame(() => {
+      window.print();
+      announce("PDF ready. Use your browser's save dialog to download.");
+    });
+  };
+
   const printCurrentResume = () => {
     // Make sure the preview is mounted/visible so contentEditable reads back
     // real text in commitPreviewEdits (innerText returns "" for display:none).
     setMobileView("preview");
     requestAnimationFrame(() => {
-      commitPreviewEdits();
-      announce("Preparing PDF for download…");
-      requestAnimationFrame(() => {
-        window.print();
-        announce("PDF ready. Use your browser's save dialog to download.");
-      });
+      printResumeData(commitPreviewEdits());
     });
   };
 
@@ -1765,6 +1775,10 @@ export function Builder() {
         onNew={newResume}
         onSetPrimary={setAsPrimary}
       />
+
+      <div className="print-only-resume" aria-hidden="true">
+        {printData && <ResumeDocument data={printData} />}
+      </div>
 
       <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-4 sm:px-6 py-6 grid-cols-1",
         atsOpen

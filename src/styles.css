@@ -179,6 +179,10 @@
   }
 }
 
+.print-only-resume {
+  display: none;
+}
+
 @media print {
   body * {
     visibility: hidden;
@@ -186,6 +190,17 @@
   .print-area,
   .print-area * {
     visibility: visible;
+  }
+  .print-only-resume {
+    display: block !important;
+  }
+  body.resume-print-mode .print-area,
+  body.resume-print-mode .print-area * {
+    visibility: hidden !important;
+  }
+  body.resume-print-mode .print-only-resume .print-area,
+  body.resume-print-mode .print-only-resume .print-area * {
+    visibility: visible !important;
   }
   html,
   body {
