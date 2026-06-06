@@ -60,21 +60,78 @@ export function AiAssistantDock({ data, atsScore }: { data: ResumeData; atsScore
     }
   };
 
+  const runAction = (prompt: string) => {
+    setMenuOpen(false);
+    setOpen(true);
+    send(prompt);
+  };
+
   return (
     <>
-      {/* Floating trigger */}
+      {/* Floating quick-action menu */}
+      <div
+        className={cn(
+          "no-print fixed z-40 transition-all duration-200",
+          "bottom-[5.5rem] right-5 md:bottom-20 md:right-6",
+          "w-[min(240px,calc(100vw-2.5rem))] origin-bottom-right",
+          menuOpen && !open ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0",
+        )}
+        aria-hidden={!(menuOpen && !open)}
+      >
+        <div className="overflow-hidden rounded-2xl border border-border bg-card p-1.5 shadow-[var(--shadow-elegant)]">
+          {QUICK_ACTIONS.map(a => {
+            const Icon = a.icon;
+            return (
+              <button
+                key={a.label}
+                type="button"
+                onClick={() => runAction(a.prompt)}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium text-foreground transition hover:bg-secondary"
+              >
+                <Icon className="h-4 w-4 text-primary" />
+                {a.label}
+              </button>
+            );
+          })}
+          <div className="my-1 border-t border-border" />
+          <button
+            type="button"
+            onClick={() => { setMenuOpen(false); setOpen(true); }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          >
+            <Wand2 className="h-3.5 w-3.5" />
+            Open chat
+          </button>
+        </div>
+      </div>
+
+      {/* Floating AI Assistant pill */}
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
-        aria-label={open ? "Close AI assistant" : "Open AI assistant"}
+        onClick={() => {
+          if (open) { setOpen(false); return; }
+          setMenuOpen(o => !o);
+        }}
+        aria-label={open ? "Close AI assistant" : "AI Assistant"}
+        aria-expanded={menuOpen || open}
         className={cn(
           "no-print fixed bottom-24 right-5 z-40 md:bottom-6 md:right-6",
-          "flex h-14 w-14 items-center justify-center rounded-full",
+          "inline-flex items-center gap-2 rounded-full pl-3.5 pr-4 py-2.5",
           "bg-gradient-to-br from-primary to-[var(--primary-glow,var(--primary))] text-primary-foreground",
-          "shadow-[var(--shadow-elegant)] transition-all hover:scale-105 active:scale-95",
+          "shadow-[var(--shadow-elegant)] transition-all hover:scale-[1.03] active:scale-95",
+          "text-sm font-semibold",
         )}
       >
-        {open ? <X className="h-5 w-5" /> : <Sparkles className="h-6 w-6" />}
+        {open ? <X className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+        <span>AI Assistant</span>
+        {!open && (
+          <ChevronUp
+            className={cn(
+              "h-3.5 w-3.5 transition-transform",
+              menuOpen ? "rotate-180" : "rotate-0",
+            )}
+          />
+        )}
       </button>
 
       {/* Dock */}
