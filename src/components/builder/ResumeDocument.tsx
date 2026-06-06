@@ -170,18 +170,20 @@ function SkillsGridContent({
     borderColor: dark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.14)",
     borderRadius: isPlain ? 0 : 999,
     fontSize: "0.92em",
-    lineHeight: 1.4,
+    lineHeight: 1.35,
     breakInside: "avoid",
     pageBreakInside: "avoid",
     background: "transparent",
-    whiteSpace: "normal",
-    overflowWrap: "anywhere",
-    wordBreak: "break-word",
+    // Keep multi-word skills like "Power BI" on a single line so multi-column
+    // grids don't blow up with one-word-per-row stacks.
+    whiteSpace: "nowrap",
+    overflowWrap: "normal",
+    wordBreak: "normal",
   };
 
   // Modern strategy:
   //  - single column → inline wrap (chips flow side-by-side, denser, scannable)
-  //  - multi column  → balanced grid (each chip on its own row inside its column)
+  //  - multi column  → balanced inline-wrap inside each column (also dense)
   const inlineWrapStyle: React.CSSProperties = {
     display: "flex",
     flexWrap: "wrap",
@@ -193,15 +195,16 @@ function SkillsGridContent({
   const gridStyle: React.CSSProperties = {
     display: "grid",
     gridTemplateColumns: `repeat(${desktopCols}, minmax(0, 1fr))`,
-    gap: isSingleCol ? "8px" : "6px 16px",
+    gap: isSingleCol ? "6px" : "6px 16px",
     alignItems: "start",
     minWidth: 0,
     width: "100%",
     ["--skills-cols-mobile" as any]: mobileCols,
   };
   const columnStyle: React.CSSProperties = {
-    display: "grid",
-    gap: "4px",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "6px",
     alignContent: "start",
     minWidth: 0,
     breakInside: "avoid",
