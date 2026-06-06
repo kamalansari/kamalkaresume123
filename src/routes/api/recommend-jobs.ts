@@ -359,7 +359,13 @@ export const Route = createFileRoute("/api/recommend-jobs")({
         } else {
           const q = [title, keywords].filter(Boolean).join(" ");
           const result = await fetchJSearchBroad(q, location);
-          const fallback = result.jobs.length > 0 ? [] : [...await fetchRemotive(q || title || "jobs"), ...await fetchRemoteOk(q || title || "jobs")];
+          let fallback: OutJob[] = [];
+          if (result.jobs.length === 0) {
+            const fallbackQuery = q || title || "jobs";
+            const remotiveJobs = await fetchRemotive(fallbackQuery);
+            const remoteOkJobs = await fetchRemoteOk(fallbackQuery);
+            fallback = [...remotiveJobs, ...remoteOkJobs];
+          }
           const all = [...result.jobs, ...fallback];
           providerIssue = result.issue;
           // dedupe by applyUrl + source
