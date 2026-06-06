@@ -1334,6 +1334,30 @@ export function Builder() {
         </div>
       </header>
 
+      <StickyToolbar
+        name={currentName}
+        onRename={(next) => {
+          setCurrentName(next);
+          if (currentId) {
+            resumeStore.upsert({ id: currentId, name: next, updatedAt: Date.now(), data });
+            setSaved(resumeStore.list());
+          }
+        }}
+        savedAt={savedAt}
+        saving={saving}
+        canUndo={sectionsPast.length > 0}
+        canRedo={sectionsFuture.length > 0}
+        onUndo={undoSections}
+        onRedo={redoSections}
+        zoom={previewZoom}
+        onZoom={setPreviewZoom}
+        previewOnly={!inlineEdit}
+        onTogglePreview={() => setInlineEdit(v => !v)}
+        onPdf={printCurrentResume}
+        getData={() => data}
+      />
+
+
       <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Save resume as…</DialogTitle></DialogHeader>
@@ -1913,21 +1937,24 @@ export function Builder() {
             </Sheet>
           </div>
           <div className="overflow-auto rounded-xl">
-            <PreviewFitWrap>
-              <ResumeDocument
-                data={data}
-                onSectionClick={inlineEdit ? undefined : scrollToEditor}
-                editable={inlineEdit}
-                flashSection={flashSection}
-                handlers={{
-                  onUpdate: updatePatch,
-                  onUpdateExperienceBullets: (id, bullets) => updateExp(id, { bullets }),
-                  onRewrite: rewriteFromPreview,
-                  rewritingKey: rewriting ? "summary" : rewritingKey,
-                }}
-              />
-            </PreviewFitWrap>
+            <div style={{ transform: `scale(${previewZoom})`, transformOrigin: "top left", width: previewZoom !== 1 ? `${100 / previewZoom}%` : undefined }}>
+              <PreviewFitWrap>
+                <ResumeDocument
+                  data={data}
+                  onSectionClick={inlineEdit ? undefined : scrollToEditor}
+                  editable={inlineEdit}
+                  flashSection={flashSection}
+                  handlers={{
+                    onUpdate: updatePatch,
+                    onUpdateExperienceBullets: (id, bullets) => updateExp(id, { bullets }),
+                    onRewrite: rewriteFromPreview,
+                    rewritingKey: rewriting ? "summary" : rewritingKey,
+                  }}
+                />
+              </PreviewFitWrap>
+            </div>
           </div>
+
         </div>
         {inlineEdit && <SelectionFormatToolbar data={data} />}
 
