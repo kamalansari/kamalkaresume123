@@ -340,6 +340,21 @@ function JobsPage() {
           />
         ) : (
           <>
+            {!hasResumeData && (
+              <div className="mb-4 rounded-lg border border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <Sparkles className="h-5 w-5 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Personalised match scores are off</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Add or set a primary resume to rank these jobs by your skills, seniority and title.
+                  </p>
+                </div>
+                <Link to="/builder" className="shrink-0">
+                  <Button size="sm">Open resume builder</Button>
+                </Link>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {visibleList.map(({ job, score, breakdown }) => (
                 <JobCard
