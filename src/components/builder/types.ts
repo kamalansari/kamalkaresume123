@@ -164,6 +164,11 @@ export type ResumeData = {
   // Number of columns for the Skills list on small screens (mobile preview,
   // ≤640px). Defaults to 1. Range 1–2.
   skillsColumnsMobile?: number;
+  // How the Skills section is laid out.
+  // - "compact"     : flat chip grid in multi-column flow (default).
+  // - "categorized" : groups parsed by "Heading: a, b" are rendered as
+  //                   labeled blocks (Programming & Analytics, BI & Reporting…).
+  skillsViewMode?: "compact" | "categorized";
   // Optional per-resume override of which section ids appear in the sidebar.
   // When undefined, the template default (TEMPLATE_SIDEBAR_DEFAULTS) is used.
   sidebarSections?: SectionId[];
