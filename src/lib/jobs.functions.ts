@@ -59,6 +59,9 @@ export const listJobs = createServerFn({ method: "POST" })
     if (data.minSalaryLpa > 0) {
       q = q.gte("salary_max", data.minSalaryLpa * 100000);
     }
+    if (data.source !== "all") {
+      q = q.eq("source", data.source);
+    }
 
     const from = data.cursor;
     const to = data.cursor + data.pageSize - 1;
