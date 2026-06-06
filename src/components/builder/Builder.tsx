@@ -49,6 +49,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AiAssistantDock } from "./workspace/AiAssistantDock";
+import { StickyToolbar } from "./workspace/StickyToolbar";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -153,6 +154,9 @@ export function Builder() {
   const [mounted, setMounted] = useState(false);
   const [inlineEdit, setInlineEdit] = useState(true);
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [previewZoom, setPreviewZoom] = useState(1);
   // Mobile view switcher: which panel is visible on screens < lg.
   // 'editor' is the default; bottom nav toggles between editor and preview.
   const [mobileView, setMobileView] = useState<"editor" | "preview">("editor");
@@ -290,8 +294,17 @@ export function Builder() {
 
   useEffect(() => {
     if (!mounted) return;
-    resumeStore.saveDraft(data);
-  }, [mounted, data]);
+    setSaving(true);
+    const t = window.setTimeout(() => {
+      resumeStore.saveDraft(data);
+      if (currentId) {
+        resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data });
+      }
+      setSavedAt(Date.now());
+      setSaving(false);
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [mounted, data, currentId, currentName]);
 
   // Load profiles and apply active profile on first mount
   useEffect(() => {
