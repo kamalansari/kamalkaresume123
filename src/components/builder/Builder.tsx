@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye, LayoutTemplate } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Share2, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye, LayoutTemplate, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, TEMPLATE_SIDEBAR_DEFAULTS, SIDEBAR_ELIGIBLE, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId, type CustomSection } from "./types";
 import { computeScore, jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
