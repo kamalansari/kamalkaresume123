@@ -139,11 +139,23 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive(("match" in item && item.match) || item.url)}
+                      isActive={isActive(item)}
                       tooltip={item.title}
                       className="h-9 rounded-lg transition-all data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium hover:translate-x-0.5"
                     >
-                      <Link to={item.url} className="flex items-center gap-3">
+                      <Link
+                        to={item.url}
+                        hash={item.hash}
+                        className="flex items-center gap-3"
+                        onClick={() => {
+                          if (item.scrollTo) {
+                            // Smooth-scroll on single click, even when already on the route.
+                            requestAnimationFrame(() => {
+                              document.getElementById(item.scrollTo!)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            });
+                          }
+                        }}
+                      >
                         <item.icon className="h-[18px] w-[18px]" />
                         <span className="text-sm">{item.title}</span>
                       </Link>
