@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Search, MapPin, Briefcase, Building2, Bookmark, BookmarkCheck,
   Sparkles, Loader2, ArrowLeft, ExternalLink, RefreshCw, Filter, X, IndianRupee,
+  Info, Check, CircleDot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +13,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { resumeStore } from "@/components/builder/resumeStore";
-import { defaultResume, type ResumeData } from "@/components/builder/types";
 import {
   listJobs, saveJob, unsaveJob, listSavedJobs, triggerJobSync,
   type JobRow,
 } from "@/lib/jobs.functions";
+import {
+  buildResumeProfile, scoreJobBreakdown, describeLevel,
+  type MatchBreakdown,
+} from "@/lib/jobMatch";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/jobs")({
