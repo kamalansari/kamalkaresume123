@@ -66,6 +66,50 @@ function bullet(text: string, bodyBold?: boolean, justify?: boolean) {
   });
 }
 
+function visibleSkillGroups(data: ResumeData): SkillGroup[] {
+  const groups = parseSkillGroups(data.skills || "");
+  const hidden = new Set((data.hiddenSkillCategories ?? []).map(h => h.trim().toLowerCase()));
+  return groups.filter(g => !g.heading || !hidden.has(g.heading.trim().toLowerCase()));
+}
+
+function renderSkillsParagraphs(data: ResumeData, color: string, headingFont?: string): Paragraph[] {
+  const groups = visibleSkillGroups(data);
+  if (!groups.length) return [];
+  const hasHeadings = groups.some(g => g.heading);
+  // Flat list → simple bulleted items, matching the on-screen preview.
+  if (!hasHeadings) {
+    const items = groups.flatMap(g => g.items);
+    return items.map(s => new Paragraph({
+      bullet: { level: 0 },
+      children: [new TextRun({ text: s, size: 21 })],
+    }));
+  }
+  // Categorized → bold heading line + bulleted items per group.
+  const out: Paragraph[] = [];
+  groups.forEach((g, gi) => {
+    if (g.heading) {
+      out.push(new Paragraph({
+        spacing: { before: gi === 0 ? 40 : 120, after: 40 },
+        children: [new TextRun({
+          text: g.heading.toUpperCase(),
+          bold: true,
+          size: 20,
+          color,
+          characterSpacing: 20,
+          font: headingFont,
+        })],
+      }));
+    }
+    for (const item of g.items) {
+      out.push(new Paragraph({
+        bullet: { level: 0 },
+        children: [new TextRun({ text: item, size: 21 })],
+      }));
+    }
+  });
+  return out;
+}
+
 function line(text: string, opts: { bold?: boolean; right?: string; bodyBold?: boolean } = {}) {
   const isBold = opts.bold || opts.bodyBold;
   if (opts.right) {
