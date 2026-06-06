@@ -40,7 +40,16 @@ type Job = {
   source?: string;
   applyUrl?: string;
   remote?: boolean;
+  logo?: string;
 };
+
+type SourceTab = "all" | "linkedin" | "naukri" | "career";
+const SOURCE_TABS: { id: SourceTab; label: string; match: (src: string) => boolean }[] = [
+  { id: "linkedin", label: "LinkedIn", match: s => /linkedin/i.test(s) },
+  { id: "naukri", label: "Naukri", match: s => /naukri/i.test(s) },
+  { id: "career", label: "Career Pages", match: s => /company\s*website|career|employer/i.test(s) },
+  { id: "all", label: "AI Mode", match: () => true },
+];
 
 const CACHE_KEY = "rf:jobsCache:v2";
 const PAGE_SIZE = 20;
@@ -130,6 +139,7 @@ function JobsPage() {
   const [expLevel, setExpLevel] = useState<ExpLevelId>("any");
   const [salaryRange, setSalaryRange] = useState<[number, number]>([0, 100]);
   const [minScore, setMinScore] = useState<number>(0);
+  const [sourceTab, setSourceTab] = useState<SourceTab>("all");
 
   const refreshResumes = () => {
     const list = resumeStore.list();
@@ -397,14 +407,15 @@ function JobsPage() {
   const expRange = EXPERIENCE_LEVELS.find(l => l.id === expLevel)!;
 
   const filteredJobs = useMemo(() => {
+    const tabDef = SOURCE_TABS.find(t => t.id === sourceTab);
     return scoredJobs
       .filter(s => {
+        if (sourceTab !== "all" && tabDef && !tabDef.match(s.job.source ?? "")) return false;
         if (roleFilter.size > 0) {
           const key = s.job.title.split(/[-–|·,(]/)[0].trim() || s.job.title;
           if (!roleFilter.has(key)) return false;
         }
         if (expLevel !== "any") {
-          // Overlap test between job's experience range and selected level range
           if (s.exp.max < expRange.min || s.exp.min > expRange.max) return false;
         }
         if (s.salary) {
@@ -414,7 +425,18 @@ function JobsPage() {
         return true;
       })
       .sort((a, b) => b.score - a.score);
-  }, [scoredJobs, roleFilter, expLevel, expRange, salaryRange, minScore]);
+  }, [scoredJobs, sourceTab, roleFilter, expLevel, expRange, salaryRange, minScore]);
+
+  const sourceCounts = useMemo(() => {
+    const counts: Record<SourceTab, number> = { all: scoredJobs.length, linkedin: 0, naukri: 0, career: 0 };
+    for (const { job } of scoredJobs) {
+      const src = job.source ?? "";
+      for (const tab of SOURCE_TABS) if (tab.id !== "all" && tab.match(src)) counts[tab.id]++;
+    }
+    return counts;
+  }, [scoredJobs]);
+
+
 
   const clientFilterCount =
     (roleFilter.size > 0 ? 1 : 0) +
@@ -510,17 +532,45 @@ function JobsPage() {
           )}
         </div>
 
+        {/* Source tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 py-1">
+          {SOURCE_TABS.map(tab => {
+            const active = sourceTab === tab.id;
+            const count = sourceCounts[tab.id];
+            const isAi = tab.id === "all";
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setSourceTab(tab.id)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-xs font-medium whitespace-nowrap transition-colors shrink-0",
+                  active
+                    ? isAi
+                      ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]"
+                      : "border-foreground bg-foreground text-background"
+                    : "border-border bg-card hover:border-[var(--navy-light)]",
+                )}
+              >
+                {isAi && <Sparkles className="h-3 w-3" />}
+                {tab.label}
+                {jobs.length > 0 && <span className={cn("text-[10px] opacity-70", active && !isAi && "text-background/80")}>({count})</span>}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Recommended header + selectors */}
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display text-lg font-semibold">
-              {totalResults > 0 ? `${totalResults} Live Jobs Found` : "Live Job Matches"}{" "}
+              Recommended Jobs{" "}
               <span className="text-sm font-normal text-muted-foreground">
-                ({filteredJobs.length}{filteredJobs.length !== jobs.length ? ` of ${jobs.length} loaded` : " shown"}{location ? ` · ${location}` : ""})
+                ({filteredJobs.length} {filteredJobs.length === 1 ? "job" : "jobs"}{location ? ` in ${location}` : ""})
               </span>
             </h2>
             <p className="text-xs text-muted-foreground inline-flex items-center gap-2">
-              <Globe className="h-3 w-3" /> Live listings from Remotive &amp; Arbeitnow · ranked by your resume
+              <Globe className="h-3 w-3" /> Live aggregated from LinkedIn, Naukri &amp; Career Pages · ranked by your resume
               {fetchedAt && <span>· Updated {formatStamp(fetchedAt)}</span>}
               {jobs.length > 0 && (
                 <button onClick={searchJobs} className="ml-1 inline-flex items-center gap-1 text-[var(--navy-light)] hover:underline">
@@ -937,6 +987,7 @@ function normalizeJobs(items: Job[]): Job[] {
       source: text(job.source, ""),
       applyUrl: text(job.applyUrl, ""),
       remote: !!job.remote,
+      logo: typeof job.logo === "string" && job.logo.trim() ? job.logo : undefined,
     };
     return { ...normalized, jd: normalized.jd || getJobScoringText(normalized) };
   });
@@ -973,8 +1024,12 @@ function JobCard({ job, resume, onScore, onNova, onApply, liveScore, isSaved, on
     <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3 hover:border-[var(--navy-light)] hover:shadow-[var(--shadow-soft)] transition-all">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-md bg-[var(--navy-light)]/10 text-[var(--navy-light)] font-bold flex items-center justify-center shrink-0">
-            {(job.company || "?").charAt(0).toUpperCase()}
+          <div className="h-10 w-10 rounded-md bg-[var(--navy-light)]/10 text-[var(--navy-light)] font-bold flex items-center justify-center shrink-0 overflow-hidden">
+            {job.logo ? (
+              <img src={job.logo} alt={job.company} className="h-full w-full object-contain" loading="lazy" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            ) : (
+              (job.company || "?").charAt(0).toUpperCase()
+            )}
           </div>
           <div className="min-w-0">
             <div className="font-semibold truncate">{job.title}</div>
