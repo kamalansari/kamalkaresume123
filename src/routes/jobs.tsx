@@ -90,6 +90,7 @@ const FILTERS_STORAGE_KEY = "jobs.filters.v1";
 type StoredFilters = {
   search: string;
   location: string;
+  company: string;
   workMode: WorkMode;
   experience: ExpId;
   minSalary: number;
