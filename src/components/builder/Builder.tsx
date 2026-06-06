@@ -982,14 +982,14 @@ export function Builder() {
     if (kind === "summary") { await rewriteSummary(); return; }
     if (kind === "skills") {
       const out = await rewriteWithAI("skills", data.skills, {}, "skills");
-      if (out) { update("skills", out); toast.success("Skills rewritten"); }
+      if (out) { update("skills", out); announce("Skills rewritten by AI."); toast.success("Skills rewritten"); }
       return;
     }
     if (kind === "experience-bullets" && refId) {
       const e = data.experience.find(x => x.id === refId);
       if (!e) return;
       const out = await rewriteWithAI("bullets", e.bullets, { title: e.title, company: e.company }, `exp-${e.id}`);
-      if (out) { updateExp(e.id, { bullets: normalizeBulletText(out) }); toast.success("Bullets rewritten"); }
+      if (out) { updateExp(e.id, { bullets: normalizeBulletText(out) }); announce("Experience bullets rewritten by AI."); toast.success("Bullets rewritten"); }
     }
   };
 
