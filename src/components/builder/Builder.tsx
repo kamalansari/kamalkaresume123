@@ -178,6 +178,7 @@ export function Builder() {
   const [atsSheetOpen, setAtsSheetOpen] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1);
   // Mobile view switcher: which panel is visible on screens < lg.
   // 'editor' is the default; bottom nav toggles between editor and preview.
