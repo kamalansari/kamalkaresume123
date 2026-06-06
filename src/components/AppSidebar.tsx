@@ -79,6 +79,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 
 export function AppSidebar() {
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
+  const currentHash = useRouterState({ select: (s) => s.location.hash });
   const navigate = useNavigate();
   const [email, setEmail] = useState<string | null>(null);
 
@@ -90,8 +91,18 @@ export function AppSidebar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const isActive = (path: string) =>
-    currentPath === path || currentPath.startsWith(path + "/");
+  const isActive = (item: NavItem) => {
+    // Items with a hash anchor are active only when the hash matches.
+    if (item.hash) {
+      return currentPath === item.url && currentHash === item.hash;
+    }
+    const target = item.match ?? item.url;
+    // Plain dashboard link should NOT light up when a hash-anchored sibling is selected.
+    if (item.url === "/dashboard" && currentPath === "/dashboard" && currentHash) {
+      return false;
+    }
+    return currentPath === target || currentPath.startsWith(target + "/");
+  };
 
   const signOut = async () => {
     await supabase.auth.signOut();
