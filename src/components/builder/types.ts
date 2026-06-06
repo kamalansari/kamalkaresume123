@@ -164,20 +164,32 @@ export type ResumeData = {
   // Number of columns for the Skills list on small screens (mobile preview,
   // ≤640px). Defaults to 1. Range 1–2.
   skillsColumnsMobile?: number;
+  // Backward-compatible persisted alias used by older saved resumes/imports.
+  mobileSkillsColumns?: number;
   // How the Skills section is laid out.
   // - "compact"     : flat chip grid in multi-column flow (default).
   // - "categorized" : groups parsed by "Heading: a, b" are rendered as
   //                   labeled blocks (Programming & Analytics, BI & Reporting…).
   skillsViewMode?: "compact" | "categorized";
+  // Backward-compatible persisted alias used by older saved resumes/imports.
+  skillsView?: "compact" | "categorized";
   // Strategy used by the deterministic column balancer in the Skills section.
   // - "length" : weight ≈ wrapped line count (default; balances visual height)
   // - "count"  : every item weighs 1 (equal items per column)
   // - "chars"  : raw character count (long items dominate proportionally)
   skillsBalanceStrategy?: "length" | "count" | "chars";
+  // Backward-compatible persisted alias used by older saved resumes/imports.
+  balanceStrategy?: "length" | "count" | "chars";
   // Optional multiplier applied to each item's weight after the strategy
   // computes it. Used to bias the balancer toward filling earlier columns
   // (<1) or spreading more aggressively (>1). Range 0.5–1.5, default 1.
   skillsBalanceBias?: number;
+  // Backward-compatible persisted alias used by older saved resumes/imports.
+  skillsBias?: number;
+  // Visual treatment for skill text. Defaults to chip styling.
+  skillsTextStyle?: "chips" | "plain";
+  // Backward-compatible persisted alias used by older saved resumes/imports.
+  textStyle?: "chips" | "plain";
   // Optional per-resume override of which section ids appear in the sidebar.
   // When undefined, the template default (TEMPLATE_SIDEBAR_DEFAULTS) is used.
   sidebarSections?: SectionId[];
