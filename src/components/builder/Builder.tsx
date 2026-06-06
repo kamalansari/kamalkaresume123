@@ -48,6 +48,7 @@ const { decompressFromEncodedURIComponent } = lzString;
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { AiAssistantDock } from "./workspace/AiAssistantDock";
 import { StickyToolbar } from "./workspace/StickyToolbar";
 
