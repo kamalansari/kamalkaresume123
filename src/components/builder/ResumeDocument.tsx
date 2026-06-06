@@ -1220,13 +1220,37 @@ function SkillsSection({
   const desktopCols = data.skillsColumns ?? 3;
   const mobileCols = data.skillsColumnsMobile ?? 2;
 
-  const columnsStyle: React.CSSProperties = {
-    columnCount: desktopCols,
-    columnGap: "0.9rem",
-    columnFill: "balance",
-    orphans: 2,
-    widows: 2,
-    ["--skills-cols-mobile" as any]: mobileCols,
+  // ---- Deterministic balancing -------------------------------------------
+  // CSS `column-fill: balance` is browser-dependent and reflows unpredictably
+  // as items change. We pre-distribute items into N explicit columns with a
+  // stable algorithm so layout is identical across browsers, screen vs PDF,
+  // and across small edits to the list.
+  //
+  // Walk items in their ORIGINAL order and place each into the currently
+  // shortest column (ties → left-most). This preserves reading order while
+  // keeping column heights within one item of each other.
+  const estimateWeight = (text: string, cols: number) => {
+    const cpl = Math.max(10, Math.floor(60 / Math.max(1, cols)));
+    const lines = Math.max(1, Math.ceil(text.length / cpl));
+    return lines + 0.35;
+  };
+
+  const balanceIntoColumns = <T,>(
+    items: T[],
+    getText: (t: T) => string,
+    cols: number,
+  ): T[][] => {
+    const buckets: T[][] = Array.from({ length: cols }, () => []);
+    const heights = new Array(cols).fill(0);
+    for (const item of items) {
+      let target = 0;
+      for (let c = 1; c < cols; c++) {
+        if (heights[c] < heights[target]) target = c;
+      }
+      buckets[target].push(item);
+      heights[target] += estimateWeight(getText(item), cols);
+    }
+    return buckets;
   };
 
   const chipStyle: React.CSSProperties = {
@@ -1245,15 +1269,75 @@ function SkillsSection({
     background: "transparent",
   };
 
-  const renderChips = (items: string[], keyPrefix = "") => (
-    <div data-skills-list style={columnsStyle}>
-      {items.map((s, i) => (
-        <span key={`${keyPrefix}${i}`} style={chipStyle}>
-          {s}
-        </span>
-      ))}
-    </div>
-  );
+  const gridStyle: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: `repeat(${desktopCols}, minmax(0, 1fr))`,
+    gap: "0 0.9rem",
+    alignItems: "start",
+    ["--skills-cols-mobile" as any]: mobileCols,
+  };
+
+  // Editable mode keeps CSS columns on a contentEditable list so blur-to-save
+  // line parsing keeps working; deterministic balancing is applied to the
+  // read-only render path.
+  const editableColumnsStyle: React.CSSProperties = {
+    columnCount: desktopCols,
+    columnGap: "0.9rem",
+    columnFill: "balance",
+    orphans: 2,
+    widows: 2,
+    ["--skills-cols-mobile" as any]: mobileCols,
+  };
+
+  const renderBalancedChips = (items: string[], keyPrefix = "") => {
+    const columns = balanceIntoColumns(items, (s) => s, desktopCols);
+    return (
+      <div data-skills-list data-skills-balanced style={gridStyle}>
+        {columns.map((col, ci) => (
+          <div key={ci} style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
+            {col.map((s, i) => (
+              <span key={`${keyPrefix}${ci}-${i}`} style={chipStyle}>
+                {s}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderBalancedGroups = (gs: { heading?: string; items: string[] }[]) => {
+    const columns = balanceIntoColumns(
+      gs,
+      (g) => (g.heading ? g.heading + " " : "") + g.items.join(" "),
+      desktopCols,
+    );
+    return (
+      <div data-skills-list data-skills-balanced style={gridStyle}>
+        {columns.map((col, ci) => (
+          <div key={ci}>
+            {col.map((g, gi) => (
+              <div
+                key={gi}
+                style={{ breakInside: "avoid", pageBreakInside: "avoid", marginBottom: 8 }}
+              >
+                {g.heading && (
+                  <div style={{ fontWeight: 700, marginBottom: 3, fontSize: "0.95em" }}>
+                    {g.heading}
+                  </div>
+                )}
+                {g.items.map((s, i) => (
+                  <span key={i} style={chipStyle}>
+                    {s}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <Section title="Skills" accent={accent} headingFont={headingFont} ed={ed} kind="skills">
@@ -1277,7 +1361,7 @@ function SkillsSection({
               .filter(Boolean);
             ed.onUpdate({ skills: lines.join("\n") });
           }}
-          style={{ ...columnsStyle, listStyle: "none", padding: 0, margin: 0 }}
+          style={{ ...editableColumnsStyle, listStyle: "none", padding: 0, margin: 0 }}
         >
           {flatSkills.map((s, i) => (
             <li key={i} style={{ ...chipStyle, display: "block" }}>
@@ -1286,24 +1370,9 @@ function SkillsSection({
           ))}
         </ul>
       ) : mode === "categorized" && hasHeadings ? (
-        <div style={columnsStyle}>
-          {groups.map((g, gi) => (
-            <div key={gi} style={{ breakInside: "avoid", pageBreakInside: "avoid", marginBottom: 8 }}>
-              {g.heading && (
-                <div style={{ fontWeight: 700, marginBottom: 3, fontSize: "0.95em" }}>
-                  {g.heading}
-                </div>
-              )}
-              {g.items.map((s, i) => (
-                <span key={i} style={chipStyle}>
-                  {s}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
+        renderBalancedGroups(groups)
       ) : (
-        renderChips(flatSkills)
+        renderBalancedChips(flatSkills)
       )}
     </Section>
   );
