@@ -12,8 +12,17 @@ import {
   Download,
   Check,
   Loader2,
+  MoreHorizontal,
   Pencil as PencilIcon,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import lzString from "lz-string";
 import type { ResumeData } from "../types";
