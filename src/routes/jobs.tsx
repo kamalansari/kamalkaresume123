@@ -435,14 +435,8 @@ function JobsPage() {
     }
     return counts;
   }, [scoredJobs]);
-        if (s.salary) {
-          if (s.salary.max < salaryRange[0] || s.salary.min > salaryRange[1]) return false;
-        }
-        if (s.score < minScore) return false;
-        return true;
-      })
-      .sort((a, b) => b.score - a.score);
-  }, [scoredJobs, roleFilter, expLevel, expRange, salaryRange, minScore]);
+
+
 
   const clientFilterCount =
     (roleFilter.size > 0 ? 1 : 0) +
