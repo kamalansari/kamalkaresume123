@@ -243,7 +243,9 @@ export const getProviderStatus = createServerFn({ method: "POST" })
       } catch (e) {
         jsearchDetail = (e as Error).message;
         console.warn(`[providerStatus] jsearch threw: ${jsearchDetail}`);
-        jsearchStatus = "error";
+        // Network/timeout on the probe doesn't mean the API is broken — stay
+        // optimistic when a key is configured. Real failures surface during sync.
+        jsearchStatus = "available";
       }
     }
 
