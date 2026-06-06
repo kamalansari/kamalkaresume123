@@ -532,17 +532,45 @@ function JobsPage() {
           )}
         </div>
 
+        {/* Source tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 py-1">
+          {SOURCE_TABS.map(tab => {
+            const active = sourceTab === tab.id;
+            const count = sourceCounts[tab.id];
+            const isAi = tab.id === "all";
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setSourceTab(tab.id)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-xs font-medium whitespace-nowrap transition-colors shrink-0",
+                  active
+                    ? isAi
+                      ? "border-[var(--navy-light)] bg-[var(--navy-light)]/10 text-[var(--navy-light)]"
+                      : "border-foreground bg-foreground text-background"
+                    : "border-border bg-card hover:border-[var(--navy-light)]",
+                )}
+              >
+                {isAi && <Sparkles className="h-3 w-3" />}
+                {tab.label}
+                {jobs.length > 0 && <span className={cn("text-[10px] opacity-70", active && !isAi && "text-background/80")}>({count})</span>}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Recommended header + selectors */}
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display text-lg font-semibold">
-              {totalResults > 0 ? `${totalResults} Live Jobs Found` : "Live Job Matches"}{" "}
+              Recommended Jobs{" "}
               <span className="text-sm font-normal text-muted-foreground">
-                ({filteredJobs.length}{filteredJobs.length !== jobs.length ? ` of ${jobs.length} loaded` : " shown"}{location ? ` · ${location}` : ""})
+                ({filteredJobs.length} {filteredJobs.length === 1 ? "job" : "jobs"}{location ? ` in ${location}` : ""})
               </span>
             </h2>
             <p className="text-xs text-muted-foreground inline-flex items-center gap-2">
-              <Globe className="h-3 w-3" /> Live listings from Remotive &amp; Arbeitnow · ranked by your resume
+              <Globe className="h-3 w-3" /> Live aggregated from LinkedIn, Naukri &amp; Career Pages · ranked by your resume
               {fetchedAt && <span>· Updated {formatStamp(fetchedAt)}</span>}
               {jobs.length > 0 && (
                 <button onClick={searchJobs} className="ml-1 inline-flex items-center gap-1 text-[var(--navy-light)] hover:underline">
