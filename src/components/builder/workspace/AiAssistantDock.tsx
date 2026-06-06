@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, X, Send, Loader2, Wand2 } from "lucide-react";
+import { Sparkles, X, Send, Loader2, Wand2, PenLine, Target, FileText, ListChecks, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { authFetch } from "@/lib/authFetch";
@@ -8,10 +8,10 @@ import type { ResumeData } from "../types";
 type Msg = { role: "user" | "assistant"; content: string };
 
 const QUICK_ACTIONS = [
-  { label: "Rewrite summary", prompt: "Rewrite my summary to be more impactful, concise, and recruiter-friendly. Keep it under 4 lines." },
-  { label: "Improve bullets", prompt: "Review my experience bullets and rewrite the weakest ones using strong action verbs + measurable outcomes." },
-  { label: "Suggest skills", prompt: "Based on my experience and target JD, list 8–12 ATS-friendly skills I should add." },
-  { label: "ATS optimize", prompt: "Tell me the top 3 ATS improvements I should make right now, in priority order." },
+  { label: "Rewrite", icon: PenLine, prompt: "Review my experience bullets and rewrite the weakest ones using strong action verbs + measurable outcomes." },
+  { label: "ATS Optimize", icon: Target, prompt: "Tell me the top 3 ATS improvements I should make right now, in priority order." },
+  { label: "Improve Summary", icon: FileText, prompt: "Rewrite my summary to be more impactful, concise, and recruiter-friendly. Keep it under 4 lines." },
+  { label: "Generate Skills", icon: ListChecks, prompt: "Based on my experience and target JD, list 8–12 ATS-friendly skills I should add." },
 ];
 
 export function AiAssistantDock({ data, atsScore }: { data: ResumeData; atsScore?: number }) {
