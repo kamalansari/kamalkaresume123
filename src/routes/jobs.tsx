@@ -282,7 +282,7 @@ function JobsPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search title, company, skill…"
+                placeholder="Search title, skill…"
                 className="pl-9"
               />
             </div>
@@ -292,6 +292,15 @@ function JobsPage() {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Location"
+                className="pl-9"
+              />
+            </div>
+            <div className="relative w-44 hidden sm:block">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="Company"
                 className="pl-9"
               />
             </div>
