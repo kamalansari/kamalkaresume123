@@ -16,13 +16,13 @@ import {
   Pencil as PencilIcon,
 } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import lzString from "lz-string";
 import type { ResumeData } from "../types";
@@ -224,50 +224,235 @@ export function StickyToolbar({
           <span className="hidden sm:inline">PDF</span>
         </Button>
 
-        {/* Mobile overflow menu — exposes every action below md */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="md:hidden h-8 px-2 shrink-0" title="More actions">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-60">
-            <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              View
-            </DropdownMenuLabel>
-            <DropdownMenuItem onClick={onTogglePreview}>
-              {previewOnly ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              {previewOnly ? "Switch to edit" : "Preview only"}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              History
-            </DropdownMenuLabel>
-            <DropdownMenuItem onClick={onUndo} disabled={!canUndo}>
-              <Undo2 className="h-4 w-4" /> Undo
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onRedo} disabled={!canRedo}>
-              <Redo2 className="h-4 w-4" /> Redo
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-[11px] uppercase tracking-widest text-muted-foreground">
-              Zoom · {Math.round(zoom * 100)}%
-            </DropdownMenuLabel>
-            <DropdownMenuItem onClick={decZoom}>
-              <ZoomOut className="h-4 w-4" /> Zoom out
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onZoom(1)}>
-              <Check className="h-4 w-4" /> Reset to 100%
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={incZoom}>
-              <ZoomIn className="h-4 w-4" /> Zoom in
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={share}>
-              <Share2 className="h-4 w-4" /> Copy share link
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Mobile overflow sheet — searchable, large tap targets, full labels */}
+        <MobileActionsSheet
+          previewOnly={previewOnly}
+          onTogglePreview={onTogglePreview}
+          onUndo={onUndo}
+          onRedo={onRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          zoom={zoom}
+          onZoom={onZoom}
+          decZoom={decZoom}
+          incZoom={incZoom}
+          share={share}
+        />
+      </div>
+    </div>
+  );
+}
+
+type MobileSheetProps = {
+  previewOnly: boolean;
+  onTogglePreview: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  zoom: number;
+  onZoom: (n: number) => void;
+  decZoom: () => void;
+  incZoom: () => void;
+  share: () => void;
+};
+
+function MobileActionsSheet({
+  previewOnly,
+  onTogglePreview,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  zoom,
+  onZoom,
+  decZoom,
+  incZoom,
+  share,
+}: MobileSheetProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  type Action = {
+    id: string;
+    label: string;
+    description: string;
+    icon: React.ReactNode;
+    keywords: string;
+    onClick: () => void;
+    disabled?: boolean;
+    group: "View" | "History" | "Zoom" | "Share";
+  };
+
+  const actions: Action[] = [
+    {
+      id: "preview",
+      label: previewOnly ? "Switch to edit mode" : "Preview only",
+      description: previewOnly
+        ? "Re-enable inline editing in the resume preview"
+        : "Hide editing controls and show a clean preview",
+      icon: previewOnly ? <Pencil className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />,
+      keywords: "preview edit view toggle mode",
+      onClick: () => { onTogglePreview(); setOpen(false); },
+      group: "View",
+    },
+    {
+      id: "undo",
+      label: "Undo",
+      description: "Revert the last change to sections",
+      icon: <Undo2 className="h-5 w-5" aria-hidden="true" />,
+      keywords: "undo back revert history",
+      onClick: () => { onUndo(); setOpen(false); },
+      disabled: !canUndo,
+      group: "History",
+    },
+    {
+      id: "redo",
+      label: "Redo",
+      description: "Reapply the change you just undid",
+      icon: <Redo2 className="h-5 w-5" aria-hidden="true" />,
+      keywords: "redo forward history",
+      onClick: () => { onRedo(); setOpen(false); },
+      disabled: !canRedo,
+      group: "History",
+    },
+    {
+      id: "zoom-out",
+      label: "Zoom out",
+      description: `Currently ${Math.round(zoom * 100)}%`,
+      icon: <ZoomOut className="h-5 w-5" aria-hidden="true" />,
+      keywords: "zoom out smaller decrease size",
+      onClick: () => { decZoom(); },
+      group: "Zoom",
+    },
+    {
+      id: "zoom-reset",
+      label: "Reset zoom to 100%",
+      description: "Return the preview to its default size",
+      icon: <Check className="h-5 w-5" aria-hidden="true" />,
+      keywords: "zoom reset default 100 fit",
+      onClick: () => { onZoom(1); },
+      group: "Zoom",
+    },
+    {
+      id: "zoom-in",
+      label: "Zoom in",
+      description: `Currently ${Math.round(zoom * 100)}%`,
+      icon: <ZoomIn className="h-5 w-5" aria-hidden="true" />,
+      keywords: "zoom in bigger increase size",
+      onClick: () => { incZoom(); },
+      group: "Zoom",
+    },
+    {
+      id: "share",
+      label: "Copy share link",
+      description: "Copy a shareable URL to your clipboard",
+      icon: <Share2 className="h-5 w-5" aria-hidden="true" />,
+      keywords: "share link copy url",
+      onClick: () => { share(); setOpen(false); },
+      group: "Share",
+    },
+  ];
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? actions.filter(a =>
+        a.label.toLowerCase().includes(q) ||
+        a.description.toLowerCase().includes(q) ||
+        a.keywords.includes(q),
+      )
+    : actions;
+
+  const groups: Action["group"][] = ["View", "History", "Zoom", "Share"];
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="md:hidden h-11 w-11 p-0 shrink-0"
+          aria-label="More toolbar actions"
+        >
+          <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="bottom" className="p-0 max-h-[85dvh] flex flex-col">
+        <SheetHeader className="p-4 pb-2 text-left">
+          <SheetTitle>Toolbar actions</SheetTitle>
+        </SheetHeader>
+        <div className="px-4 pb-3">
+          <label htmlFor="toolbar-action-search" className="sr-only">
+            Search actions
+          </label>
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <Input
+              id="toolbar-action-search"
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search actions…"
+              className="h-11 pl-9 text-base"
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-2 pb-[env(safe-area-inset-bottom)]">
+          {filtered.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+              No actions match “{query}”.
+            </p>
+          ) : (
+            groups.map((g) => {
+              const items = filtered.filter(a => a.group === g);
+              if (items.length === 0) return null;
+              return (
+                <div key={g} className="mb-3">
+                  <div className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    {g}
+                  </div>
+                  <ul className="flex flex-col gap-1">
+                    {items.map((a) => (
+                      <li key={a.id}>
+                        <button
+                          type="button"
+                          onClick={a.onClick}
+                          disabled={a.disabled}
+                          className={cn(
+                            "w-full min-h-11 flex items-center gap-3 rounded-lg px-3 py-2.5 text-left",
+                            "hover:bg-accent/60 active:bg-accent",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            "disabled:opacity-50 disabled:pointer-events-none",
+                          )}
+                        >
+                          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-muted text-foreground shrink-0">
+                            {a.icon}
+                          </span>
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-sm font-medium text-foreground truncate">
+                              {a.label}
+                            </span>
+                            <span className="block text-xs text-muted-foreground truncate">
+                              {a.description}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
       </div>
     </div>
   );
