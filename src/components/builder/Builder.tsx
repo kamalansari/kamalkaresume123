@@ -182,6 +182,17 @@ export function Builder() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1);
+  // Polite live-region for screen-reader status announcements (AI actions, PDF/DOCX, saves).
+  // We toggle the text via a ref+state pair so the same message can be re-announced; an
+  // explicit blank flush ensures repeated identical statuses still re-fire on assistive tech.
+  const [liveMsg, setLiveMsg] = useState("");
+  const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const announce = (msg: string) => {
+    if (liveTimerRef.current) clearTimeout(liveTimerRef.current);
+    setLiveMsg("");
+    liveTimerRef.current = setTimeout(() => setLiveMsg(msg), 60);
+  };
+  useEffect(() => () => { if (liveTimerRef.current) clearTimeout(liveTimerRef.current); }, []);
   // Mobile view switcher: which panel is visible on screens < lg.
   // 'editor' is the default; bottom nav toggles between editor and preview.
   const [mobileView, setMobileView] = useState<"editor" | "preview">("editor");
