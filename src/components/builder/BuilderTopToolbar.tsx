@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, Bold, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Undo2, Redo2, PanelLeft, PanelRight } from "lucide-react";
+import { LayoutTemplate, ListOrdered, Palette, Check, Plus, GripVertical, X, AlignJustify, AlignLeft, AlignCenter, Bold, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Undo2, Redo2, PanelLeft, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
