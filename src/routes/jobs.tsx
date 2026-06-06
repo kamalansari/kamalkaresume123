@@ -4,8 +4,8 @@ import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import { useServerFn } from "@tanstack/react-start";
 import {
   Search, MapPin, Briefcase, Building2, Bookmark, BookmarkCheck,
-  Sparkles, Loader2, ArrowLeft, ExternalLink, RefreshCw, Filter, X, IndianRupee,
-  Info, Check, CircleDot,
+  Sparkles, Loader2, ArrowLeft, RefreshCw, Filter, X, IndianRupee,
+  Check, CircleDot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
