@@ -56,31 +56,6 @@ const WORK_MODES: { id: WorkMode; label: string }[] = [
   { id: "onsite", label: "Onsite" },
 ];
 
-function getResumeProfile(): { skills: string[]; titles: string[]; text: string } {
-  const primary = resumeStore.getPrimary()?.data ?? resumeStore.getDraft() ?? defaultResume;
-  const rawSkills = typeof primary.skills === "string" ? primary.skills : "";
-  const skills = rawSkills.split(/[,|;·\n]+/).map(s => s.toLowerCase().trim()).filter(Boolean);
-  const titles = (primary.experience ?? []).map(e => (e.title ?? "").toLowerCase()).filter(Boolean);
-  const text = JSON.stringify(primary).toLowerCase();
-  return { skills, titles, text };
-}
-
-function matchScore(job: JobRow, profile: ReturnType<typeof getResumeProfile>): number {
-  if (!profile.skills.length && !profile.titles.length) return 0;
-  let score = 0;
-  const jobSkills = (job.skills ?? []).map(s => s.toLowerCase());
-  const overlap = profile.skills.filter(s => jobSkills.includes(s)).length;
-  const skillBase = jobSkills.length || 1;
-  score += Math.min(60, (overlap / skillBase) * 60);
-  const titleLower = (job.title ?? "").toLowerCase();
-  if (profile.titles.some(t => t && titleLower.includes(t.split(" ")[0]))) score += 25;
-  // keyword overlap from description
-  const desc = (job.description ?? "").toLowerCase();
-  const kwHits = profile.skills.filter(s => desc.includes(s)).length;
-  score += Math.min(15, kwHits * 2);
-  return Math.max(0, Math.min(99, Math.round(score)));
-}
-
 function timeAgo(iso: string | null): string {
   if (!iso) return "Recently";
   const ms = Date.now() - new Date(iso).getTime();
