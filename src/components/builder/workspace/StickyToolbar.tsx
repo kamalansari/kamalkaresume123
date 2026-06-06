@@ -8,8 +8,6 @@ import {
   ZoomOut,
   Eye,
   Pencil,
-  Share2,
-  Download,
   Check,
   Loader2,
   MoreHorizontal,
@@ -24,12 +22,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Search } from "lucide-react";
-import { toast } from "sonner";
-import lzString from "lz-string";
-import type { ResumeData } from "../types";
 import { cn } from "@/lib/utils";
-
-const { compressToEncodedURIComponent } = lzString;
 
 type Props = {
   name: string;
@@ -44,8 +37,6 @@ type Props = {
   onZoom: (next: number) => void;
   previewOnly: boolean;
   onTogglePreview: () => void;
-  onPdf: () => void;
-  getData: () => ResumeData;
 };
 
 const ZOOMS = [0.5, 0.6, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
@@ -72,8 +63,6 @@ export function StickyToolbar({
   onZoom,
   previewOnly,
   onTogglePreview,
-  onPdf,
-  getData,
 }: Props) {
   const [editingName, setEditingName] = useState(false);
   const [draft, setDraft] = useState(name);
@@ -102,16 +91,6 @@ export function StickyToolbar({
     onZoom(ZOOMS[Math.min(ZOOMS.length - 1, i < 0 ? ZOOMS.length - 1 : i + 1)]);
   };
 
-  const share = async () => {
-    try {
-      const payload = compressToEncodedURIComponent(JSON.stringify(getData()));
-      const url = `${window.location.origin}/builder#r=${payload}`;
-      await navigator.clipboard.writeText(url);
-      toast.success("Share link copied to clipboard");
-    } catch {
-      toast.error("Could not generate share link");
-    }
-  };
 
   const savedLabel = saving
     ? "Saving…"
@@ -197,34 +176,6 @@ export function StickyToolbar({
           </Button>
         </div>
 
-        <Button
-          variant={previewOnly ? "default" : "outline"}
-          size="sm"
-          className="hidden md:inline-flex h-8"
-          onClick={onTogglePreview}
-          title={previewOnly ? "Switch to edit mode" : "Preview only"}
-        >
-          {previewOnly ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          <span className="hidden sm:inline">{previewOnly ? "Edit" : "Preview"}</span>
-        </Button>
-
-        <Button variant="outline" size="sm" className="hidden md:inline-flex h-8" onClick={share} title="Copy shareable link">
-          <Share2 className="h-4 w-4" />
-          <span className="hidden sm:inline">Share</span>
-        </Button>
-
-        {/* PDF — primary action, always visible */}
-        <Button
-          size="sm"
-          className="h-8 shrink-0"
-          style={{ background: "var(--gradient-hero)", color: "white" }}
-          onClick={onPdf}
-          title="Download as PDF"
-        >
-          <Download className="h-4 w-4" />
-          <span className="hidden sm:inline">PDF</span>
-        </Button>
-
         {/* Mobile overflow sheet — searchable, large tap targets, full labels */}
         <MobileActionsSheet
           previewOnly={previewOnly}
@@ -237,7 +188,6 @@ export function StickyToolbar({
           onZoom={onZoom}
           decZoom={decZoom}
           incZoom={incZoom}
-          share={share}
         />
       </div>
     </div>
@@ -255,7 +205,6 @@ type MobileSheetProps = {
   onZoom: (n: number) => void;
   decZoom: () => void;
   incZoom: () => void;
-  share: () => void;
 };
 
 function MobileActionsSheet({
@@ -269,7 +218,6 @@ function MobileActionsSheet({
   onZoom,
   decZoom,
   incZoom,
-  share,
 }: MobileSheetProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -344,15 +292,6 @@ function MobileActionsSheet({
       onClick: () => { incZoom(); },
       group: "Zoom",
     },
-    {
-      id: "share",
-      label: "Copy share link",
-      description: "Copy a shareable URL to your clipboard",
-      icon: <Share2 className="h-5 w-5" aria-hidden="true" />,
-      keywords: "share link copy url",
-      onClick: () => { share(); setOpen(false); },
-      group: "Share",
-    },
   ];
 
   const q = query.trim().toLowerCase();
@@ -364,7 +303,7 @@ function MobileActionsSheet({
       )
     : actions;
 
-  const groups: Action["group"][] = ["View", "History", "Zoom", "Share"];
+  const groups: Action["group"][] = ["View", "History", "Zoom"];
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

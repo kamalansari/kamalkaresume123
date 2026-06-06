@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye, LayoutTemplate } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Share2, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye, LayoutTemplate, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, TEMPLATE_SIDEBAR_DEFAULTS, SIDEBAR_ELIGIBLE, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId, type CustomSection } from "./types";
 import { computeScore, jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
@@ -1153,11 +1153,11 @@ export function Builder() {
         />
       )}
       <header className="no-print sticky top-0 z-30 backdrop-blur-md bg-background/80 border-b border-border">
-        <div className="mx-auto max-w-[1600px] px-6 h-14 flex items-center justify-between">
+        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Back
+            <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back</span>
           </Link>
-          <div className="font-display font-semibold">ResumeForge Builder</div>
+          <div className="font-display font-semibold hidden sm:block">ResumeForge Builder</div>
           <div className="flex items-center gap-2">
             {mounted && profileApplied && (
               <span
@@ -1173,7 +1173,7 @@ export function Builder() {
                 size="sm"
                 onClick={() => setVerbChangesOpen(true)}
                 title="View bullets strengthened by action-verb auto-fix"
-                className="relative"
+                className="relative hidden md:inline-flex"
               >
                 <Wand2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Changes</span>
@@ -1182,13 +1182,10 @@ export function Builder() {
                 </span>
               </Button>
             )}
-            <Button variant="accent" onClick={saveCurrent} title={currentId ? `Save "${currentName}"` : "Save resume"}>
-              <Save /> <span className="hidden sm:inline">{currentId ? "Save" : "Save…"}</span>
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" title="Manage profile templates">
-                  <IdCard /> <span className="hidden sm:inline">Profile</span>
+                <Button variant="outline" size="sm" className="h-8" title="Manage profile templates">
+                  <IdCard className="h-4 w-4" /> <span className="hidden sm:inline">Profile</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-72">
@@ -1270,8 +1267,8 @@ export function Builder() {
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <FolderOpen /> <span className="hidden sm:inline">Resumes</span>
+                <Button variant="outline" size="sm" className="h-8">
+                  <FolderOpen className="h-4 w-4" /> <span className="hidden sm:inline">Resumes</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-72">
@@ -1353,20 +1350,53 @@ export function Builder() {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="outline" onClick={() => { setJdDialogText(data.jobDescription); setJdDialogOpen(true); }}>
-              <Wand2 /> <span className="hidden sm:inline">JD → Resume</span>
+
+            {/* Tools dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">
+                  <Wrench className="h-4 w-4" /> <span className="hidden sm:inline">Tools</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => { setJdDialogText(data.jobDescription); setJdDialogOpen(true); }}>
+                  <Wand2 className="h-4 w-4" /> JD → Resume
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({ to: "/jobs" })}>
+                  <Briefcase className="h-4 w-4" /> Find Jobs
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDocx} disabled={exporting}>
+                  {exporting ? <Loader2 className="animate-spin h-4 w-4" /> : <FileType className="h-4 w-4" />} DOCX Export
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="w-px h-6 bg-border hidden sm:block" />
+
+            {/* Secondary actions */}
+            <Button variant="outline" size="sm" className="h-8" onClick={saveCurrent} title={currentId ? `Save "${currentName}"` : "Save resume"}>
+              <Save className="h-4 w-4" /> <span className="hidden sm:inline">{currentId ? "Save" : "Save…"}</span>
             </Button>
-            <Link
-              to="/jobs"
-              className="inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
-            >
-              <Briefcase className="h-4 w-4" /> <span className="hidden sm:inline">Find Jobs</span>
-            </Link>
-            <Button variant="outline" onClick={handleDocx} disabled={exporting}>
-              {exporting ? <Loader2 className="animate-spin" /> : <FileType />} DOCX
+            <Button variant="outline" size="sm" className="h-8" onClick={() => {
+              try {
+                const payload = lzString.compressToEncodedURIComponent(JSON.stringify(data));
+                const url = `${window.location.origin}/builder#r=${payload}`;
+                navigator.clipboard.writeText(url).then(() => toast.success("Share link copied to clipboard")).catch(() => toast.error("Could not copy link"));
+              } catch {
+                toast.error("Could not generate share link");
+              }
+            }} title="Copy shareable link">
+              <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Share</span>
             </Button>
-            <Button variant="hero" style={{ background: "var(--gradient-hero)" }} onClick={printCurrentResume}>
-              <FileText /> PDF
+            <Button variant="outline" size="sm" className="h-8 hidden md:inline-flex" onClick={() => setInlineEdit(v => !v)} title={inlineEdit ? "Preview only" : "Switch to edit mode"}>
+              {inlineEdit ? <Eye className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+              <span className="hidden sm:inline">{inlineEdit ? "Preview" : "Edit"}</span>
+            </Button>
+
+            {/* Primary CTA */}
+            <Button size="sm" className="h-8 shrink-0" style={{ background: "var(--gradient-hero)", color: "white" }} onClick={printCurrentResume} title="Download as PDF">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Download</span>
             </Button>
           </div>
         </div>
@@ -1391,8 +1421,6 @@ export function Builder() {
         onZoom={setPreviewZoom}
         previewOnly={!inlineEdit}
         onTogglePreview={() => setInlineEdit(v => !v)}
-        onPdf={printCurrentResume}
-        getData={() => data}
       />
 
 
