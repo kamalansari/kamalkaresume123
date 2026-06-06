@@ -1677,14 +1677,32 @@ export function Builder() {
           <Card
             title="Summary"
             action={
-              <Button size="sm" variant="accent" onClick={rewriteSummary} disabled={rewriting}>
-                {rewriting ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                {rewriting ? "Rewriting…" : "Rewrite with AI"}
-              </Button>
+              data.summary.trim() ? (
+                <Button size="sm" variant="accent" onClick={rewriteSummary} disabled={rewriting}>
+                  {rewriting ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                  {rewriting ? "Rewriting…" : "Rewrite with AI"}
+                </Button>
+              ) : null
             }
           >
-            <FormattableTextarea rows={4} value={data.summary} onChange={v => update("summary", v)} placeholder="2-3 sentences on who you are and what you do." />
-            <p className="mt-2 text-xs text-muted-foreground">Select text and click <b>B</b> to bold it. Tip: paste a job description below for a tailored rewrite.</p>
+            {!data.summary.trim() ? (
+              <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center">
+                <p className="text-sm text-muted-foreground mb-3">Your summary is empty. Let AI craft one tailored to your role and target job.</p>
+                <Button variant="accent" onClick={rewriteSummary} disabled={rewriting}>
+                  {rewriting ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                  {rewriting ? "Generating…" : "Generate Professional Summary"}
+                </Button>
+                <p className="mt-3 text-xs text-muted-foreground">Or type your own below.</p>
+                <div className="mt-3 text-left">
+                  <FormattableTextarea rows={3} value={data.summary} onChange={v => update("summary", v)} placeholder="2-3 sentences on who you are and what you do." />
+                </div>
+              </div>
+            ) : (
+              <>
+                <FormattableTextarea rows={4} value={data.summary} onChange={v => update("summary", v)} placeholder="2-3 sentences on who you are and what you do." />
+                <p className="mt-2 text-xs text-muted-foreground">Select text and click <b>B</b> to bold it. Tip: paste a job description below for a tailored rewrite.</p>
+              </>
+            )}
           </Card>
           </div>
             </TabsContent>
