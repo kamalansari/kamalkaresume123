@@ -1066,9 +1066,9 @@ export function Builder() {
           },
         }),
       });
-      if (res.status === 429) { toast.error("Rate limit hit."); return; }
-      if (res.status === 402) { toast.error("AI credits exhausted."); return; }
-      if (!res.ok) { toast.error("AI tailoring failed."); return; }
+      if (res.status === 429) { announce("Rate limit hit during AI tailoring."); toast.error("Rate limit hit."); return; }
+      if (res.status === 402) { announce("AI credits exhausted."); toast.error("AI credits exhausted."); return; }
+      if (!res.ok) { announce("AI tailoring failed. Please try again."); toast.error("AI tailoring failed."); return; }
       const out = (await res.json()) as { headline?: string; summary?: string; skills?: string; experience?: { id: string; bullets: string }[] };
       const verbState = loadCustomVerbs();
       const collected: VerbChange[] = [];
