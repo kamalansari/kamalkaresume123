@@ -8,8 +8,6 @@ import {
   ZoomOut,
   Eye,
   Pencil,
-  Share2,
-  Download,
   Check,
   Loader2,
   MoreHorizontal,
