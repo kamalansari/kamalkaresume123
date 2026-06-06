@@ -2015,9 +2015,11 @@ export function Builder() {
           ))}
         </div>
       </nav>
+      <AiAssistantDock data={data} atsScore={score.score} />
     </div>
   );
 }
+
 
 function Card({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
