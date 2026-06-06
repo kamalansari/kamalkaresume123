@@ -514,12 +514,20 @@ function JobsPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display text-lg font-semibold">
-              Recommended Jobs{" "}
+              {totalResults > 0 ? `${totalResults} Live Jobs Found` : "Live Job Matches"}{" "}
               <span className="text-sm font-normal text-muted-foreground">
-                ({filteredJobs.length}{filteredJobs.length !== jobs.length ? ` of ${jobs.length}` : ""} jobs{location ? ` in ${location}` : ""})
+                ({filteredJobs.length}{filteredJobs.length !== jobs.length ? ` of ${jobs.length} loaded` : " shown"}{location ? ` · ${location}` : ""})
               </span>
             </h2>
-            <p className="text-xs text-muted-foreground">AI-generated previews for demo — verified listings via "Apply Now" on Naukri.</p>
+            <p className="text-xs text-muted-foreground inline-flex items-center gap-2">
+              <Globe className="h-3 w-3" /> Live listings from Remotive &amp; Arbeitnow · ranked by your resume
+              {fetchedAt && <span>· Updated {formatStamp(fetchedAt)}</span>}
+              {jobs.length > 0 && (
+                <button onClick={searchJobs} className="ml-1 inline-flex items-center gap-1 text-[var(--navy-light)] hover:underline">
+                  <RefreshCw className="h-3 w-3" /> Refresh
+                </button>
+              )}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {/* Resume selector */}
