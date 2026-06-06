@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Search, MapPin, Briefcase, Building2, Bookmark, BookmarkCheck,
   Sparkles, Loader2, ArrowLeft, ExternalLink, RefreshCw, Filter, X, IndianRupee,
+  Info, Check, CircleDot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +13,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { resumeStore } from "@/components/builder/resumeStore";
-import { defaultResume, type ResumeData } from "@/components/builder/types";
 import {
   listJobs, saveJob, unsaveJob, listSavedJobs, triggerJobSync,
   type JobRow,
 } from "@/lib/jobs.functions";
+import {
+  buildResumeProfile, scoreJobBreakdown, describeLevel,
+  type MatchBreakdown,
+} from "@/lib/jobMatch";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/jobs")({
@@ -50,31 +55,6 @@ const WORK_MODES: { id: WorkMode; label: string }[] = [
   { id: "hybrid", label: "Hybrid" },
   { id: "onsite", label: "Onsite" },
 ];
-
-function getResumeProfile(): { skills: string[]; titles: string[]; text: string } {
-  const primary = resumeStore.getPrimary()?.data ?? resumeStore.getDraft() ?? defaultResume;
-  const rawSkills = typeof primary.skills === "string" ? primary.skills : "";
-  const skills = rawSkills.split(/[,|;·\n]+/).map(s => s.toLowerCase().trim()).filter(Boolean);
-  const titles = (primary.experience ?? []).map(e => (e.title ?? "").toLowerCase()).filter(Boolean);
-  const text = JSON.stringify(primary).toLowerCase();
-  return { skills, titles, text };
-}
-
-function matchScore(job: JobRow, profile: ReturnType<typeof getResumeProfile>): number {
-  if (!profile.skills.length && !profile.titles.length) return 0;
-  let score = 0;
-  const jobSkills = (job.skills ?? []).map(s => s.toLowerCase());
-  const overlap = profile.skills.filter(s => jobSkills.includes(s)).length;
-  const skillBase = jobSkills.length || 1;
-  score += Math.min(60, (overlap / skillBase) * 60);
-  const titleLower = (job.title ?? "").toLowerCase();
-  if (profile.titles.some(t => t && titleLower.includes(t.split(" ")[0]))) score += 25;
-  // keyword overlap from description
-  const desc = (job.description ?? "").toLowerCase();
-  const kwHits = profile.skills.filter(s => desc.includes(s)).length;
-  score += Math.min(15, kwHits * 2);
-  return Math.max(0, Math.min(99, Math.round(score)));
-}
 
 function timeAgo(iso: string | null): string {
   if (!iso) return "Recently";
@@ -118,7 +98,7 @@ function JobsPage() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const profile = useMemo(getResumeProfile, []);
+  const profile = useMemo(() => buildResumeProfile(), []);
 
   const filters = { search, location, workMode, experience, minSalaryLpa: minSalary };
 
@@ -179,14 +159,21 @@ function JobsPage() {
   const total = jobsQuery.data?.pages[0]?.total ?? 0;
 
   const rankedJobs = useMemo(() => {
-    const scored = allJobs.map((j) => ({ job: j, score: matchScore(j, profile) }));
+    const scored = allJobs.map((j) => {
+      const breakdown = scoreJobBreakdown(j, profile);
+      return { job: j, score: breakdown.score, breakdown };
+    });
     scored.sort((a, b) => b.score - a.score);
     return scored;
   }, [allJobs, profile]);
 
   const savedList = savedQuery.data?.saved ?? [];
   const visibleList = tab === "saved"
-    ? savedList.map((s) => ({ job: s.jobs as unknown as JobRow, score: matchScore(s.jobs as unknown as JobRow, profile) }))
+    ? savedList.map((s) => {
+        const job = s.jobs as unknown as JobRow;
+        const breakdown = scoreJobBreakdown(job, profile);
+        return { job, score: breakdown.score, breakdown };
+      })
     : rankedJobs;
 
   const clearFilters = () => {
@@ -337,11 +324,12 @@ function JobsPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {visibleList.map(({ job, score }) => (
+              {visibleList.map(({ job, score, breakdown }) => (
                 <JobCard
                   key={job.id}
                   job={job}
                   score={score}
+                  breakdown={breakdown}
                   saved={savedIds.has(job.id)}
                   authed={authed}
                   onToggleSave={() => {
@@ -430,11 +418,12 @@ function EmptyState({
 }
 
 function JobCard({
-  job, score, saved, authed, onToggleSave,
+  job, score, breakdown, saved, authed, onToggleSave,
 }: {
-  job: JobRow; score: number; saved: boolean; authed: boolean; onToggleSave: () => void;
+  job: JobRow; score: number; breakdown: MatchBreakdown; saved: boolean; authed: boolean; onToggleSave: () => void;
 }) {
   const initial = (job.company_name ?? job.title).charAt(0).toUpperCase();
+  const tone = score >= 75 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-muted-foreground/50";
   return (
     <article className="group border rounded-xl p-5 bg-card hover:shadow-lg hover:border-primary/40 transition-all flex flex-col">
       <div className="flex items-start gap-3">
@@ -473,26 +462,37 @@ function JobCard({
 
       {job.skills.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {job.skills.slice(0, 5).map((s) => (
-            <span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-              {s}
-            </span>
-          ))}
+          {job.skills.slice(0, 5).map((s) => {
+            const hit = breakdown.skills.matched.includes(s.toLowerCase());
+            return (
+              <span
+                key={s}
+                className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full border",
+                  hit
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                    : "bg-muted text-muted-foreground border-transparent",
+                )}
+              >
+                {s}
+              </span>
+            );
+          })}
         </div>
       )}
 
       {score > 0 && (
         <div className="mt-3">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-medium text-foreground">Match {score}%</span>
+            <span className="font-medium text-foreground inline-flex items-center gap-1">
+              Match {score}%
+              <MatchPopover breakdown={breakdown} />
+            </span>
             <span className="text-muted-foreground">{timeAgo(job.created_date)}</span>
           </div>
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
             <div
-              className={cn(
-                "h-full rounded-full transition-all",
-                score >= 75 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-muted-foreground/50",
-              )}
+              className={cn("h-full rounded-full transition-all", tone)}
               style={{ width: `${score}%` }}
             />
           </div>
@@ -510,5 +510,73 @@ function JobCard({
         )}
       </div>
     </article>
+  );
+}
+
+function MatchPopover({ breakdown }: { breakdown: MatchBreakdown }) {
+  const rows = [
+    { key: "Skills", data: breakdown.skills, icon: <Sparkles className="h-3.5 w-3.5" /> },
+    { key: "Keywords", data: breakdown.keywords, icon: <CircleDot className="h-3.5 w-3.5" /> },
+    { key: "Seniority", data: breakdown.seniority, icon: <Briefcase className="h-3.5 w-3.5" /> },
+    { key: "Title", data: breakdown.title, icon: <Check className="h-3.5 w-3.5" /> },
+  ] as const;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground transition"
+          aria-label="Why this match score?"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold">Match {breakdown.score}%</p>
+            <p className="text-[11px] text-muted-foreground">How your resume stacks up</p>
+          </div>
+        </div>
+        <div className="space-y-2.5">
+          {rows.map(({ key, data, icon }) => {
+            const pct = Math.round((data.earned / data.weight) * 100);
+            return (
+              <div key={key}>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="inline-flex items-center gap-1.5 font-medium">{icon}{key}</span>
+                  <span className="text-muted-foreground">{data.earned}/{data.weight}</span>
+                </div>
+                <Progress value={pct} className="h-1 mt-1" />
+              </div>
+            );
+          })}
+        </div>
+        <div className="border-t pt-3 space-y-2 text-[11px] leading-relaxed">
+          {breakdown.skills.matched.length > 0 && (
+            <p>
+              <span className="font-medium text-foreground">Matched skills:</span>{" "}
+              <span className="text-muted-foreground">{breakdown.skills.matched.slice(0, 6).join(", ")}</span>
+            </p>
+          )}
+          {breakdown.skills.missing.length > 0 && (
+            <p>
+              <span className="font-medium text-foreground">Missing:</span>{" "}
+              <span className="text-muted-foreground">{breakdown.skills.missing.join(", ")}</span>
+            </p>
+          )}
+          <p>
+            <span className="font-medium text-foreground">Seniority:</span>{" "}
+            <span className="text-muted-foreground">
+              Job looks {describeLevel(breakdown.seniority.jobLevel)} · You're {describeLevel(breakdown.seniority.resumeLevel)}. {breakdown.seniority.note}
+            </span>
+          </p>
+          <p>
+            <span className="font-medium text-foreground">Title:</span>{" "}
+            <span className="text-muted-foreground">{breakdown.title.note}</span>
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
