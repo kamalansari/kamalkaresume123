@@ -981,9 +981,9 @@ function JobCard({ job, resume, onScore, onNova, onApply, liveScore, isSaved, on
             <div className="text-sm text-muted-foreground truncate">{job.company}</div>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <button type="button" onClick={onScore} className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold", tone)} title="Open live ATS match against selected resume">
-            <Gauge className="h-3 w-3" /> {score}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button type="button" onClick={onScore} className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap", tone)} title="Open live ATS match against selected resume">
+            <Gauge className="h-3 w-3" /> {score}% Match
           </button>
           <button
             type="button"
@@ -1049,13 +1049,13 @@ function JobCard({ job, resume, onScore, onNova, onApply, liveScore, isSaved, on
         </button>
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-border">
         <span className="text-xs text-muted-foreground">{job.postedAgo}</span>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={onNova}>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button size="sm" variant="outline" onClick={onNova} className="flex-1 sm:flex-none">
             <Sparkles className="h-3.5 w-3.5" /> Ask Nova
           </Button>
-          <Button size="sm" onClick={onApply} className="bg-[var(--navy-light)] text-white hover:opacity-95">
+          <Button size="sm" onClick={onApply} className="flex-1 sm:flex-none bg-[var(--navy-light)] text-white hover:opacity-95">
             Apply Now <ExternalLink className="h-3 w-3" />
           </Button>
         </div>
