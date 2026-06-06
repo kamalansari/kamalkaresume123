@@ -37,19 +37,16 @@ const ListInput = z.object({
   pageSize: z.number().min(5).max(50).optional().default(20),
 });
 
-function escapePostgrestFilterValue(value: string): string {
-  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-}
-
-function makeIlikePattern(value: string): string | null {
-  const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
-  if (!cleaned) return null;
-  return escapePostgrestFilterValue(`%${cleaned}%`);
-}
-
 export const listJobs = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ListInput.parse(input))
   .handler(async ({ data }) => {
+    const escapePostgrestFilterValue = (value: string): string =>
+      `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+    const makeIlikePattern = (value: string): string | null => {
+      const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+      if (!cleaned) return null;
+      return escapePostgrestFilterValue(`%${cleaned}%`);
+    };
     const { getServiceClient } = await import("@/lib/jobs.server");
     const supabase = getServiceClient();
     let q = supabase
