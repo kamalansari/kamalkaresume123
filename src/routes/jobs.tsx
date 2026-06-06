@@ -98,7 +98,24 @@ function JobsPage() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const profile = useMemo(() => buildResumeProfile(), []);
+  const [profileTick, setProfileTick] = useState(0);
+  const profile = useMemo(() => buildResumeProfile(), [profileTick, authed]);
+  const hasResumeData = profile.skills.length > 0 || profile.titles.length > 0;
+
+  useEffect(() => {
+    // Hydrate on mount (SSR has no localStorage) and react to cross-tab updates.
+    setProfileTick((t) => t + 1);
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key.startsWith("resume")) setProfileTick((t) => t + 1);
+    };
+    window.addEventListener("storage", onStorage);
+    const onFocus = () => setProfileTick((t) => t + 1);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
 
   const filters = { search, location, workMode, experience, minSalaryLpa: minSalary };
 
