@@ -923,7 +923,7 @@ function normalizeJobs(items: Job[]): Job[] {
   return items.map((job, index) => {
     const title = text(job.title, "Recommended Role");
     const tags = Array.isArray(job.tags) ? job.tags.filter(Boolean).map(String) : [];
-    const normalized = {
+    const normalized: Job = {
       id: text(job.id, `job_${index + 1}`),
       title,
       company: text(job.company, "Hiring company"),
@@ -931,8 +931,12 @@ function normalizeJobs(items: Job[]): Job[] {
       experience: text(job.experience, "Experience not specified"),
       salary: text(job.salary, "Not disclosed"),
       postedAgo: text(job.postedAgo, "Recently posted"),
+      postedAt: typeof job.postedAt === "number" ? job.postedAt : undefined,
       tags,
       jd: text(job.jd),
+      source: text(job.source, ""),
+      applyUrl: text(job.applyUrl, ""),
+      remote: !!job.remote,
     };
     return { ...normalized, jd: normalized.jd || getJobScoringText(normalized) };
   });
