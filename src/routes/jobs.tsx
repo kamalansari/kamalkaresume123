@@ -217,7 +217,7 @@ function JobsPage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-base sm:text-lg font-semibold truncate">Find Jobs</h1>
             <p className="text-xs text-muted-foreground">
-              {total > 0 ? `${total.toLocaleString()} live jobs` : "Live jobs from Adzuna"} · cached & refreshed every 6h
+              {total > 0 ? `${total.toLocaleString()} live jobs` : "Live jobs from Adzuna & Naukri"} · cached & refreshed every 6h
             </p>
           </div>
           <Button
@@ -298,6 +298,17 @@ function JobsPage() {
                   min={0} max={50} step={1}
                   className="mt-3"
                 />
+              </div>
+              <div>
+                <Label className="text-xs">Source</Label>
+                <Select value={source} onValueChange={(v) => setSource(v as "all" | "Adzuna" | "Naukri")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All sources</SelectItem>
+                    <SelectItem value="Adzuna">Adzuna</SelectItem>
+                    <SelectItem value="Naukri">Naukri</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="sm:col-span-4 flex justify-end">
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
