@@ -418,11 +418,12 @@ function EmptyState({
 }
 
 function JobCard({
-  job, score, saved, authed, onToggleSave,
+  job, score, breakdown, saved, authed, onToggleSave,
 }: {
-  job: JobRow; score: number; saved: boolean; authed: boolean; onToggleSave: () => void;
+  job: JobRow; score: number; breakdown: MatchBreakdown; saved: boolean; authed: boolean; onToggleSave: () => void;
 }) {
   const initial = (job.company_name ?? job.title).charAt(0).toUpperCase();
+  const tone = score >= 75 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-muted-foreground/50";
   return (
     <article className="group border rounded-xl p-5 bg-card hover:shadow-lg hover:border-primary/40 transition-all flex flex-col">
       <div className="flex items-start gap-3">
@@ -461,26 +462,37 @@ function JobCard({
 
       {job.skills.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {job.skills.slice(0, 5).map((s) => (
-            <span key={s} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-              {s}
-            </span>
-          ))}
+          {job.skills.slice(0, 5).map((s) => {
+            const hit = breakdown.skills.matched.includes(s.toLowerCase());
+            return (
+              <span
+                key={s}
+                className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full border",
+                  hit
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                    : "bg-muted text-muted-foreground border-transparent",
+                )}
+              >
+                {s}
+              </span>
+            );
+          })}
         </div>
       )}
 
       {score > 0 && (
         <div className="mt-3">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-medium text-foreground">Match {score}%</span>
+            <span className="font-medium text-foreground inline-flex items-center gap-1">
+              Match {score}%
+              <MatchPopover breakdown={breakdown} />
+            </span>
             <span className="text-muted-foreground">{timeAgo(job.created_date)}</span>
           </div>
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
             <div
-              className={cn(
-                "h-full rounded-full transition-all",
-                score >= 75 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-muted-foreground/50",
-              )}
+              className={cn("h-full rounded-full transition-all", tone)}
               style={{ width: `${score}%` }}
             />
           </div>
