@@ -1612,6 +1612,14 @@ export function Builder() {
       )}>
         {/* Editor */}
         <div className={cn("no-print", mobileView !== "editor" && "hidden lg:block")}>
+          {/* Resume Completion Progress */}
+          <div className="mb-3 rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-soft)]">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Resume Completion</span>
+              <span className="text-xs font-semibold text-primary">{getCompletionPercent(data)}%</span>
+            </div>
+            <Progress value={getCompletionPercent(data)} className="h-2" />
+          </div>
           <Tabs defaultValue="basics" className="w-full">
             <div className="sticky top-16 z-10 -mx-1 px-1 pb-2 pt-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
               <TabsList
