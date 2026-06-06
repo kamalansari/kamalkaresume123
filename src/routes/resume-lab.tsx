@@ -21,9 +21,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { resumeStore, newId } from "@/components/builder/resumeStore";
-import { defaultResume, type ResumeData, type Experience } from "@/components/builder/types";
+import { defaultResume, type ResumeData, type Experience, type TemplateId } from "@/components/builder/types";
 import { computeScore } from "@/components/builder/atsScore";
 import { ResumeDocument } from "@/components/builder/ResumeDocument";
+import { TemplatesPopover } from "@/components/builder/BuilderTopToolbar";
 import { exportDocx } from "@/components/builder/exportDocx";
 import { normalizeBulletText, splitBulletLines } from "@/lib/resumeText";
 import { extractResumeText } from "@/lib/importResume";
