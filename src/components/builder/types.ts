@@ -161,6 +161,9 @@ export type ResumeData = {
   sectionOrder: SectionId[];
   justifyText: boolean;
   boldBody: boolean;
+  // Per-section text alignment overrides. Fall back to justifyText when unset.
+  summaryAlign?: "left" | "justify" | "center";
+  experienceAlign?: "left" | "justify" | "center";
   customSections: CustomSection[];
   // Body line-height (unitless) and gap (px) between top-level sections.
   // Controls both the on-screen preview and printed PDF/DOCX output.
