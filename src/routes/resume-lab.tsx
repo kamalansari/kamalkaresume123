@@ -627,18 +627,47 @@ function mergeExperience(base: Experience[], next?: { title?: string; company?: 
   }));
 }
 
-// AI sometimes returns skills as an array, as a single mashed string, or
-// separated only by bullet glyphs. Normalize to a comma-separated string so
-// parseSkills() in the builder splits them correctly.
+// AI sometimes returns skills as an array, an object of {category: items},
+// an array of {heading, items}, or a single string. Normalize to a string
+// that parseSkillGroups() understands: categorized lines are kept as
+// "Heading: a, b, c" separated by newlines; flat lists become a single
+// comma-separated line.
 function normalizeSkills(input: unknown): string {
+  if (input == null) return "";
+  // Array of category objects: [{ heading, items: [] }, ...]
+  if (Array.isArray(input) && input.length > 0 && typeof input[0] === "object" && input[0] !== null && !Array.isArray(input[0])) {
+    const lines: string[] = [];
+    for (const entry of input as Array<Record<string, unknown>>) {
+      const heading = String(entry.heading ?? entry.category ?? entry.name ?? "").trim();
+      const itemsRaw = entry.items ?? entry.skills ?? entry.values ?? [];
+      const items = Array.isArray(itemsRaw)
+        ? itemsRaw.map((s) => String(s).trim()).filter(Boolean)
+        : String(itemsRaw).split(/[,|\u2022•·]/g).map((s) => s.trim()).filter(Boolean);
+      if (!items.length) continue;
+      lines.push(heading ? `${heading}: ${items.join(", ")}` : items.join(", "));
+    }
+    return lines.join("\n");
+  }
+  // Plain object of { category: items }
+  if (!Array.isArray(input) && typeof input === "object") {
+    const lines: string[] = [];
+    for (const [heading, value] of Object.entries(input as Record<string, unknown>)) {
+      const items = Array.isArray(value)
+        ? value.map((s) => String(s).trim()).filter(Boolean)
+        : String(value).split(/[,|\u2022•·]/g).map((s) => s.trim()).filter(Boolean);
+      if (!items.length) continue;
+      lines.push(`${heading.trim()}: ${items.join(", ")}`);
+    }
+    return lines.join("\n");
+  }
   if (Array.isArray(input)) {
     return input.map((s) => String(s).trim()).filter(Boolean).join(", ");
   }
   if (typeof input !== "string") return "";
   const s = input.trim();
   if (!s) return "";
+  // Preserve newlines (categorized format) and commas/pipes (flat lists).
   if (/[,|\n]/.test(s)) return s;
-  // Split on bullet glyphs / middots if present
   if (/[\u2022•·]/.test(s)) {
     return s.split(/[\u2022•·]+/).map((p) => p.trim()).filter(Boolean).join(", ");
   }
