@@ -12,6 +12,7 @@ import { useSkillDictVersion } from "@/lib/skillDictionaryStore";
 import type { ResumeData } from "./types";
 import { AtsDebugPanel } from "./AtsDebugPanel";
 import { authFetch } from "@/lib/authFetch";
+import { autoActionVerbsDetailed, loadCustomVerbs } from "./ExperienceSection";
 
 type Tab = "resume" | "ats" | "nova";
 
