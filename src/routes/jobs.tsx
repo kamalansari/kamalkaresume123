@@ -317,8 +317,13 @@ function JobsPage() {
     }
   };
 
+  const applyToJob = (job: Job) => {
+    const url = job.applyUrl || naukriUrl(job.title);
+    window.open(url, "_blank", "noreferrer");
+  };
+
   const openNaukriAndClose = () => {
-    if (applyJob) window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
+    if (applyJob) applyToJob(applyJob);
     setApplyJob(null);
   };
 
