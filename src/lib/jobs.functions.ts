@@ -172,22 +172,21 @@ export type ProviderStatus = {
   count: number;
 };
 
-function isRapidApiSubscriptionError(status: number, body: string): boolean {
-  const text = body.toLowerCase();
-  return (
-    status === 403 ||
-    status === 429 ||
-    text.includes("not subscribed") ||
-    text.includes("not subscribe") ||
-    text.includes("you are not subscribed") ||
-    text.includes("subscribe to this api") ||
-    text.includes("not authorized to access this api")
-  );
-}
-
 export const getProviderStatus = createServerFn({ method: "POST" })
   .inputValidator(() => ({}))
   .handler(async () => {
+    const isRapidApiSubscriptionError = (status: number, body: string): boolean => {
+      const text = body.toLowerCase();
+      return (
+        status === 403 ||
+        status === 429 ||
+        text.includes("not subscribed") ||
+        text.includes("not subscribe") ||
+        text.includes("you are not subscribed") ||
+        text.includes("subscribe to this api") ||
+        text.includes("not authorized to access this api")
+      );
+    };
     const { getServiceClient } = await import("@/lib/jobs.server");
     const supabase = getServiceClient();
 
