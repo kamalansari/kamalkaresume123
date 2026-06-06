@@ -86,14 +86,32 @@ function sourceBadgeClass(source: string): string {
   }
 }
 
+const FILTERS_STORAGE_KEY = "jobs.filters.v1";
+type StoredFilters = {
+  search: string;
+  location: string;
+  workMode: WorkMode;
+  experience: ExpId;
+  minSalary: number;
+  source: SourceFilter;
+};
+function loadStoredFilters(): Partial<StoredFilters> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(FILTERS_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Partial<StoredFilters>) : {};
+  } catch { return {}; }
+}
+
 function JobsPage() {
+  const initial = loadStoredFilters();
   const [authed, setAuthed] = useState<boolean>(false);
-  const [search, setSearch] = useState("");
-  const [location, setLocation] = useState("");
-  const [workMode, setWorkMode] = useState<WorkMode>("any");
-  const [experience, setExperience] = useState<ExpId>("any");
-  const [minSalary, setMinSalary] = useState<number>(0);
-  const [source, setSource] = useState<SourceFilter>("all");
+  const [search, setSearch] = useState(initial.search ?? "");
+  const [location, setLocation] = useState(initial.location ?? "");
+  const [workMode, setWorkMode] = useState<WorkMode>(initial.workMode ?? "any");
+  const [experience, setExperience] = useState<ExpId>(initial.experience ?? "any");
+  const [minSalary, setMinSalary] = useState<number>(initial.minSalary ?? 0);
+  const [source, setSource] = useState<SourceFilter>(initial.source ?? "all");
   const [showFilters, setShowFilters] = useState(false);
   const [tab, setTab] = useState<"all" | "saved">("all");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
