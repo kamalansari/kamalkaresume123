@@ -27,6 +27,75 @@ export const TARGET_CITIES = [
   "Remote",
 ];
 
+// ───────────────────────── Retry helper ─────────────────────────
+// Exponential backoff with jitter for transient failures (network errors, 5xx, 408, 429).
+// Non-retryable: 4xx (except 408/429) and explicit "non_retryable" errors.
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+export type RetryOpts = {
+  retries?: number;       // number of retry attempts after the initial try (default 3)
+  baseDelayMs?: number;   // initial backoff (default 400ms)
+  maxDelayMs?: number;    // cap on backoff (default 4000ms)
+  label?: string;         // for log lines
+  shouldRetry?: (err: unknown, attempt: number) => boolean;
+};
+
+export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOpts = {}): Promise<T> {
+  const retries = opts.retries ?? 3;
+  const base = opts.baseDelayMs ?? 400;
+  const max = opts.maxDelayMs ?? 4000;
+  const label = opts.label ?? "op";
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const retryable = opts.shouldRetry ? opts.shouldRetry(err, attempt) : true;
+      if (!retryable || attempt === retries) break;
+      const expo = Math.min(max, base * 2 ** attempt);
+      const delay = Math.round(expo * (0.5 + Math.random() * 0.5)); // jitter 50-100%
+      console.warn(`[retry] ${label} attempt ${attempt + 1}/${retries + 1} failed: ${(err as Error).message}. retrying in ${delay}ms`);
+      await sleep(delay);
+    }
+  }
+  throw lastErr;
+}
+
+class NonRetryableError extends Error {
+  constructor(message: string) { super(message); this.name = "NonRetryableError"; }
+}
+
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit & { timeoutMs?: number } = {},
+  opts: RetryOpts = {},
+): Promise<Response> {
+  const { timeoutMs = 15000, ...rest } = init;
+  return withRetry(async () => {
+    const res = await fetch(url, { ...rest, signal: AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) {
+      const status = res.status;
+      // Read body once for both error inspection and re-exposure to caller via clone.
+      const bodyText = await res.clone().text();
+      const transient = status >= 500 || status === 408 || status === 429;
+      // 429 may be either rate-limit (retry) or subscription error (don't retry).
+      if (status === 429 && isRapidApiSubscriptionError(status, bodyText)) {
+        throw new NonRetryableError(`HTTP ${status}: ${bodyText.slice(0, 200)}`);
+      }
+      if (!transient) {
+        throw new NonRetryableError(`HTTP ${status}: ${bodyText.slice(0, 200)}`);
+      }
+      throw new Error(`HTTP ${status}: ${bodyText.slice(0, 200)}`);
+    }
+    return res;
+  }, {
+    ...opts,
+    shouldRetry: (err) => !(err instanceof NonRetryableError),
+  });
+}
+
 type AdzunaJob = {
   id: string;
   title: string;
@@ -99,14 +168,14 @@ async function callAdzuna(
   if (where && where.toLowerCase() !== "remote") params.set("where", where);
   if (where && where.toLowerCase() === "remote") params.set("what_or", `${query} remote`);
   const url = `https://api.adzuna.com/v1/api/jobs/in/search/${page}?${params.toString()}`;
-  const res = await fetch(url, { headers: { accept: "application/json" } });
-  if (!res.ok) {
-    const body = (await res.text()).slice(0, 200);
-    console.warn(`[adzuna] ${res.status} ${query} @ ${where}: ${body}`);
+  try {
+    const res = await fetchWithRetry(url, { headers: { accept: "application/json" }, timeoutMs: 10000 }, { label: `adzuna ${query}@${where}` });
+    const data = (await res.json()) as AdzunaResponse;
+    return data.results ?? [];
+  } catch (e) {
+    console.warn(`[adzuna] ${query} @ ${where}: ${(e as Error).message}`);
     return [];
   }
-  const data = (await res.json()) as AdzunaResponse;
-  return data.results ?? [];
 }
 
 type UpsertRow = Database["public"]["Tables"]["jobs"]["Insert"];
@@ -302,23 +371,25 @@ async function callJSearch(
     date_posted: "month",
   });
   const url = `https://jsearch.p.rapidapi.com/search?${params.toString()}`;
-  const res = await fetch(url, {
-    headers: {
-      "X-RapidAPI-Key": rapidKey,
-      "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
-      accept: "application/json",
-    },
-  });
-  if (!res.ok) {
-    const body = (await res.text()).slice(0, 200);
-    if (isRapidApiSubscriptionError(res.status, body)) {
+  try {
+    const res = await fetchWithRetry(url, {
+      headers: {
+        "X-RapidAPI-Key": rapidKey,
+        "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
+        accept: "application/json",
+      },
+      timeoutMs: 15000,
+    }, { label: `jsearch ${query} p${page}` });
+    const data = (await res.json()) as JSearchResponse;
+    return data.data ?? [];
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (isRapidApiSubscriptionError(0, msg) || msg.toLowerCase().includes("not subscribed")) {
       throw new Error("JSearch subscription required on RapidAPI");
     }
-    console.warn(`[jsearch] ${res.status} ${query} p${page}: ${body}`);
+    console.warn(`[jsearch] ${query} p${page}: ${msg}`);
     return [];
   }
-  const data = (await res.json()) as JSearchResponse;
-  return data.data ?? [];
 }
 
 function jsearchToRow(job: JSearchJob, pub: PublisherConfig): UpsertRow {
