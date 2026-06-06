@@ -118,7 +118,7 @@ function JobsPage() {
     };
   }, []);
 
-  const filters = { search, location, workMode, experience, minSalaryLpa: minSalary };
+  const filters = { search, location, workMode, experience, minSalaryLpa: minSalary, source };
 
   const jobsQuery = useInfiniteQuery({
     queryKey: ["jobs", filters],
