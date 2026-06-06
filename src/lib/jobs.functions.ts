@@ -28,6 +28,7 @@ export type JobRow = {
 const ListInput = z.object({
   search: z.string().max(200).optional().default(""),
   location: z.string().max(200).optional().default(""),
+  company: z.string().max(200).optional().default(""),
   workMode: z.enum(["any", "remote", "hybrid", "onsite"]).optional().default("any"),
   experience: z.enum(["any", "fresher", "1-3", "3-5", "5-8", "8+"]).optional().default("any"),
   minSalaryLpa: z.number().min(0).max(200).optional().default(0),
