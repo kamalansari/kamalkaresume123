@@ -109,6 +109,7 @@ function JobsPage() {
   const [authed, setAuthed] = useState<boolean>(false);
   const [search, setSearch] = useState(initial.search ?? "");
   const [location, setLocation] = useState(initial.location ?? "");
+  const [company, setCompany] = useState(initial.company ?? "");
   const [workMode, setWorkMode] = useState<WorkMode>(initial.workMode ?? "any");
   const [experience, setExperience] = useState<ExpId>(initial.experience ?? "any");
   const [minSalary, setMinSalary] = useState<number>(initial.minSalary ?? 0);
