@@ -22,12 +22,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Search } from "lucide-react";
-import { toast } from "sonner";
-import lzString from "lz-string";
-import type { ResumeData } from "../types";
 import { cn } from "@/lib/utils";
-
-const { compressToEncodedURIComponent } = lzString;
 
 type Props = {
   name: string;
