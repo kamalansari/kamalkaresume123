@@ -72,6 +72,7 @@ function ResumeLabPage() {
   const [dragOver, setDragOver] = useState(false);
   const [applyPromptOpen, setApplyPromptOpen] = useState(false);
   const [savedResumeName, setSavedResumeName] = useState("");
+  const [templateOverride, setTemplateOverride] = useState<TemplateId | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
