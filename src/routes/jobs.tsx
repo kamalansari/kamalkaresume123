@@ -40,7 +40,16 @@ type Job = {
   source?: string;
   applyUrl?: string;
   remote?: boolean;
+  logo?: string;
 };
+
+type SourceTab = "all" | "linkedin" | "naukri" | "career";
+const SOURCE_TABS: { id: SourceTab; label: string; match: (src: string) => boolean }[] = [
+  { id: "linkedin", label: "LinkedIn", match: s => /linkedin/i.test(s) },
+  { id: "naukri", label: "Naukri", match: s => /naukri/i.test(s) },
+  { id: "career", label: "Career Pages", match: s => /company\s*website|career|employer/i.test(s) },
+  { id: "all", label: "AI Mode", match: () => true },
+];
 
 const CACHE_KEY = "rf:jobsCache:v2";
 const PAGE_SIZE = 20;
