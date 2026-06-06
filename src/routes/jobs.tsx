@@ -103,6 +103,11 @@ function JobsPage() {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [activeRoleTab, setActiveRoleTab] = useState("Data Analyst");
   const [scoreJob, setScoreJob] = useState<Job | null>(null);
   const [scoreResume, setScoreResume] = useState<ResumeData | null>(null);
@@ -118,6 +123,7 @@ function JobsPage() {
   const [applySavedResume, setApplySavedResume] = useState<SavedResume | null>(null);
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(() => loadSavedJobIds());
   const navigate = useNavigate();
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Client-side filter state for recommended-jobs panel
   const [roleFilter, setRoleFilter] = useState<Set<string>>(new Set());
