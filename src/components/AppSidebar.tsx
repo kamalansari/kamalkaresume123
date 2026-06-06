@@ -1,4 +1,4 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate, type LinkProps } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   FileStack,
