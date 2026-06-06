@@ -866,7 +866,7 @@ function JobsPage() {
               Edit in builder
             </Button>
             <Button onClick={openNaukriAndClose} className="bg-[var(--navy-light)] text-white hover:opacity-95">
-              <ExternalLink className="h-3.5 w-3.5" /> Yes, apply on Naukri
+              <ExternalLink className="h-3.5 w-3.5" /> Apply on {applyJob?.source || "source"}
             </Button>
           </>)}
           </DialogFooter>
