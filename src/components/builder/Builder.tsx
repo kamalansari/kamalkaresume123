@@ -1421,8 +1421,6 @@ export function Builder() {
         onZoom={setPreviewZoom}
         previewOnly={!inlineEdit}
         onTogglePreview={() => setInlineEdit(v => !v)}
-        onPdf={printCurrentResume}
-        getData={() => data}
       />
 
 
