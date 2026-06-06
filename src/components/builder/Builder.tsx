@@ -48,7 +48,8 @@ import { SelectionFormatToolbar } from "./SelectionFormatToolbar";
 import { ExperienceSection, autoActionVerbs, autoActionVerbsDetailed, loadCustomVerbs } from "./ExperienceSection";
 import lzString from "lz-string";
 const { decompressFromEncodedURIComponent } = lzString;
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
@@ -2086,7 +2087,11 @@ export function Builder() {
                   <Gauge className="h-4 w-4" /> Open ATS analysis · {score.score}
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-0">
+              <SheetContent side="right" id="ats-sheet" aria-labelledby="ats-sheet-title" aria-describedby="ats-sheet-desc" className="w-full sm:max-w-md overflow-y-auto p-0">
+                <VisuallyHidden>
+                  <SheetTitle id="ats-sheet-title">ATS analysis</SheetTitle>
+                  <SheetDescription id="ats-sheet-desc">Review your resume's ATS score, keyword matches, and recommended improvements.</SheetDescription>
+                </VisuallyHidden>
                 <div className="p-4">
                   <AtsPanel
                     data={data}
@@ -2215,77 +2220,103 @@ export function Builder() {
       <nav
         className="no-print lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-[env(safe-area-inset-bottom)]"
         aria-label="Builder mobile navigation"
+        role="navigation"
       >
-        <div className="grid grid-cols-5 h-[64px]">
+        <ul className="grid grid-cols-5 h-[64px]" role="list">
           {[
-            { id: "editor" as const, label: "Resume", icon: Pencil, onClick: () => setMobileView("editor"), active: mobileView === "editor" },
-            { id: "preview" as const, label: "Preview", icon: Eye, onClick: () => { setMobileView("preview"); requestAnimationFrame(() => document.getElementById("resume-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })); }, active: mobileView === "preview" },
-            { id: "ats" as const, label: `ATS · ${score.score}`, icon: Gauge, onClick: () => setAtsSheetOpen(true), active: atsSheetOpen },
-            { id: "ai" as const, label: "AI", icon: Sparkles, onClick: () => window.dispatchEvent(new CustomEvent(AI_ASSISTANT_OPEN_EVENT)), active: false },
-            { id: "settings" as const, label: "Settings", icon: LayoutTemplate, onClick: () => setSettingsSheetOpen(true), active: settingsSheetOpen },
+            { id: "editor" as const, label: "Resume", ariaLabel: "Edit resume", icon: Pencil, onClick: () => setMobileView("editor"), active: mobileView === "editor", controls: undefined, expanded: undefined },
+            { id: "preview" as const, label: "Preview", ariaLabel: "Preview resume", icon: Eye, onClick: () => { setMobileView("preview"); requestAnimationFrame(() => document.getElementById("resume-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })); }, active: mobileView === "preview", controls: "resume-preview", expanded: undefined },
+            { id: "ats" as const, label: `ATS · ${score.score}`, ariaLabel: `Open ATS panel, current score ${score.score} out of 100`, icon: Gauge, onClick: () => setAtsSheetOpen(true), active: atsSheetOpen, controls: "ats-sheet", expanded: atsSheetOpen },
+            { id: "ai" as const, label: "AI", ariaLabel: "Open AI assistant", icon: Sparkles, onClick: () => window.dispatchEvent(new CustomEvent(AI_ASSISTANT_OPEN_EVENT)), active: false, controls: undefined, expanded: undefined },
+            { id: "settings" as const, label: "Settings", ariaLabel: "Open builder settings", icon: LayoutTemplate, onClick: () => setSettingsSheetOpen(true), active: settingsSheetOpen, controls: "settings-sheet", expanded: settingsSheetOpen },
           ].map(item => (
-            <button
-              key={item.id}
-              onClick={item.onClick}
-              className={cn(
-                "flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors",
-                item.active ? "text-[var(--navy-light)]" : "text-muted-foreground hover:text-foreground"
-              )}
-              aria-pressed={item.active}
-            >
-              <item.icon className="h-[18px] w-[18px]" />
-              <span className="leading-none">{item.label}</span>
-            </button>
+            <li key={item.id} className="contents">
+              <button
+                type="button"
+                onClick={item.onClick}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors min-h-11",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                  item.active ? "text-[var(--navy-light)]" : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-label={item.ariaLabel}
+                aria-current={item.active ? "page" : undefined}
+                aria-haspopup={item.controls ? "dialog" : undefined}
+                aria-expanded={item.expanded}
+                aria-controls={item.controls}
+              >
+                <item.icon className="h-[18px] w-[18px]" aria-hidden="true" />
+                <span className="leading-none">{item.label}</span>
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       </nav>
 
       {/* Mobile Settings sheet — surfaces template/style/sections/history actions. */}
       <Sheet open={settingsSheetOpen} onOpenChange={setSettingsSheetOpen}>
-        <SheetContent side="bottom" className="lg:hidden h-auto max-h-[80vh] overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+16px)]">
-          <div className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-3">
+        <SheetContent
+          side="bottom"
+          id="settings-sheet"
+          className="lg:hidden h-auto max-h-[80vh] overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+16px)]"
+          aria-labelledby="settings-sheet-title"
+          aria-describedby="settings-sheet-desc"
+        >
+          <SheetTitle id="settings-sheet-title" className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-3">
             Builder settings
-          </div>
-          <div className="grid grid-cols-2 gap-2">
+          </SheetTitle>
+          <VisuallyHidden>
+            <SheetDescription id="settings-sheet-desc">
+              Quick actions for templates, version history, saving and exporting your resume.
+            </SheetDescription>
+          </VisuallyHidden>
+          <div className="grid grid-cols-2 gap-2" role="group" aria-label="Builder actions">
             <button
+              type="button"
               onClick={() => { setSettingsSheetOpen(false); openMobileTemplates(); }}
-              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-11"
             >
-              <LayoutTemplate className="h-4 w-4" /> Templates
+              <LayoutTemplate className="h-4 w-4" aria-hidden="true" /> Templates
             </button>
             <button
+              type="button"
               onClick={() => { setSettingsSheetOpen(false); setHistoryOpen(true); }}
-              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-11"
             >
-              <HistoryIcon className="h-4 w-4" /> History
+              <HistoryIcon className="h-4 w-4" aria-hidden="true" /> History
             </button>
             <button
+              type="button"
               onClick={() => { setSettingsSheetOpen(false); saveCurrent(); }}
-              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-11"
             >
-              <Save className="h-4 w-4" /> Save
+              <Save className="h-4 w-4" aria-hidden="true" /> Save
             </button>
             <button
+              type="button"
               onClick={() => { setSettingsSheetOpen(false); setNameDraft(currentName); setSaveAsOpen(true); }}
-              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-11"
             >
-              <FilePlus2 className="h-4 w-4" /> Save as new
+              <FilePlus2 className="h-4 w-4" aria-hidden="true" /> Save as new
             </button>
             <button
+              type="button"
               onClick={() => { setSettingsSheetOpen(false); printCurrentResume(); }}
-              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-11"
             >
-              <FileText className="h-4 w-4" /> Download PDF
+              <FileText className="h-4 w-4" aria-hidden="true" /> Download PDF
             </button>
             <button
+              type="button"
               onClick={() => { setSettingsSheetOpen(false); handleDocx(); }}
-              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-11"
             >
-              <FileType className="h-4 w-4" /> Download DOCX
+              <FileType className="h-4 w-4" aria-hidden="true" /> Download DOCX
             </button>
           </div>
         </SheetContent>
       </Sheet>
+
 
       <AiAssistantDock data={data} atsScore={score.score} />
     </div>
