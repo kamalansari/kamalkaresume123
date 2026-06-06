@@ -513,23 +513,22 @@ function JobCard({
         </div>
       )}
 
-      {score > 0 && (
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-medium text-foreground inline-flex items-center gap-1">
-              Match {score}%
-              <MatchPopover breakdown={breakdown} />
-            </span>
-            <span className="text-muted-foreground">{timeAgo(job.created_date)}</span>
-          </div>
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className={cn("h-full rounded-full transition-all", tone)}
-              style={{ width: `${score}%` }}
-            />
-          </div>
+      <div className="mt-3">
+        <div className="flex items-center justify-between text-xs mb-1">
+          <span className="font-medium text-foreground inline-flex items-center gap-1">
+            Match {score}%
+            <MatchPopover breakdown={breakdown} />
+          </span>
+          <span className="text-muted-foreground">{timeAgo(job.created_date)}</span>
         </div>
-      )}
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className={cn("h-full rounded-full transition-all", tone)}
+            style={{ width: `${Math.max(score, 2)}%` }}
+          />
+        </div>
+      </div>
+
 
       <div className="mt-auto pt-4 flex items-center gap-2">
         <Button asChild size="sm" className="flex-1">
