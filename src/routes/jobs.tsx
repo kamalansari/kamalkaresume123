@@ -512,3 +512,71 @@ function JobCard({
     </article>
   );
 }
+
+function MatchPopover({ breakdown }: { breakdown: MatchBreakdown }) {
+  const rows = [
+    { key: "Skills", data: breakdown.skills, icon: <Sparkles className="h-3.5 w-3.5" /> },
+    { key: "Keywords", data: breakdown.keywords, icon: <CircleDot className="h-3.5 w-3.5" /> },
+    { key: "Seniority", data: breakdown.seniority, icon: <Briefcase className="h-3.5 w-3.5" /> },
+    { key: "Title", data: breakdown.title, icon: <Check className="h-3.5 w-3.5" /> },
+  ] as const;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground transition"
+          aria-label="Why this match score?"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold">Match {breakdown.score}%</p>
+            <p className="text-[11px] text-muted-foreground">How your resume stacks up</p>
+          </div>
+        </div>
+        <div className="space-y-2.5">
+          {rows.map(({ key, data, icon }) => {
+            const pct = Math.round((data.earned / data.weight) * 100);
+            return (
+              <div key={key}>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="inline-flex items-center gap-1.5 font-medium">{icon}{key}</span>
+                  <span className="text-muted-foreground">{data.earned}/{data.weight}</span>
+                </div>
+                <Progress value={pct} className="h-1 mt-1" />
+              </div>
+            );
+          })}
+        </div>
+        <div className="border-t pt-3 space-y-2 text-[11px] leading-relaxed">
+          {breakdown.skills.matched.length > 0 && (
+            <p>
+              <span className="font-medium text-foreground">Matched skills:</span>{" "}
+              <span className="text-muted-foreground">{breakdown.skills.matched.slice(0, 6).join(", ")}</span>
+            </p>
+          )}
+          {breakdown.skills.missing.length > 0 && (
+            <p>
+              <span className="font-medium text-foreground">Missing:</span>{" "}
+              <span className="text-muted-foreground">{breakdown.skills.missing.join(", ")}</span>
+            </p>
+          )}
+          <p>
+            <span className="font-medium text-foreground">Seniority:</span>{" "}
+            <span className="text-muted-foreground">
+              Job looks {describeLevel(breakdown.seniority.jobLevel)} · You're {describeLevel(breakdown.seniority.resumeLevel)}. {breakdown.seniority.note}
+            </span>
+          </p>
+          <p>
+            <span className="font-medium text-foreground">Title:</span>{" "}
+            <span className="text-muted-foreground">{breakdown.title.note}</span>
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
