@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Mail, Copy, Download, Loader2, Sparkles } from "lucide-react";
+import { Mail, Copy, Download, Loader2, Sparkles, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { resumeStore, type SavedResume } from "@/components/builder/resumeStore";
 import type { ResumeData } from "@/components/builder/types";
 import { splitBulletLines } from "@/lib/resumeText";
-import { generateCoverLetter } from "@/lib/coverLetter.functions";
+import { generateCoverLetter, generateCoverLetterVariations } from "@/lib/coverLetter.functions";
 
 export const Route = createFileRoute("/cover-letter")({
   head: () => ({
@@ -60,18 +60,28 @@ function resumeToPlainText(r: ResumeData): string {
   return lines.filter((l) => l !== undefined).join("\n").trim();
 }
 
+interface Variation {
+  tone: string;
+  letter: string;
+  error?: string;
+}
+
 function CoverLetterPage() {
   const generate = useServerFn(generateCoverLetter);
+  const generateVariations = useServerFn(generateCoverLetterVariations);
   const [resumes, setResumes] = useState<SavedResume[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [jobDescription, setJobDescription] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
   const [hiringManager, setHiringManager] = useState("");
-  const [tone, setTone] = useState<"professional" | "friendly" | "enthusiastic" | "concise">("professional");
+  const [tone, setTone] = useState<"professional" | "friendly" | "enthusiastic" | "concise" | "confident">("professional");
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
   const [letter, setLetter] = useState("");
+  const [variations, setVariations] = useState<Variation[]>([]);
+  const [activeVariation, setActiveVariation] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"single" | "variations">("single");
 
   useEffect(() => {
     const list = resumeStore.list();
@@ -85,19 +95,25 @@ function CoverLetterPage() {
     [resumes, selectedId],
   );
 
-  const onGenerate = async () => {
+  const validateInputs = () => {
     if (!selectedResume) {
       toast.error("Pick a resume first. Create one in the Builder.");
-      return;
+      return false;
     }
     if (jobDescription.trim().length < 20) {
       toast.error("Paste a job description (at least 20 characters).");
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const onGenerate = async () => {
+    if (!validateInputs()) return;
     setLoading(true);
     setLetter("");
+    setMode("single");
     try {
-      const resumeText = resumeToPlainText(selectedResume.data);
+      const resumeText = resumeToPlainText(selectedResume!.data);
       const res = await generate({
         data: {
           resumeText,
@@ -119,24 +135,62 @@ function CoverLetterPage() {
     }
   };
 
-  const onCopy = async () => {
-    if (!letter) return;
-    await navigator.clipboard.writeText(letter);
+  const onGenerateVariations = async () => {
+    if (!validateInputs()) return;
+    setLoading(true);
+    setLetter("");
+    setVariations([]);
+    setMode("variations");
+    try {
+      const resumeText = resumeToPlainText(selectedResume!.data);
+      const res = await generateVariations({
+        data: {
+          resumeText,
+          jobDescription: jobDescription.trim(),
+          jobTitle: jobTitle.trim(),
+          company: company.trim(),
+          hiringManager: hiringManager.trim(),
+          length,
+        },
+      });
+      setVariations(res.variations);
+      setActiveVariation(0);
+      toast.success("3 variations generated");
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Failed to generate variations.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onCopy = async (text: string) => {
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
   };
 
-  const onDownload = () => {
-    if (!letter) return;
-    const blob = new Blob([letter], { type: "text/plain;charset=utf-8" });
+  const onDownload = (text: string, suffix: string) => {
+    if (!text) return;
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const safe = (company || jobTitle || "cover-letter").replace(/[^a-z0-9-_]+/gi, "-").toLowerCase();
     a.href = url;
-    a.download = `${safe}-cover-letter.txt`;
+    a.download = `${safe}-${suffix}.txt`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+  };
+
+  const toneLabel = (t: string) => {
+    switch (t) {
+      case "professional": return "Formal";
+      case "friendly": return "Friendly";
+      case "confident": return "Confident";
+      default: return t.charAt(0).toUpperCase() + t.slice(1);
+    }
   };
 
   return (
@@ -195,6 +249,7 @@ function CoverLetterPage() {
                   <SelectItem value="friendly">Friendly</SelectItem>
                   <SelectItem value="enthusiastic">Enthusiastic</SelectItem>
                   <SelectItem value="concise">Concise</SelectItem>
+                  <SelectItem value="confident">Confident</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -222,32 +277,87 @@ function CoverLetterPage() {
             />
           </div>
 
-          <Button onClick={onGenerate} disabled={loading} className="w-full">
-            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-            {loading ? "Generating…" : "Generate cover letter"}
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button onClick={onGenerate} disabled={loading} className="w-full">
+              {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+              {loading ? "Generating…" : "Generate cover letter"}
+            </Button>
+            <Button onClick={onGenerateVariations} disabled={loading} variant="outline" className="w-full">
+              {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+              {loading ? "Generating…" : "Generate 3 variations (Formal, Friendly, Confident)"}
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label>Result</Label>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={onCopy} disabled={!letter}>
-                <Copy className="h-4 w-4 mr-1" /> Copy
-              </Button>
-              <Button size="sm" variant="outline" onClick={onDownload} disabled={!letter}>
-                <Download className="h-4 w-4 mr-1" /> Download
-              </Button>
-            </div>
-          </div>
-          <Textarea
-            value={letter}
-            onChange={(e) => setLetter(e.target.value)}
-            placeholder="Your tailored cover letter will appear here. You can edit it before copying."
-            className="min-h-[520px] font-serif leading-relaxed"
-          />
+          {mode === "variations" && variations.length > 0 ? (
+            <>
+              <div className="flex items-center justify-between">
+                <Label>Variations</Label>
+              </div>
+              <div className="flex gap-1">
+                {variations.map((v, i) => (
+                  <button
+                    key={v.tone}
+                    onClick={() => setActiveVariation(i)}
+                    className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                      i === activeVariation
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted hover:bg-muted/80"
+                    }`}
+                  >
+                    {toneLabel(v.tone)}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-2">
+                {variations.map((v, i) => (
+                  <div key={v.tone} className={i === activeVariation ? "block" : "hidden"}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-muted-foreground">{toneLabel(v.tone)}</span>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => onCopy(v.letter)} disabled={!v.letter}>
+                          <Copy className="h-4 w-4 mr-1" /> Copy
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => onDownload(v.letter, v.tone)} disabled={!v.letter}>
+                          <Download className="h-4 w-4 mr-1" /> Download
+                        </Button>
+                      </div>
+                    </div>
+                    <Textarea
+                      value={v.letter}
+                      readOnly
+                      placeholder={`${toneLabel(v.tone)} variation will appear here…`}
+                      className="min-h-[520px] font-serif leading-relaxed"
+                    />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <Label>Result</Label>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => onCopy(letter)} disabled={!letter}>
+                    <Copy className="h-4 w-4 mr-1" /> Copy
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => onDownload(letter, tone)} disabled={!letter}>
+                    <Download className="h-4 w-4 mr-1" /> Download
+                  </Button>
+                </div>
+              </div>
+              <Textarea
+                value={letter}
+                onChange={(e) => setLetter(e.target.value)}
+                placeholder="Your tailored cover letter will appear here. You can edit it before copying."
+                className="min-h-[520px] font-serif leading-relaxed"
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
