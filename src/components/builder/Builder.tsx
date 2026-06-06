@@ -52,7 +52,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { AiAssistantDock } from "./workspace/AiAssistantDock";
+import { AiAssistantDock, AI_ASSISTANT_OPEN_EVENT } from "./workspace/AiAssistantDock";
 import { StickyToolbar } from "./workspace/StickyToolbar";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
@@ -179,6 +179,7 @@ export function Builder() {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1);
   // Mobile view switcher: which panel is visible on screens < lg.
   // 'editor' is the default; bottom nav toggles between editor and preview.
@@ -2210,17 +2211,18 @@ export function Builder() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* Mobile bottom navigation — switch between Editor/Preview, open Templates or ATS sheets. */}
+      {/* Mobile bottom navigation — 5-tab nav for primary builder actions. */}
       <nav
         className="no-print lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-[env(safe-area-inset-bottom)]"
         aria-label="Builder mobile navigation"
       >
-        <div className="grid grid-cols-4 h-[64px]">
+        <div className="grid grid-cols-5 h-[64px]">
           {[
-            { id: "editor" as const, label: "Editor", icon: Pencil, onClick: () => setMobileView("editor"), active: mobileView === "editor" },
+            { id: "editor" as const, label: "Resume", icon: Pencil, onClick: () => setMobileView("editor"), active: mobileView === "editor" },
             { id: "preview" as const, label: "Preview", icon: Eye, onClick: () => { setMobileView("preview"); requestAnimationFrame(() => document.getElementById("resume-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })); }, active: mobileView === "preview" },
-            { id: "templates" as const, label: "Templates", icon: LayoutTemplate, onClick: openMobileTemplates, active: false },
             { id: "ats" as const, label: `ATS · ${score.score}`, icon: Gauge, onClick: () => setAtsSheetOpen(true), active: atsSheetOpen },
+            { id: "ai" as const, label: "AI", icon: Sparkles, onClick: () => window.dispatchEvent(new CustomEvent(AI_ASSISTANT_OPEN_EVENT)), active: false },
+            { id: "settings" as const, label: "Settings", icon: LayoutTemplate, onClick: () => setSettingsSheetOpen(true), active: settingsSheetOpen },
           ].map(item => (
             <button
               key={item.id}
@@ -2237,6 +2239,54 @@ export function Builder() {
           ))}
         </div>
       </nav>
+
+      {/* Mobile Settings sheet — surfaces template/style/sections/history actions. */}
+      <Sheet open={settingsSheetOpen} onOpenChange={setSettingsSheetOpen}>
+        <SheetContent side="bottom" className="lg:hidden h-auto max-h-[80vh] overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+16px)]">
+          <div className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase mb-3">
+            Builder settings
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => { setSettingsSheetOpen(false); openMobileTemplates(); }}
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+            >
+              <LayoutTemplate className="h-4 w-4" /> Templates
+            </button>
+            <button
+              onClick={() => { setSettingsSheetOpen(false); setHistoryOpen(true); }}
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+            >
+              <HistoryIcon className="h-4 w-4" /> History
+            </button>
+            <button
+              onClick={() => { setSettingsSheetOpen(false); saveCurrent(); }}
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+            >
+              <Save className="h-4 w-4" /> Save
+            </button>
+            <button
+              onClick={() => { setSettingsSheetOpen(false); setNameDraft(currentName); setSaveAsOpen(true); }}
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+            >
+              <FilePlus2 className="h-4 w-4" /> Save as new
+            </button>
+            <button
+              onClick={() => { setSettingsSheetOpen(false); printCurrentResume(); }}
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+            >
+              <FileText className="h-4 w-4" /> Download PDF
+            </button>
+            <button
+              onClick={() => { setSettingsSheetOpen(false); handleDocx(); }}
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-3 text-sm font-medium hover:border-[var(--navy-light)] hover:bg-muted/40"
+            >
+              <FileType className="h-4 w-4" /> Download DOCX
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       <AiAssistantDock data={data} atsScore={score.score} />
     </div>
   );

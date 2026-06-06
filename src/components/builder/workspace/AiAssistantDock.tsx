@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+export const AI_ASSISTANT_OPEN_EVENT = "ai-assistant:open";
 import { Sparkles, X, Send, Loader2, Wand2, PenLine, Target, FileText, ListChecks, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,14 @@ export function AiAssistantDock({ data, atsScore }: { data: ResumeData; atsScore
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
+
+  // Allow external triggers (e.g. mobile bottom nav) to open the menu.
+  useEffect(() => {
+    const handler = () => { setOpen(false); setMenuOpen(true); };
+    window.addEventListener(AI_ASSISTANT_OPEN_EVENT, handler);
+    return () => window.removeEventListener(AI_ASSISTANT_OPEN_EVENT, handler);
+  }, []);
+
 
   const send = async (text: string) => {
     const content = text.trim();
@@ -116,7 +125,8 @@ export function AiAssistantDock({ data, atsScore }: { data: ResumeData; atsScore
         aria-expanded={menuOpen || open}
         className={cn(
           "no-print fixed bottom-24 right-5 z-40 md:bottom-6 md:right-6",
-          "inline-flex items-center gap-2 rounded-full pl-3.5 pr-4 py-2.5",
+          "hidden lg:inline-flex",
+          "items-center gap-2 rounded-full pl-3.5 pr-4 py-2.5",
           "bg-gradient-to-br from-primary to-[var(--primary-glow,var(--primary))] text-primary-foreground",
           "shadow-[var(--shadow-elegant)] transition-all hover:scale-[1.03] active:scale-95",
           "text-sm font-semibold",
