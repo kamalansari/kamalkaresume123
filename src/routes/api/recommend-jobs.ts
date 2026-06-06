@@ -19,18 +19,19 @@ type OutJob = {
   experience: string;
   salary: string;
   postedAgo: string;
-  postedAt: number; // epoch ms
+  postedAt: number;
   tags: string[];
   jd: string;
-  source: string;
+  source: string; // publisher name e.g. "LinkedIn", "Naukri", "Company Website"
   applyUrl: string;
   remote: boolean;
+  logo?: string;
 };
 
 // --- tiny in-memory cache (per-worker) -------------------------------------
 type CacheEntry = { at: number; jobs: OutJob[] };
 const CACHE = new Map<string, CacheEntry>();
-const CACHE_TTL = 10 * 60 * 1000; // 10 min
+const CACHE_TTL = 10 * 60 * 1000;
 
 function cacheKey(b: Body) {
   return `${(b.jobTitle ?? "").toLowerCase()}|${(b.location ?? "").toLowerCase()}|${(b.keywords ?? "").toLowerCase()}`;
@@ -51,80 +52,114 @@ function htmlToText(s: string) {
   return s.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
 }
 
-function matchesQuery(text: string, needle: string) {
-  if (!needle.trim()) return true;
-  const t = text.toLowerCase();
-  return needle.toLowerCase().split(/[,\s]+/).filter(Boolean).every(w => t.includes(w));
+function formatSalary(min: number | null, max: number | null, currency: string | null, period: string | null): string {
+  if (!min && !max) return "Not disclosed";
+  const cur = (currency || "").toUpperCase();
+  const per = (period || "").toUpperCase();
+  // Convert to LPA when INR + YEAR
+  if (cur === "INR" && (per === "YEAR" || !per)) {
+    const lo = min ? Math.round((min / 100000) * 10) / 10 : null;
+    const hi = max ? Math.round((max / 100000) * 10) / 10 : null;
+    if (lo && hi) return `₹${lo}-${hi} LPA`;
+    if (hi) return `₹${hi} LPA`;
+    if (lo) return `₹${lo}+ LPA`;
+  }
+  const sym = cur === "INR" ? "₹" : cur === "USD" ? "$" : cur === "EUR" ? "€" : cur === "GBP" ? "£" : `${cur} `;
+  const fmt = (n: number) => n >= 1000 ? `${Math.round(n / 1000)}k` : `${n}`;
+  const lbl = per === "HOUR" ? "/hr" : per === "MONTH" ? "/mo" : per === "YEAR" ? "/yr" : "";
+  if (min && max) return `${sym}${fmt(min)}-${fmt(max)}${lbl}`;
+  if (max) return `${sym}${fmt(max)}${lbl}`;
+  return `${sym}${fmt(min!)}${lbl}`;
 }
 
-// --- providers -------------------------------------------------------------
-type RemotiveJob = {
-  id: number; url: string; title: string; company_name: string; category: string;
-  tags?: string[]; job_type: string; publication_date: string;
-  candidate_required_location: string; salary: string; description: string;
-};
-
-async function fetchRemotive(query: string): Promise<OutJob[]> {
-  try {
-    const url = `https://remotive.com/api/remote-jobs${query ? `?search=${encodeURIComponent(query)}` : ""}`;
-    const res = await fetch(url, { headers: { "user-agent": "ResumeForge/1.0" } });
-    if (!res.ok) return [];
-    const data = (await res.json()) as { jobs?: RemotiveJob[] };
-    return (data.jobs ?? []).map((j): OutJob => {
-      const posted = Date.parse(j.publication_date) || Date.now();
-      return {
-        id: `rmt_${j.id}`,
-        title: j.title,
-        company: j.company_name,
-        location: j.candidate_required_location || "Remote",
-        experience: "Not specified",
-        salary: j.salary?.trim() || "Not disclosed",
-        postedAgo: timeAgo(posted),
-        postedAt: posted,
-        tags: (j.tags ?? []).slice(0, 6),
-        jd: htmlToText(j.description ?? "").slice(0, 1800),
-        source: "Remotive",
-        applyUrl: j.url,
-        remote: true,
-      };
-    });
-  } catch { return []; }
+function experienceLabel(months: number | null | undefined, noExp: boolean | null | undefined): string {
+  if (noExp) return "Fresher";
+  if (months == null) return "Not specified";
+  const yrs = Math.round((months / 12) * 10) / 10;
+  if (yrs <= 1) return "0-1 years";
+  if (yrs <= 3) return `${Math.floor(yrs)}-${Math.ceil(yrs) + 1} years`;
+  return `${Math.floor(yrs)}+ years`;
 }
 
-type ArbeitnowJob = {
-  slug: string; company_name: string; title: string; description: string;
-  remote: boolean; url: string; tags: string[]; job_types: string[];
-  location: string; created_at: number;
+// --- JSearch (RapidAPI) ----------------------------------------------------
+type JSearchJob = {
+  job_id: string;
+  employer_name: string;
+  employer_logo: string | null;
+  job_publisher: string;
+  job_title: string;
+  job_apply_link: string;
+  job_apply_is_direct?: boolean;
+  apply_options?: Array<{ publisher: string; apply_link: string; is_direct: boolean }>;
+  job_description: string;
+  job_is_remote: boolean;
+  job_posted_at_timestamp: number | null;
+  job_city: string | null;
+  job_state: string | null;
+  job_country: string | null;
+  job_location?: string | null;
+  job_employment_type?: string | null;
+  job_min_salary: number | null;
+  job_max_salary: number | null;
+  job_salary_currency: string | null;
+  job_salary_period: string | null;
+  job_required_experience?: {
+    no_experience_required?: boolean | null;
+    required_experience_in_months?: number | null;
+  };
+  job_required_skills?: string[] | null;
 };
 
-async function fetchArbeitnow(): Promise<OutJob[]> {
+async function fetchJSearch(query: string, location: string, pages: number): Promise<OutJob[]> {
+  const key = process.env.RAPIDAPI_KEY;
+  if (!key) return [];
+  const q = [query, location].filter(Boolean).join(" in ") || "jobs";
   const out: OutJob[] = [];
   try {
-    // fetch first 2 pages for breadth
-    for (let p = 1; p <= 2; p++) {
-      const res = await fetch(`https://www.arbeitnow.com/api/job-board-api?page=${p}`, { headers: { "user-agent": "ResumeForge/1.0" } });
-      if (!res.ok) break;
-      const data = (await res.json()) as { data?: ArbeitnowJob[] };
-      for (const j of data.data ?? []) {
-        const posted = (j.created_at ?? Math.floor(Date.now() / 1000)) * 1000;
+    const res = await fetch(
+      `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(q)}&page=1&num_pages=${pages}&country=in&date_posted=month`,
+      { headers: { "x-rapidapi-key": key, "x-rapidapi-host": "jsearch.p.rapidapi.com" } },
+    );
+    if (!res.ok) {
+      console.warn("[jsearch] status", res.status, (await res.text()).slice(0, 200));
+      return [];
+    }
+    const data = (await res.json()) as { data?: JSearchJob[] };
+    for (const j of data.data ?? []) {
+      const posted = j.job_posted_at_timestamp ? j.job_posted_at_timestamp * 1000 : Date.now();
+      const loc = [j.job_city, j.job_state].filter(Boolean).join(", ") || j.job_location || j.job_country || (j.job_is_remote ? "Remote" : "India");
+      // Build a "Career Pages" entry if direct apply exists
+      const directApply = j.apply_options?.find(o => o.is_direct) || (j.job_apply_is_direct ? { publisher: "Company Website", apply_link: j.job_apply_link, is_direct: true } : null);
+      const base: OutJob = {
+        id: `js_${j.job_id}`,
+        title: j.job_title,
+        company: j.employer_name,
+        location: loc,
+        experience: experienceLabel(j.job_required_experience?.required_experience_in_months ?? null, j.job_required_experience?.no_experience_required ?? null),
+        salary: formatSalary(j.job_min_salary, j.job_max_salary, j.job_salary_currency, j.job_salary_period),
+        postedAgo: timeAgo(posted),
+        postedAt: posted,
+        tags: (j.job_required_skills ?? []).slice(0, 6),
+        jd: htmlToText(j.job_description ?? "").slice(0, 2200),
+        source: j.job_publisher || "Web",
+        applyUrl: j.job_apply_link,
+        remote: !!j.job_is_remote,
+        logo: j.employer_logo ?? undefined,
+      };
+      out.push(base);
+      // Add a separate "Career Pages" variant if direct apply differs from main publisher
+      if (directApply && !/company website|career/i.test(base.source) && directApply.apply_link !== base.applyUrl) {
         out.push({
-          id: `arb_${j.slug}`,
-          title: j.title,
-          company: j.company_name,
-          location: j.location || (j.remote ? "Remote" : "—"),
-          experience: "Not specified",
-          salary: "Not disclosed",
-          postedAgo: timeAgo(posted),
-          postedAt: posted,
-          tags: (j.tags ?? []).slice(0, 6),
-          jd: htmlToText(j.description ?? "").slice(0, 1800),
-          source: "Arbeitnow",
-          applyUrl: j.url,
-          remote: !!j.remote,
+          ...base,
+          id: `${base.id}_cp`,
+          source: "Company Website",
+          applyUrl: directApply.apply_link,
         });
       }
     }
-  } catch { /* ignore */ }
+  } catch (e) {
+    console.warn("[jsearch] error", (e as Error).message);
+  }
   return out;
 }
 
@@ -132,22 +167,17 @@ async function fetchArbeitnow(): Promise<OutJob[]> {
 function rank(jobs: OutJob[], q: { title: string; location: string; keywords: string }): OutJob[] {
   const wantedLoc = q.location.toLowerCase();
   const kws = `${q.title} ${q.keywords}`.toLowerCase().split(/[,\s]+/).filter(w => w.length > 2);
-  const indiaWanted = /india|mumbai|delhi|bangalore|bengaluru|pune|hyderabad|chennai|kolkata|noida|gurgaon|ahmedabad/.test(wantedLoc);
-
   return jobs
     .map(j => {
       let s = 0;
       const hay = `${j.title} ${j.company} ${j.tags.join(" ")} ${j.jd}`.toLowerCase();
       for (const k of kws) if (hay.includes(k)) s += 3;
       if (q.title && j.title.toLowerCase().includes(q.title.toLowerCase())) s += 8;
-      // location pref
       if (wantedLoc) {
         const loc = j.location.toLowerCase();
         if (loc.includes(wantedLoc.split(",")[0].trim())) s += 6;
-        else if (indiaWanted && (loc.includes("india") || loc.includes("worldwide") || j.remote)) s += 3;
-        else if (j.remote) s += 1;
-      } else if (j.remote) s += 1;
-      // recency: up to +5 within last 14 days
+        else if (j.remote) s += 2;
+      }
       const ageDays = (Date.now() - j.postedAt) / 86400000;
       s += Math.max(0, 5 - ageDays / 3);
       return { j, s };
@@ -176,45 +206,19 @@ export const Route = createFileRoute("/api/recommend-jobs")({
         if (cached && Date.now() - cached.at < CACHE_TTL) {
           pool = cached.jobs;
         } else {
-          const [a, b] = await Promise.all([fetchRemotive(title), fetchArbeitnow()]);
-          // dedupe by applyUrl
+          const q = [title, keywords].filter(Boolean).join(" ");
+          const all = await fetchJSearch(q, location, 2);
+          // dedupe by applyUrl + source
           const seen = new Set<string>();
-          const all: OutJob[] = [];
-          for (const j of [...a, ...b]) {
-            if (!j.applyUrl || seen.has(j.applyUrl)) continue;
-            seen.add(j.applyUrl);
-            all.push(j);
+          const unique: OutJob[] = [];
+          for (const j of all) {
+            const k = `${j.source}|${j.applyUrl}`;
+            if (!j.applyUrl || seen.has(k)) continue;
+            seen.add(k);
+            unique.push(j);
           }
-          // Hard scope: India-based or remote/worldwide only.
-          const INDIA_RX = /india|mumbai|delhi|bangalore|bengaluru|pune|hyderabad|chennai|kolkata|noida|gurgaon|gurugram|ahmedabad|jaipur|kochi|cochin|trivandrum|thiruvananthapuram|coimbatore|indore|chandigarh|nagpur/i;
-          const REMOTE_RX = /remote|worldwide|anywhere|work from home|wfh/i;
-          const isIndiaOrRemote = (j: OutJob) =>
-            j.remote ||
-            INDIA_RX.test(j.location) ||
-            REMOTE_RX.test(j.location) ||
-            INDIA_RX.test(j.jd) && REMOTE_RX.test(j.jd);
-          const geoScoped = all.filter(isIndiaOrRemote);
-          const textFiltered = geoScoped.filter(j => {
-            const hay = `${j.title} ${j.company} ${j.tags.join(" ")} ${j.jd}`;
-            return matchesQuery(hay, `${title} ${keywords}`);
-          });
-          let merged = textFiltered;
-          if (location.trim()) {
-            const first = location.toLowerCase().split(",")[0].trim();
-            const indiaWanted = INDIA_RX.test(location);
-            const locFiltered = textFiltered.filter(j => {
-              const loc = j.location.toLowerCase();
-              if (loc.includes(first)) return true;
-              if (indiaWanted && (INDIA_RX.test(loc) || REMOTE_RX.test(loc) || j.remote)) return true;
-              return false;
-            });
-            // Fallback within India/remote scope — never reintroduce other geos.
-            merged = locFiltered.length > 0 ? locFiltered : textFiltered;
-          }
-          // Last resort: if text filter wiped results, keep geo-scoped pool.
-          if (merged.length === 0 && geoScoped.length > 0) merged = geoScoped;
-          pool = rank(merged, { title, location, keywords });
-          CACHE.set(key, { at: Date.now(), jobs: pool });
+          pool = rank(unique, { title, location, keywords });
+          if (pool.length > 0) CACHE.set(key, { at: Date.now(), jobs: pool });
         }
 
         const start = (page - 1) * pageSize;
@@ -226,6 +230,7 @@ export const Route = createFileRoute("/api/recommend-jobs")({
           pageSize,
           hasMore: start + slice.length < pool.length,
           fetchedAt: Date.now(),
+          provider: "JSearch",
         });
       },
     },
