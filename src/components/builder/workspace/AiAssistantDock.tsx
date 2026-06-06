@@ -125,6 +125,7 @@ export function AiAssistantDock({ data, atsScore }: { data: ResumeData; atsScore
         aria-expanded={menuOpen || open}
         className={cn(
           "no-print fixed bottom-24 right-5 z-40 md:bottom-6 md:right-6",
+          "hidden lg:inline-flex",
           "inline-flex items-center gap-2 rounded-full pl-3.5 pr-4 py-2.5",
           "bg-gradient-to-br from-primary to-[var(--primary-glow,var(--primary))] text-primary-foreground",
           "shadow-[var(--shadow-elegant)] transition-all hover:scale-[1.03] active:scale-95",
