@@ -236,7 +236,7 @@ function JobsPage() {
     : rankedJobs;
 
   const clearFilters = () => {
-    setSearch(""); setLocation(""); setWorkMode("any"); setExperience("any"); setMinSalary(0); setSource("all");
+    setSearch(""); setLocation(""); setCompany(""); setWorkMode("any"); setExperience("any"); setMinSalary(0); setSource("all");
   };
 
   const activeFilters = [
@@ -244,6 +244,7 @@ function JobsPage() {
     experience !== "any" && EXPERIENCE_OPTIONS.find((e) => e.id === experience)?.label,
     minSalary > 0 && `${minSalary}+ LPA`,
     location && `📍 ${location}`,
+    company && `🏢 ${company}`,
     source !== "all" && `Source: ${source}`,
   ].filter(Boolean) as string[];
 
