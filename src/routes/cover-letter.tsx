@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Mail, Copy, Download, Loader2, Sparkles, FileText } from "lucide-react";
+import { Mail, Copy, Download, Loader2, Sparkles, FileText, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,7 +63,28 @@ function resumeToPlainText(r: ResumeData): string {
 interface Variation {
   tone: string;
   letter: string;
+  matches: string[];
   error?: string;
+}
+
+function MatchesList({ matches }: { matches: string[] }) {
+  if (!matches || matches.length === 0) return null;
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <CheckCircle2 className="h-4 w-4 text-primary" />
+        Why this matches
+      </div>
+      <ul className="space-y-1.5 text-sm text-muted-foreground">
+        {matches.map((m, i) => (
+          <li key={i} className="flex gap-2">
+            <span className="text-primary mt-0.5">•</span>
+            <span>{m}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function CoverLetterPage() {
@@ -78,6 +99,7 @@ function CoverLetterPage() {
   const [tone, setTone] = useState<"professional" | "friendly" | "enthusiastic" | "concise" | "confident">("professional");
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
   const [letter, setLetter] = useState("");
+  const [matches, setMatches] = useState<string[]>([]);
   const [variations, setVariations] = useState<Variation[]>([]);
   const [activeVariation, setActiveVariation] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -111,6 +133,7 @@ function CoverLetterPage() {
     if (!validateInputs()) return;
     setLoading(true);
     setLetter("");
+    setMatches([]);
     setMode("single");
     try {
       const resumeText = resumeToPlainText(selectedResume!.data);
@@ -126,6 +149,7 @@ function CoverLetterPage() {
         },
       });
       setLetter(res.letter);
+      setMatches(res.matches ?? []);
       toast.success("Cover letter ready");
     } catch (err) {
       console.error(err);
@@ -328,8 +352,11 @@ function CoverLetterPage() {
                       value={v.letter}
                       readOnly
                       placeholder={`${toneLabel(v.tone)} variation will appear here…`}
-                      className="min-h-[520px] font-serif leading-relaxed"
+                      className="min-h-[420px] font-serif leading-relaxed"
                     />
+                    <div className="mt-3">
+                      <MatchesList matches={v.matches} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -351,8 +378,9 @@ function CoverLetterPage() {
                 value={letter}
                 onChange={(e) => setLetter(e.target.value)}
                 placeholder="Your tailored cover letter will appear here. You can edit it before copying."
-                className="min-h-[520px] font-serif leading-relaxed"
+                className="min-h-[420px] font-serif leading-relaxed"
               />
+              <MatchesList matches={matches} />
             </>
           )}
         </div>
