@@ -371,23 +371,25 @@ async function callJSearch(
     date_posted: "month",
   });
   const url = `https://jsearch.p.rapidapi.com/search?${params.toString()}`;
-  const res = await fetch(url, {
-    headers: {
-      "X-RapidAPI-Key": rapidKey,
-      "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
-      accept: "application/json",
-    },
-  });
-  if (!res.ok) {
-    const body = (await res.text()).slice(0, 200);
-    if (isRapidApiSubscriptionError(res.status, body)) {
+  try {
+    const res = await fetchWithRetry(url, {
+      headers: {
+        "X-RapidAPI-Key": rapidKey,
+        "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
+        accept: "application/json",
+      },
+      timeoutMs: 15000,
+    }, { label: `jsearch ${query} p${page}` });
+    const data = (await res.json()) as JSearchResponse;
+    return data.data ?? [];
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (isRapidApiSubscriptionError(0, msg) || msg.toLowerCase().includes("not subscribed")) {
       throw new Error("JSearch subscription required on RapidAPI");
     }
-    console.warn(`[jsearch] ${res.status} ${query} p${page}: ${body}`);
+    console.warn(`[jsearch] ${query} p${page}: ${msg}`);
     return [];
   }
-  const data = (await res.json()) as JSearchResponse;
-  return data.data ?? [];
 }
 
 function jsearchToRow(job: JSearchJob, pub: PublisherConfig): UpsertRow {
