@@ -161,54 +161,50 @@ function SkillsGridContent({
   const isSingleCol = desktopCols === 1;
 
   const chipStyle: React.CSSProperties = {
-    display: "inline-block",
+    display: "list-item",
+    listStyleType: "disc",
+    listStylePosition: "outside",
+    marginLeft: 0,
     maxWidth: "100%",
     minWidth: 0,
     boxSizing: "border-box",
-    padding: isPlain ? 0 : "2px 10px",
-    border: isPlain ? undefined : "1px solid currentColor",
-    borderColor: dark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.14)",
-    borderRadius: isPlain ? 0 : 999,
-    fontSize: "0.92em",
-    lineHeight: 1.35,
+    padding: 0,
+    fontSize: "0.95em",
+    lineHeight: 1.4,
     breakInside: "avoid",
     pageBreakInside: "avoid",
     background: "transparent",
-    // Keep multi-word skills like "Power BI" on a single line so multi-column
-    // grids don't blow up with one-word-per-row stacks.
-    whiteSpace: "nowrap",
-    overflowWrap: "normal",
+    whiteSpace: "normal",
+    overflowWrap: "break-word",
     wordBreak: "normal",
+    color: "inherit",
   };
+  void isPlain;
 
-  // Modern strategy:
-  //  - single column → inline wrap (chips flow side-by-side, denser, scannable)
-  //  - multi column  → balanced inline-wrap inside each column (also dense)
-  const inlineWrapStyle: React.CSSProperties = {
+  // Bulleted-list layout for every column count:
+  //  - single column → one vertical bulleted list
+  //  - multi column  → N balanced bulleted lists side-by-side
+  const listStyle: React.CSSProperties = {
+    listStyleType: "disc",
+    listStylePosition: "outside",
+    margin: 0,
+    paddingLeft: 18,
     display: "flex",
-    flexWrap: "wrap",
-    gap: "6px",
-    alignItems: "center",
+    flexDirection: "column",
+    gap: "2px",
     minWidth: 0,
     width: "100%",
+    breakInside: "avoid",
+    pageBreakInside: "avoid",
   };
   const gridStyle: React.CSSProperties = {
     display: "grid",
     gridTemplateColumns: `repeat(${desktopCols}, minmax(0, 1fr))`,
-    gap: isSingleCol ? "6px" : "6px 16px",
+    gap: "0 24px",
     alignItems: "start",
     minWidth: 0,
     width: "100%",
     ["--skills-cols-mobile" as any]: mobileCols,
-  };
-  const columnStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "6px",
-    alignContent: "start",
-    minWidth: 0,
-    breakInside: "avoid",
-    pageBreakInside: "avoid",
   };
   const headingStyle: React.CSSProperties = {
     fontWeight: 700,
@@ -216,7 +212,7 @@ function SkillsGridContent({
     letterSpacing: "0.02em",
     textTransform: "uppercase",
     opacity: 0.85,
-    marginBottom: 2,
+    marginBottom: 4,
     paddingBottom: 2,
     borderBottom: `1px solid ${dark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.1)"}`,
     overflowWrap: "anywhere",
@@ -242,19 +238,24 @@ function SkillsGridContent({
       }
     : {};
 
+  const renderList = (items: string[], key?: React.Key) => (
+    <ul key={key} style={listStyle}>
+      {items.map((s, i) => (
+        <li key={i} style={chipStyle}>{s}</li>
+      ))}
+    </ul>
+  );
+
   const renderFlat = (items: string[]) => {
     if (isSingleCol) {
       return (
         <div
           data-skills-list
-          data-skills-balanced
           data-skills-column-count={1}
           {...editableProps}
-          style={inlineWrapStyle}
+          style={{ width: "100%" }}
         >
-          {items.map((s, i) => (
-            <span key={i} style={chipStyle}>{s}</span>
-          ))}
+          {renderList(items)}
         </div>
       );
     }
@@ -267,13 +268,7 @@ function SkillsGridContent({
         {...editableProps}
         style={gridStyle}
       >
-        {columns.map((col, ci) => (
-          <div key={ci} style={columnStyle}>
-            {col.map((s, i) => (
-              <span key={`${ci}-${i}`} style={chipStyle}>{s}</span>
-            ))}
-          </div>
-        ))}
+        {columns.map((col, ci) => renderList(col, ci))}
       </div>
     );
   };
@@ -281,9 +276,7 @@ function SkillsGridContent({
   const renderGroup = (g: { heading?: string; items: string[] }, key: React.Key) => (
     <div key={key} style={{ display: "grid", gap: "4px", minWidth: 0, breakInside: "avoid", pageBreakInside: "avoid" }}>
       {g.heading && <div style={headingStyle}>{g.heading}</div>}
-      <div style={inlineWrapStyle}>
-        {g.items.map((s, i) => <span key={i} style={chipStyle}>{s}</span>)}
-      </div>
+      {renderList(g.items)}
     </div>
   );
 
@@ -299,7 +292,7 @@ function SkillsGridContent({
     return (
       <div data-skills-list data-skills-balanced data-skills-column-count={desktopCols} style={gridStyle}>
         {columns.map((col, ci) => (
-          <div key={ci} style={{ ...columnStyle, gap: "10px" }}>
+          <div key={ci} style={{ display: "grid", gap: "10px", alignContent: "start", minWidth: 0 }}>
             {col.map((g, gi) => renderGroup(g, `${ci}-${gi}`))}
           </div>
         ))}
