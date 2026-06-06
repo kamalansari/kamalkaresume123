@@ -41,6 +41,7 @@ import { PreviewToolbar } from "./PreviewToolbar";
 import { MonthYearPicker, DateRangePicker } from "./MonthYearPicker";
 import { SavedResumesGallery } from "./SavedResumesGallery";
 import { TemplatesPopover, SectionsPopover, StylePopover } from "./BuilderTopToolbar";
+import { SectionReorderBar } from "./SectionReorderBar";
 import { SelectionFormatToolbar } from "./SelectionFormatToolbar";
 import { ExperienceSection, autoActionVerbs, autoActionVerbsDetailed, loadCustomVerbs } from "./ExperienceSection";
 import lzString from "lz-string";
@@ -1990,6 +1991,16 @@ export function Builder() {
               <PanelRightOpen className="h-3.5 w-3.5" /> ATS · {score.score}
             </button>
           )}
+          <SectionReorderBar
+            order={data.sectionOrder}
+            onChange={(order) => {
+              pushSectionsHistory("reorder");
+              const prev = dataRef.current.sectionOrder;
+              const moved = order.find((id, i) => prev[i] !== id);
+              update("sectionOrder", order);
+              if (moved) flashMoved(moved);
+            }}
+          />
           <PreviewToolbar
             data={data}
             getData={() => commitPreviewEdits()}
