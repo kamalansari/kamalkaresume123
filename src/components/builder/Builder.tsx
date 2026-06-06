@@ -797,7 +797,11 @@ export function Builder() {
 
   const printCurrentResume = () => {
     commitPreviewEdits();
-    requestAnimationFrame(() => window.print());
+    announce("Preparing PDF for download…");
+    requestAnimationFrame(() => {
+      window.print();
+      announce("PDF ready. Use your browser's save dialog to download.");
+    });
   };
 
   // Autosave: continuously sync contentEditable edits in the preview to the
