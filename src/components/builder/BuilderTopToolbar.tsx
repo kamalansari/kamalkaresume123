@@ -804,23 +804,80 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
             })}
           </div>
           {(data.skillsViewMode ?? data.skillsView ?? "compact") === "categorized" && (
-            <button
-              type="button"
-              onClick={() => {
-                const preset = [
-                  "Programming & Analytics: ",
-                  "BI & Reporting: ",
-                  "Data Engineering: ",
-                  "Domain Knowledge: ",
-                  "Leadership & Management: ",
-                ].join("\n");
-                const existing = (data.skills ?? "").trim();
-                onPatch({ skills: existing ? `${existing}\n\n${preset}` : preset });
-              }}
-              className="mt-2 w-full text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
-            >
-              + Insert category preset
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  const preset = [
+                    "Programming & Analytics: ",
+                    "BI & Reporting: ",
+                    "Data Engineering: ",
+                    "Domain Knowledge: ",
+                    "Leadership & Management: ",
+                  ].join("\n");
+                  const existing = (data.skills ?? "").trim();
+                  onPatch({ skills: existing ? `${existing}\n\n${preset}` : preset });
+                }}
+                className="mt-2 w-full text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+              >
+                + Insert category preset
+              </button>
+              {(() => {
+                const cats = parseSkillGroups(data.skills)
+                  .map((g) => g.heading?.trim())
+                  .filter((h): h is string => !!h);
+                const unique = Array.from(new Set(cats));
+                if (unique.length === 0) return null;
+                const hidden = new Set(
+                  (data.hiddenSkillCategories ?? []).map((h) => h.trim().toLowerCase()),
+                );
+                const toggle = (name: string) => {
+                  const key = name.trim().toLowerCase();
+                  const next = new Set(hidden);
+                  if (next.has(key)) next.delete(key);
+                  else next.add(key);
+                  onPatch({ hiddenSkillCategories: Array.from(next) });
+                };
+                return (
+                  <div className="mt-3">
+                    <Label className="text-xs text-muted-foreground">
+                      Show categories
+                    </Label>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {unique.map((name) => {
+                        const active = !hidden.has(name.toLowerCase());
+                        return (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => toggle(name)}
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition",
+                              active
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border text-muted-foreground line-through opacity-60 hover:opacity-100",
+                            )}
+                            title={active ? "Click to hide" : "Click to show"}
+                          >
+                            {active ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                            {name}
+                          </button>
+                        );
+                      })}
+                      {hidden.size > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => onPatch({ hiddenSkillCategories: [] })}
+                          className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+                        >
+                          Show all
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
           )}
           <div className="mt-3">
             <Label className="text-xs text-muted-foreground">Balance strategy</Label>
