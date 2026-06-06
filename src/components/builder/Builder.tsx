@@ -218,6 +218,7 @@ export function Builder() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1);
+  const [printData, setPrintData] = useState<ResumeData | null>(null);
   // Polite live-region for screen-reader status announcements (AI actions, PDF/DOCX, saves).
   // We toggle the text via a ref+state pair so the same message can be re-announced; an
   // explicit blank flush ensures repeated identical statuses still re-fire on assistive tech.
