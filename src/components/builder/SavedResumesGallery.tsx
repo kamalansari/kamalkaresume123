@@ -36,6 +36,7 @@ export function SavedResumesGallery({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const currentResume = useMemo(() => saved.find(r => r.id === currentId) ?? null, [saved, currentId]);
   const [view, setView] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "list";
     return (localStorage.getItem("resumeforge.gallery.view") as "grid" | "list") || "list";
