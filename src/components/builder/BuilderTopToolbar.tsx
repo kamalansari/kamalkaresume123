@@ -10,6 +10,7 @@ import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, us
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { COLOR_PRESETS, FONT_PRESETS, SIDEBAR_ELIGIBLE, getSidebarSectionIds, templateHasSidebar, type CustomSection, type ResumeData, type SectionId, type TemplateId } from "./types";
+import { parseSkillGroups } from "@/lib/parseSkills";
 import {
   AlertDialog,
   AlertDialogAction,
