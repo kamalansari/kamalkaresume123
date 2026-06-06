@@ -1265,7 +1265,7 @@ function ExperienceSection({
                 marginTop: 10,
                 marginLeft: 0,
                 paddingLeft: 0,
-                textAlign: "justify",
+                textAlign: expAlign,
                 display: "block",
                 columnCount: 1,
                 lineHeight: 1.5,
@@ -1290,7 +1290,7 @@ function ExperienceSection({
                       display: "block",
                       width: "100%",
                       breakInside: "avoid",
-                      textAlign: "justify",
+                      textAlign: expAlign,
                     }}
                   >
                     • {b}
@@ -1303,7 +1303,7 @@ function ExperienceSection({
                 marginTop: 10,
                 marginLeft: 0,
                 paddingLeft: 0,
-                textAlign: "justify",
+                textAlign: expAlign,
                 display: "block",
                 columnCount: 1,
               }}
@@ -1320,7 +1320,7 @@ function ExperienceSection({
                       display: "block",
                       width: "100%",
                       breakInside: "avoid",
-                      textAlign: "justify",
+                      textAlign: expAlign,
                     }}
                   >
                     • <InlineText text={b} />
