@@ -2,7 +2,7 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, T
 import FileSaver from "file-saver";
 const { saveAs } = FileSaver;
 import { FONT_PRESETS, type ResumeData, type SectionId } from "./types";
-import { parseSkills } from "@/lib/parseSkills";
+import { parseSkillGroups, type SkillGroup } from "@/lib/parseSkills";
 import { parseInline } from "@/lib/inlineFormat";
 import { splitBulletLines } from "@/lib/resumeText";
 import { jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
@@ -66,6 +66,50 @@ function bullet(text: string, bodyBold?: boolean, justify?: boolean) {
   });
 }
 
+function visibleSkillGroups(data: ResumeData): SkillGroup[] {
+  const groups = parseSkillGroups(data.skills || "");
+  const hidden = new Set((data.hiddenSkillCategories ?? []).map(h => h.trim().toLowerCase()));
+  return groups.filter(g => !g.heading || !hidden.has(g.heading.trim().toLowerCase()));
+}
+
+function renderSkillsParagraphs(data: ResumeData, color: string, headingFont?: string): Paragraph[] {
+  const groups = visibleSkillGroups(data);
+  if (!groups.length) return [];
+  const hasHeadings = groups.some(g => g.heading);
+  // Flat list → simple bulleted items, matching the on-screen preview.
+  if (!hasHeadings) {
+    const items = groups.flatMap(g => g.items);
+    return items.map(s => new Paragraph({
+      bullet: { level: 0 },
+      children: [new TextRun({ text: s, size: 21 })],
+    }));
+  }
+  // Categorized → bold heading line + bulleted items per group.
+  const out: Paragraph[] = [];
+  groups.forEach((g, gi) => {
+    if (g.heading) {
+      out.push(new Paragraph({
+        spacing: { before: gi === 0 ? 40 : 120, after: 40 },
+        children: [new TextRun({
+          text: g.heading.toUpperCase(),
+          bold: true,
+          size: 20,
+          color,
+          characterSpacing: 20,
+          font: headingFont,
+        })],
+      }));
+    }
+    for (const item of g.items) {
+      out.push(new Paragraph({
+        bullet: { level: 0 },
+        children: [new TextRun({ text: item, size: 21 })],
+      }));
+    }
+  });
+  return out;
+}
+
 function line(text: string, opts: { bold?: boolean; right?: string; bodyBold?: boolean } = {}) {
   const isBold = opts.bold || opts.bodyBold;
   if (opts.right) {
@@ -104,15 +148,7 @@ function buildSections(data: ResumeData, color: string, headingFont?: string): R
       ? [h("Education"), ...data.education.map(ed => line(`${ed.degree} · ${ed.school}`, { right: ed.date, bodyBold: bb }))]
       : [],
     skills: data.skills
-      ? [
-          h("Skills"),
-          ...parseSkills(data.skills).map(s =>
-            new Paragraph({
-              bullet: { level: 0 },
-              children: [new TextRun({ text: s, size: 21 })],
-            })
-          ),
-        ]
+      ? [h("Skills"), ...renderSkillsParagraphs(data, color, headingFont)]
       : [],
     projects: data.projects?.length
       ? [
@@ -183,13 +219,33 @@ export async function exportDocx(data: ResumeData) {
         new Paragraph({ children: [new TextRun({ text: t, size: 18, color: sidebarText })] })
       ),
       new Paragraph({ children: [new TextRun({ text: "" })] }),
-      ...(data.skills ? [
-        new Paragraph({ children: [new TextRun({ text: "SKILLS", bold: true, size: 18, color: sidebarText, characterSpacing: 30 })] }),
-        ...parseSkills(data.skills).map(s =>
-          new Paragraph({ children: [new TextRun({ text: `• ${s}`, size: 18, color: sidebarText })] })
-        ),
-        new Paragraph({ children: [new TextRun({ text: "" })] }),
-      ] : []),
+      ...(data.skills ? (() => {
+        const groups = visibleSkillGroups(data);
+        if (!groups.length) return [] as Paragraph[];
+        const hasHeadings = groups.some(g => g.heading);
+        const block: Paragraph[] = [
+          new Paragraph({ children: [new TextRun({ text: "SKILLS", bold: true, size: 18, color: sidebarText, characterSpacing: 30 })] }),
+        ];
+        if (!hasHeadings) {
+          for (const s of groups.flatMap(g => g.items)) {
+            block.push(new Paragraph({ children: [new TextRun({ text: `• ${s}`, size: 18, color: sidebarText })] }));
+          }
+        } else {
+          groups.forEach((g, gi) => {
+            if (g.heading) {
+              block.push(new Paragraph({
+                spacing: { before: gi === 0 ? 0 : 100, after: 20 },
+                children: [new TextRun({ text: g.heading.toUpperCase(), bold: true, size: 17, color: sidebarText, characterSpacing: 20 })],
+              }));
+            }
+            for (const s of g.items) {
+              block.push(new Paragraph({ children: [new TextRun({ text: `• ${s}`, size: 18, color: sidebarText })] }));
+            }
+          });
+        }
+        block.push(new Paragraph({ children: [new TextRun({ text: "" })] }));
+        return block;
+      })() : []),
       ...(data.languages?.length ? [
         new Paragraph({ children: [new TextRun({ text: "LANGUAGES", bold: true, size: 18, color: sidebarText, characterSpacing: 30 })] }),
         ...data.languages.map(l =>
