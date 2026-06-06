@@ -34,12 +34,21 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const navGroups = [
+type NavItem = {
+  title: string;
+  url: LinkProps["to"];
+  icon: typeof LayoutDashboard;
+  match?: string;
+  hash?: string;
+  scrollTo?: string;
+};
+
+const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Workspace",
     items: [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-      { title: "My Resumes", url: "/dashboard", icon: FileStack, match: "/dashboard" },
+      { title: "My Resumes", url: "/dashboard", icon: FileStack, hash: "my-resumes", scrollTo: "my-resumes", match: "/dashboard#my-resumes" },
       { title: "Create Resume", url: "/builder", icon: PlusCircle },
     ],
   },
@@ -66,7 +75,7 @@ const navGroups = [
       { title: "Skill Dictionary", url: "/admin/skill-dictionary", icon: BookOpen },
     ],
   },
-] as const;
+];
 
 export function AppSidebar() {
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
