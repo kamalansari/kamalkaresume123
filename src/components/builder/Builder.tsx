@@ -1458,6 +1458,17 @@ export function Builder() {
         onTogglePreview={() => setInlineEdit(v => !v)}
       />
 
+      <HistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        resumeId={currentId}
+        resumeName={currentName}
+        onRestore={(restored) => {
+          if (currentId) historyStore.push(currentId, data, `Before restore of "${currentName}"`);
+          setData({ ...defaultResume, ...restored });
+        }}
+      />
+
 
       <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
         <DialogContent>
