@@ -195,7 +195,7 @@ function JobsPage() {
     : rankedJobs;
 
   const clearFilters = () => {
-    setSearch(""); setLocation(""); setWorkMode("any"); setExperience("any"); setMinSalary(0);
+    setSearch(""); setLocation(""); setWorkMode("any"); setExperience("any"); setMinSalary(0); setSource("all");
   };
 
   const activeFilters = [
