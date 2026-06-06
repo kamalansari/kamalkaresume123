@@ -54,8 +54,9 @@ type AlignResult = {
 };
 
 function ResumeLabPage() {
+  const search = Route.useSearch();
   const [resume, setResume] = useState<ResumeData>(defaultResume);
-  const [jd, setJd] = useState("");
+  const [jd, setJd] = useState(search.jd ?? "");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<AlignResult | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -68,6 +69,8 @@ function ResumeLabPage() {
   const [extracted, setExtracted] = useState<JdMeta | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [applyPromptOpen, setApplyPromptOpen] = useState(false);
+  const [savedResumeName, setSavedResumeName] = useState("");
   const imageInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
