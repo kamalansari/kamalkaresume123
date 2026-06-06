@@ -158,3 +158,74 @@ export const listApplications = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { applications: data ?? [] };
   });
+
+export type ProviderStatus = {
+  name: string;
+  status: "available" | "missing_credentials" | "not_subscribed" | "error";
+  count: number;
+};
+
+export const getProviderStatus = createServerFn({ method: "POST" })
+  .handler(async () => {
+    const { getServiceClient } = await import("@/lib/jobs.server");
+    const supabase = getServiceClient();
+
+    const { data: rows } = await supabase
+      .from("jobs")
+      .select("source")
+      .eq("is_active", true);
+    const dbCounts = (rows ?? []).reduce<Record<string, number>>((acc, r) => {
+      acc[r.source] = (acc[r.source] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    const adzunaId = process.env.ADZUNA_APP_ID;
+    const adzunaKey = process.env.ADZUNA_APP_KEY;
+    let adzunaStatus: ProviderStatus["status"] = "missing_credentials";
+    if (adzunaId && adzunaKey) {
+      try {
+        const url = `https://api.adzuna.com/v1/api/jobs/in/search/1?app_id=${encodeURIComponent(adzunaId)}&app_key=${encodeURIComponent(adzunaKey)}&results_per_page=1&what=developer&content-type=application/json`;
+        const res = await fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(5000) });
+        adzunaStatus = res.ok ? "available" : "error";
+      } catch {
+        adzunaStatus = "error";
+      }
+    }
+
+    const rapidKey = process.env.RAPIDAPI_KEY;
+    let jsearchStatus: ProviderStatus["status"] = "missing_credentials";
+    if (rapidKey) {
+      try {
+        const url = `https://jsearch.p.rapidapi.com/search?query=developer%20in%20India&page=1&num_pages=1&country=in&date_posted=month`;
+        const res = await fetch(url, {
+          headers: {
+            "X-RapidAPI-Key": rapidKey,
+            "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
+          },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (res.ok) {
+          jsearchStatus = "available";
+        } else {
+          const body = await res.text().catch(() => "");
+          if (res.status === 429 && body.toLowerCase().includes("not subscribed")) {
+            jsearchStatus = "not_subscribed";
+          } else {
+            jsearchStatus = "error";
+          }
+        }
+      } catch {
+        jsearchStatus = "error";
+      }
+    }
+
+    return {
+      providers: [
+        { name: "Adzuna", status: adzunaStatus, count: dbCounts["Adzuna"] ?? 0 },
+        { name: "Naukri", status: jsearchStatus, count: dbCounts["Naukri"] ?? 0 },
+        { name: "LinkedIn", status: jsearchStatus, count: dbCounts["LinkedIn"] ?? 0 },
+        { name: "Indeed", status: jsearchStatus, count: dbCounts["Indeed"] ?? 0 },
+        { name: "Glassdoor", status: jsearchStatus, count: dbCounts["Glassdoor"] ?? 0 },
+      ] as ProviderStatus[],
+    };
+  });
