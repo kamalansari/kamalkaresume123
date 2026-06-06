@@ -850,7 +850,7 @@ function JobsPage() {
               variant="ghost"
               disabled={applyLoading}
               onClick={() => {
-                if (applyJob) window.open(naukriUrl(applyJob.title), "_blank", "noreferrer");
+                if (applyJob) applyToJob(applyJob);
                 setApplyJob(null);
               }}
             >
