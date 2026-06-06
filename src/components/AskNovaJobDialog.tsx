@@ -162,6 +162,7 @@ export function AskNovaJobDialog({
           role="log"
           aria-live="polite"
         >
+          <AnalysisPanel job={job} breakdown={breakdown} />
           {messages.length === 0 && !loading && (
             <p className="text-sm text-muted-foreground">
               I'll explain your match for <strong>{job.title}</strong> and tailor bullet points to this role.
