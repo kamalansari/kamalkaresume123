@@ -135,19 +135,67 @@ export function AtsPanel({
   const resumePct = Math.round((score.checks.filter(c => !c.label.startsWith("Job description") && c.pass).reduce((s, c) => s + c.weight, 0) / Math.max(resumeMax, 1)) * 100);
 
   const atsPct = Math.round(score.coverage * 100);
-  const status = atsPct >= 80 ? "Excellent" : atsPct >= 60 ? "Solid Match" : atsPct >= 40 ? "Almost There" : "Needs Work";
-  const statusTone = atsPct >= 80 ? "bg-emerald-500" : atsPct >= 60 ? "bg-[var(--navy-light)]" : atsPct >= 40 ? "bg-amber-500" : "bg-rose-500";
+  const readabilityPct = useMemo(() => computeReadability(data), [data]);
+  const formattingPct = useMemo(() => computeFormatting(data), [data]);
+  const overallHealth = Math.round((resumePct + atsPct + readabilityPct + formattingPct) / 4);
+
+  const healthTone = overallHealth >= 80 ? "emerald" : overallHealth >= 60 ? "navy" : overallHealth >= 40 ? "amber" : "rose";
 
   return (
     <aside className="no-print space-y-3 lg:sticky lg:top-20 self-start">
-      {/* Tabs */}
+      {/* Resume Health Card */}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-[var(--navy-light)]" />
+            <h3 className="font-display font-semibold text-sm">Resume Health</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={cn("text-lg font-display font-bold",
+              healthTone === "emerald" ? "text-emerald-600" :
+              healthTone === "rose" ? "text-rose-600" :
+              healthTone === "amber" ? "text-amber-600" :
+              "text-[var(--navy-light)]"
+            )}>{overallHealth}%</span>
+            <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-secondary" title="Hide panel">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <HealthMetric
+            label="Resume Score"
+            value={resumePct}
+            icon={FileWarning}
+            tone={resumePct >= 75 ? "emerald" : resumePct >= 50 ? "amber" : "rose"}
+          />
+          <HealthMetric
+            label="ATS Score"
+            value={atsPct}
+            icon={Target}
+            tone={atsPct >= 80 ? "emerald" : atsPct >= 60 ? "navy" : atsPct >= 40 ? "amber" : "rose"}
+          />
+          <HealthMetric
+            label="Readability"
+            value={readabilityPct}
+            icon={AlignLeft}
+            tone={readabilityPct >= 75 ? "emerald" : readabilityPct >= 50 ? "amber" : "rose"}
+          />
+          <HealthMetric
+            label="Formatting"
+            value={formattingPct}
+            icon={Type}
+            tone={formattingPct >= 75 ? "emerald" : formattingPct >= 50 ? "amber" : "rose"}
+          />
+        </div>
+      </div>
+
+      {/* Sub-tabs for detail views */}
       <div className="rounded-xl border border-border bg-card p-1 flex gap-1">
-        <TabButton active={tab === "resume"} onClick={() => setTab("resume")} label="Resume Score" badge={`${resumePct}%`} tone="emerald" />
-        <TabButton active={tab === "ats"} onClick={() => setTab("ats")} label="ATS Score" badge={`${atsPct}%`} tone={atsPct >= 60 ? "navy" : "rose"} />
+        <TabButton active={tab === "resume"} onClick={() => setTab("resume")} label="Checks" badge={`${resumePct}%`} tone="emerald" />
+        <TabButton active={tab === "ats"} onClick={() => setTab("ats")} label="Keywords" badge={`${atsPct}%`} tone={atsPct >= 60 ? "navy" : "rose"} />
         <TabButton active={tab === "nova"} onClick={() => setTab("nova")} label="Chat" badge="NOVA" tone="navy" iconDot />
-        <button onClick={onClose} className="ml-1 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary" title="Hide panel">
-          <X className="h-3.5 w-3.5" />
-        </button>
       </div>
 
       {tab === "resume" && <ResumeScoreView data={data} score={score} />}
@@ -171,6 +219,33 @@ export function AtsPanel({
   );
 }
 
+function HealthMetric({ label, value, icon: Icon, tone }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; tone: "emerald" | "navy" | "amber" | "rose" }) {
+  const color =
+    tone === "emerald" ? "text-emerald-600 bg-emerald-500/10"
+    : tone === "rose" ? "text-rose-600 bg-rose-500/10"
+    : tone === "amber" ? "text-amber-600 bg-amber-500/10"
+    : "text-[var(--navy-light)] bg-[var(--navy-light)]/10";
+  const barColor =
+    tone === "emerald" ? "bg-emerald-500"
+    : tone === "rose" ? "bg-rose-500"
+    : tone === "amber" ? "bg-amber-500"
+    : "bg-[var(--navy-light)]";
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Icon className="h-3 w-3" />
+          <span>{label}</span>
+        </div>
+        <span className={cn("text-xs font-semibold tabular-nums rounded-full px-1.5 py-0.5", color)}>{value}%</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+        <div className={cn("h-full rounded-full transition-all duration-500", barColor)} style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
+}
+
 function TabButton({ active, onClick, label, badge, tone, iconDot }: { active: boolean; onClick: () => void; label: string; badge: string; tone: "emerald" | "navy" | "rose"; iconDot?: boolean }) {
   const toneCls =
     tone === "emerald" ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
@@ -191,6 +266,7 @@ function TabButton({ active, onClick, label, badge, tone, iconDot }: { active: b
     </button>
   );
 }
+
 
 type SectionIssue = { label: string; pass: boolean; hint?: string };
 type SectionGroup = { id: string; label: string; issues: SectionIssue[] };
