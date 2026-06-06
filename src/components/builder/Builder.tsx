@@ -53,6 +53,17 @@ import { StickyToolbar } from "./workspace/StickyToolbar";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
+function getSectionCompletion(data: ResumeData) {
+  return {
+    basics: !!(data.name?.trim() && data.email?.trim() && data.phone?.trim()),
+    experience: data.experience.some(e => e.title?.trim() && e.company?.trim()),
+    education: data.education.some(e => e.school?.trim() && e.degree?.trim()),
+    skills: !!(data.skills?.trim()),
+    extras: data.projects.length > 0 || data.certifications.length > 0 || data.awards.length > 0 || data.languages.length > 0 || data.customSections.length > 0,
+    target: !!(data.jobDescription?.trim()),
+  };
+}
+
 /**
  * Wraps the resume preview and scales the 8.5in document down to fit the
  * container width on smaller viewports. The wrapper itself reports the
