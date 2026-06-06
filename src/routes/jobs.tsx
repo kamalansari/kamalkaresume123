@@ -301,12 +301,15 @@ function JobsPage() {
               </div>
               <div>
                 <Label className="text-xs">Source</Label>
-                <Select value={source} onValueChange={(v) => setSource(v as "all" | "Adzuna" | "Naukri")}>
+                <Select value={source} onValueChange={(v) => setSource(v as SourceFilter)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All sources</SelectItem>
                     <SelectItem value="Adzuna">Adzuna</SelectItem>
                     <SelectItem value="Naukri">Naukri</SelectItem>
+                    <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                    <SelectItem value="Indeed">Indeed</SelectItem>
+                    <SelectItem value="Glassdoor">Glassdoor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
