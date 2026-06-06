@@ -804,3 +804,226 @@ function QuickChip({ icon: Icon, label, onClick }: { icon: typeof Gauge; label: 
     </button>
   );
 }
+
+// ---------- Baseline diagnostics (no JD pasted) ----------
+
+const COMMON_TOOL_KEYWORDS = [
+  "sql", "python", "excel", "power bi", "tableau", "javascript", "typescript",
+  "react", "node", "aws", "git", "docker", "kubernetes", "figma", "java",
+  "linux", "ci/cd", "rest", "graphql",
+];
+
+const STRONG_VERBS = [
+  "led", "built", "shipped", "launched", "designed", "drove", "grew", "reduced",
+  "improved", "owned", "managed", "created", "delivered", "scaled", "architected",
+  "implemented", "optimized", "developed", "automated", "analyzed", "analysed",
+  "spearheaded", "orchestrated", "streamlined", "negotiated", "mentored",
+];
+
+const WEAK_VERBS = [
+  "responsible for", "worked on", "helped", "assisted", "participated in",
+  "involved in", "tasked with", "duties included", "in charge of",
+];
+
+type DiagCategory = {
+  id: "keywords" | "formatting" | "verbs" | "skills";
+  label: string;
+  icon: typeof KeyRound;
+  severity: "ok" | "warn" | "bad";
+  summary: string;
+  items: string[];
+  hint?: string;
+  cta?: { label: string; onClick: () => void; disabled?: boolean };
+};
+
+function BaselineDiagnostics({
+  data, score, onAddExtraKeywords, onOneClickOptimize, optimizing,
+}: {
+  data: ResumeData;
+  score: ReturnType<typeof computeScore>;
+  onAddExtraKeywords: (kw: string[]) => void;
+  onOneClickOptimize: () => void;
+  optimizing: boolean;
+}) {
+  const cats = useMemo<DiagCategory[]>(() => {
+    const text = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
+    const skillsText = text(data.skills);
+    const allText = [
+      data.name, data.headline, data.summary, skillsText,
+      (data.experience ?? []).map(e => text(e.bullets)).join(" "),
+      data.extraKeywords ?? "",
+    ].join(" ").toLowerCase();
+
+    // 1) Missing keywords
+    const missingKw = COMMON_TOOL_KEYWORDS.filter(k => !allText.includes(k)).slice(0, 6);
+    const keywords: DiagCategory = {
+      id: "keywords",
+      label: "Missing Keywords",
+      icon: KeyRound,
+      severity: missingKw.length >= 5 ? "bad" : missingKw.length >= 3 ? "warn" : "ok",
+      summary: missingKw.length === 0
+        ? "Your resume mentions common ATS-friendly tools."
+        : `${missingKw.length} commonly-scanned ${missingKw.length === 1 ? "term is" : "terms are"} missing`,
+      items: missingKw,
+      hint: missingKw.length ? "Add these where they truthfully apply." : undefined,
+      cta: missingKw.length
+        ? { label: "Add these keywords", onClick: () => onAddExtraKeywords(missingKw) }
+        : undefined,
+    };
+
+    // 2) Formatting issues — from existing scoring checks
+    const failingChecks = score.checks.filter(c => !c.pass).slice(0, 4);
+    const formatting: DiagCategory = {
+      id: "formatting",
+      label: "Formatting Issues",
+      icon: FileWarning,
+      severity: failingChecks.length >= 3 ? "bad" : failingChecks.length >= 1 ? "warn" : "ok",
+      summary: failingChecks.length === 0
+        ? "Structure looks clean for ATS parsers."
+        : `${failingChecks.length} structural ${failingChecks.length === 1 ? "issue" : "issues"} detected`,
+      items: failingChecks.map(c => c.hint ? `${c.label} — ${c.hint}` : c.label),
+    };
+
+    // 3) Weak action verbs
+    const bulletsRaw = (data.experience ?? [])
+      .flatMap(e => text(e.bullets).split("\n"))
+      .map(b => b.replace(/^[-•·*\s]+/, "").trim())
+      .filter(Boolean);
+    const weakBullets: string[] = [];
+    let hasStrong = false;
+    for (const b of bulletsRaw) {
+      const lower = b.toLowerCase();
+      const startsWeak = WEAK_VERBS.some(w => lower.startsWith(w));
+      const startsStrong = STRONG_VERBS.some(v => new RegExp(`^${v}\\b`).test(lower));
+      if (startsStrong) hasStrong = true;
+      if (startsWeak || (!startsStrong && bulletsRaw.length > 0 && weakBullets.length < 4)) {
+        if (startsWeak) weakBullets.push(b.length > 70 ? b.slice(0, 70) + "…" : b);
+      }
+    }
+    const verbs: DiagCategory = {
+      id: "verbs",
+      label: "Weak Action Verbs",
+      icon: Zap,
+      severity: weakBullets.length >= 3 ? "bad" : weakBullets.length >= 1 ? "warn" : (hasStrong ? "ok" : "warn"),
+      summary: bulletsRaw.length === 0
+        ? "Add accomplishment bullets to your experience."
+        : weakBullets.length
+          ? `${weakBullets.length} bullet${weakBullets.length === 1 ? "" : "s"} start with weak phrasing`
+          : "Bullets open with strong action verbs.",
+      items: weakBullets.length
+        ? weakBullets
+        : (bulletsRaw.length === 0 ? ["No bullets found in Work Experience."] : []),
+      hint: weakBullets.length ? "Replace with verbs like Led, Built, Shipped, Drove, Reduced." : undefined,
+    };
+
+    // 4) Skills gap
+    const skillTokens = skillsText.split(/[,\n|;]/).map(s => s.trim()).filter(Boolean);
+    const grouped = /[:|]/.test(skillsText);
+    const skillsIssues: string[] = [];
+    if (skillTokens.length === 0) skillsIssues.push("No Skills section detected.");
+    else if (skillTokens.length < 5) skillsIssues.push(`Only ${skillTokens.length} skill${skillTokens.length === 1 ? "" : "s"} listed — aim for 8–15.`);
+    if (skillTokens.length > 0 && !grouped) skillsIssues.push("Skills aren't grouped by category (e.g. 'Languages: …').");
+    const skills: DiagCategory = {
+      id: "skills",
+      label: "Skills Gap",
+      icon: GraduationCap,
+      severity: skillsIssues.length >= 2 ? "bad" : skillsIssues.length === 1 ? "warn" : "ok",
+      summary: skillsIssues.length === 0
+        ? `${skillTokens.length} skills listed and grouped.`
+        : skillsIssues[0],
+      items: skillsIssues,
+    };
+
+    return [keywords, formatting, verbs, skills];
+  }, [data, score, onAddExtraKeywords]);
+
+  const issuesTotal = cats.filter(c => c.severity !== "ok").length;
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <span className="font-semibold text-sm">Why this score</span>
+        </div>
+        <span className="text-[11px] text-muted-foreground">
+          {issuesTotal === 0 ? "All clear" : `${issuesTotal} area${issuesTotal === 1 ? "" : "s"} to improve`}
+        </span>
+      </div>
+      <ul className="divide-y divide-border">
+        {cats.map(c => <DiagnosticRow key={c.id} cat={c} />)}
+      </ul>
+      <button
+        onClick={onOneClickOptimize}
+        disabled={optimizing}
+        className="w-full inline-flex items-center justify-center gap-2 px-3 py-3 text-sm font-medium border-t border-border bg-[var(--navy-light)] text-white hover:opacity-95 disabled:opacity-60 transition-opacity"
+      >
+        {optimizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+        Fix with AI
+      </button>
+    </div>
+  );
+}
+
+function DiagnosticRow({ cat }: { cat: DiagCategory }) {
+  const [open, setOpen] = useState(cat.severity === "bad");
+  const Icon = cat.icon;
+  const sevDot =
+    cat.severity === "ok" ? "bg-emerald-500"
+    : cat.severity === "warn" ? "bg-amber-500"
+    : "bg-rose-500";
+  const sevLabel =
+    cat.severity === "ok" ? "OK"
+    : cat.severity === "warn" ? "Warn"
+    : "Fix";
+  return (
+    <li>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-secondary/40 transition-colors"
+      >
+        <Icon className="h-4 w-4 text-[var(--navy-light)] shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium truncate">{cat.label}</div>
+          <div className="text-xs text-muted-foreground truncate">{cat.summary}</div>
+        </div>
+        <span className={cn("inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white", sevDot)}>
+          {sevLabel}
+        </span>
+        <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-90")} />
+      </button>
+      {open && cat.items.length > 0 && (
+        <div className="px-4 pb-3 -mt-1">
+          {cat.id === "keywords" ? (
+            <div className="flex flex-wrap gap-1.5">
+              {cat.items.map(k => (
+                <span key={k} className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 text-rose-700 px-2 py-0.5 text-[11px] font-medium capitalize">
+                  {k}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <ul className="space-y-1">
+              {cat.items.map((it, idx) => (
+                <li key={idx} className="flex gap-2 text-xs text-foreground/80">
+                  <span className="text-rose-500 mt-0.5">•</span>
+                  <span className="min-w-0">{it}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {cat.hint && <div className="mt-2 text-[11px] text-muted-foreground">{cat.hint}</div>}
+          {cat.cta && (
+            <button
+              onClick={cat.cta.onClick}
+              disabled={cat.cta.disabled}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-[var(--navy-light)]/40 bg-[var(--navy-light)]/10 px-2.5 py-1 text-xs font-medium text-[var(--navy-light)] hover:bg-[var(--navy-light)]/15 transition-colors"
+            >
+              <Plus className="h-3 w-3" /> {cat.cta.label}
+            </button>
+          )}
+        </div>
+      )}
+    </li>
+  );
+}
