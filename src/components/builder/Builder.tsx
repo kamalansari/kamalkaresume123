@@ -1588,8 +1588,8 @@ export function Builder() {
 
       <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-4 sm:px-6 py-6 grid-cols-1",
         atsOpen
-          ? "lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)_minmax(0,320px)]"
-          : "lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]"
+          ? "lg:grid-cols-[3fr_7fr] xl:grid-cols-[3fr_7fr] 2xl:grid-cols-[3fr_5fr_2fr]"
+          : "lg:grid-cols-[3fr_7fr] xl:grid-cols-[3fr_7fr]"
       )}>
         {/* Editor */}
         <div className={cn("no-print", mobileView !== "editor" && "hidden lg:block")}>
