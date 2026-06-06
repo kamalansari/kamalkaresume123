@@ -11,8 +11,8 @@ export const Route = createFileRoute("/api/public/hooks/fetch-jobs")({
         if (!expected || apiKey !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }
-        const { syncAdzunaJobs } = await import("@/lib/jobs.server");
-        const result = await syncAdzunaJobs();
+        const { syncAllJobs } = await import("@/lib/jobs.server");
+        const result = await syncAllJobs();
         return Response.json({ ok: true, ...result });
       },
     },
