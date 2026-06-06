@@ -52,7 +52,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { AiAssistantDock } from "./workspace/AiAssistantDock";
+import { AiAssistantDock, AI_ASSISTANT_OPEN_EVENT } from "./workspace/AiAssistantDock";
 import { StickyToolbar } from "./workspace/StickyToolbar";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
