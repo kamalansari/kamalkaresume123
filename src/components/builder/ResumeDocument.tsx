@@ -300,8 +300,13 @@ function SkillsGridContent({
     );
   };
 
-  if (ed) return renderFlat(flatSkills);
-  return mode === "categorized" && hasHeadings ? renderGroups(groups) : renderFlat(flatSkills);
+  // Render categorized layout consistently — including in the Builder
+  // preview (when `ed` handlers are present) — so JD-aligned, categorized
+  // skills shown in Resume Lab stay visible and persist in the Builder.
+  // Inline contenteditable is only attached in the flat layout to avoid
+  // collapsing categories into a single line on blur.
+  if (mode === "categorized" && hasHeadings) return renderGroups(groups);
+  return renderFlat(ed ? parseSkills(data.skills) : flatSkills);
 }
 
 export function ResumeDocument({
