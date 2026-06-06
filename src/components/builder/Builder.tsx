@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Share2, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye, LayoutTemplate, Wrench } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, CheckCircle2, XCircle, Sparkles, Share2, Loader2, GripVertical, FileType, FileText, Save, FolderOpen, FilePlus2, Check, Pencil, Briefcase, ExternalLink, AlignJustify, Bold, X, PanelRightOpen, Wand2, Copy, Download, FolderOpen as OpenIcon, MousePointerClick, Columns, Square, Star, Shield, RotateCcw, User, UserPlus, IdCard, Upload, Eye, LayoutTemplate, Wrench, GraduationCap, Trophy, Target, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { defaultResume, FONT_PRESETS, COLOR_PRESETS, TEMPLATE_SIDEBAR_DEFAULTS, SIDEBAR_ELIGIBLE, type ResumeData, type Experience, type Education, type Project, type Certification, type Award, type Language, type TemplateId, type SectionId, type CustomSection } from "./types";
 import { computeScore, jdKeywordSet, isJdKeyword, COMMON_ATS_KEYWORD_SET } from "./atsScore";
@@ -52,6 +52,17 @@ import { AiAssistantDock } from "./workspace/AiAssistantDock";
 import { StickyToolbar } from "./workspace/StickyToolbar";
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
+
+function getSectionCompletion(data: ResumeData) {
+  return {
+    basics: !!(data.name?.trim() && data.email?.trim() && data.phone?.trim()),
+    experience: data.experience.some(e => e.title?.trim() && e.company?.trim()),
+    education: data.education.some(e => e.school?.trim() && e.degree?.trim()),
+    skills: !!(data.skills?.trim()),
+    extras: data.projects.length > 0 || data.certifications.length > 0 || data.awards.length > 0 || data.languages.length > 0 || data.customSections.length > 0,
+    target: !!(data.jobDescription?.trim()),
+  };
+}
 
 /**
  * Wraps the resume preview and scales the 8.5in document down to fit the
@@ -1604,23 +1615,32 @@ export function Builder() {
                   "lg:grid lg:grid-cols-6 lg:overflow-visible"
                 )}
               >
-                {[
-                  { v: "basics", label: "Basics", icon: User },
-                  { v: "experience", label: "Experience", icon: Briefcase },
-                  { v: "education", label: "Education", icon: IdCard },
-                  { v: "skills", label: "Skills", icon: Star },
-                  { v: "extras", label: "Extras", icon: Plus },
-                  { v: "target", label: "Target", icon: MousePointerClick },
-                ].map(({ v, label, icon: Icon }) => (
-                  <TabsTrigger
-                    key={v}
-                    value={v}
-                    className="snap-start shrink-0 lg:shrink min-w-[104px] lg:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap"
-                  >
-                    <Icon className="h-3.5 w-3.5 opacity-80" />
-                    <span>{label}</span>
-                  </TabsTrigger>
-                ))}
+                {(() => {
+                  const completion = getSectionCompletion(data);
+                  const tabs = [
+                    { v: "basics" as const, label: "Basics", icon: User, done: completion.basics },
+                    { v: "experience" as const, label: "Experience", icon: Briefcase, done: completion.experience },
+                    { v: "education" as const, label: "Education", icon: GraduationCap, done: completion.education },
+                    { v: "skills" as const, label: "Skills", icon: Wrench, done: completion.skills },
+                    { v: "extras" as const, label: "Extras", icon: Trophy, done: completion.extras },
+                    { v: "target" as const, label: "Target", icon: Target, done: completion.target },
+                  ];
+                  return tabs.map(({ v, label, icon: Icon, done }) => (
+                    <TabsTrigger
+                      key={v}
+                      value={v}
+                      className="snap-start shrink-0 lg:shrink min-w-[104px] lg:min-w-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm whitespace-nowrap"
+                    >
+                      <Icon className="h-3.5 w-3.5 opacity-80" />
+                      <span>{label}</span>
+                      {done ? (
+                        <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                      ) : (
+                        <AlertCircle className="h-3 w-3 text-amber-500" />
+                      )}
+                    </TabsTrigger>
+                  ));
+                })()}
               </TabsList>
             </div>
             <TabsContent value="basics" className="space-y-6 mt-4">
