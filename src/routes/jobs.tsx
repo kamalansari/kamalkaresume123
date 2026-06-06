@@ -159,14 +159,21 @@ function JobsPage() {
   const total = jobsQuery.data?.pages[0]?.total ?? 0;
 
   const rankedJobs = useMemo(() => {
-    const scored = allJobs.map((j) => ({ job: j, score: matchScore(j, profile) }));
+    const scored = allJobs.map((j) => {
+      const breakdown = scoreJobBreakdown(j, profile);
+      return { job: j, score: breakdown.score, breakdown };
+    });
     scored.sort((a, b) => b.score - a.score);
     return scored;
   }, [allJobs, profile]);
 
   const savedList = savedQuery.data?.saved ?? [];
   const visibleList = tab === "saved"
-    ? savedList.map((s) => ({ job: s.jobs as unknown as JobRow, score: matchScore(s.jobs as unknown as JobRow, profile) }))
+    ? savedList.map((s) => {
+        const job = s.jobs as unknown as JobRow;
+        const breakdown = scoreJobBreakdown(job, profile);
+        return { job, score: breakdown.score, breakdown };
+      })
     : rankedJobs;
 
   const clearFilters = () => {
