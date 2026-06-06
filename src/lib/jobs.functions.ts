@@ -31,6 +31,7 @@ const ListInput = z.object({
   workMode: z.enum(["any", "remote", "hybrid", "onsite"]).optional().default("any"),
   experience: z.enum(["any", "fresher", "1-3", "3-5", "5-8", "8+"]).optional().default("any"),
   minSalaryLpa: z.number().min(0).max(200).optional().default(0),
+  source: z.enum(["all", "Adzuna", "Naukri"]).optional().default("all"),
   cursor: z.number().min(0).optional().default(0),
   pageSize: z.number().min(5).max(50).optional().default(20),
 });
@@ -57,6 +58,9 @@ export const listJobs = createServerFn({ method: "POST" })
     if (data.workMode === "onsite") q = q.eq("is_remote", false);
     if (data.minSalaryLpa > 0) {
       q = q.gte("salary_max", data.minSalaryLpa * 100000);
+    }
+    if (data.source !== "all") {
+      q = q.eq("source", data.source);
     }
 
     const from = data.cursor;

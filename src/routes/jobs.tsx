@@ -81,6 +81,7 @@ function JobsPage() {
   const [workMode, setWorkMode] = useState<WorkMode>("any");
   const [experience, setExperience] = useState<ExpId>("any");
   const [minSalary, setMinSalary] = useState<number>(0);
+  const [source, setSource] = useState<"all" | "Adzuna" | "Naukri">("all");
   const [showFilters, setShowFilters] = useState(false);
   const [tab, setTab] = useState<"all" | "saved">("all");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -117,7 +118,7 @@ function JobsPage() {
     };
   }, []);
 
-  const filters = { search, location, workMode, experience, minSalaryLpa: minSalary };
+  const filters = { search, location, workMode, experience, minSalaryLpa: minSalary, source };
 
   const jobsQuery = useInfiniteQuery({
     queryKey: ["jobs", filters],
@@ -194,7 +195,7 @@ function JobsPage() {
     : rankedJobs;
 
   const clearFilters = () => {
-    setSearch(""); setLocation(""); setWorkMode("any"); setExperience("any"); setMinSalary(0);
+    setSearch(""); setLocation(""); setWorkMode("any"); setExperience("any"); setMinSalary(0); setSource("all");
   };
 
   const activeFilters = [
@@ -202,6 +203,7 @@ function JobsPage() {
     experience !== "any" && EXPERIENCE_OPTIONS.find((e) => e.id === experience)?.label,
     minSalary > 0 && `${minSalary}+ LPA`,
     location && `📍 ${location}`,
+    source !== "all" && `Source: ${source}`,
   ].filter(Boolean) as string[];
 
   return (
@@ -215,7 +217,7 @@ function JobsPage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-base sm:text-lg font-semibold truncate">Find Jobs</h1>
             <p className="text-xs text-muted-foreground">
-              {total > 0 ? `${total.toLocaleString()} live jobs` : "Live jobs from Adzuna"} · cached & refreshed every 6h
+              {total > 0 ? `${total.toLocaleString()} live jobs` : "Live jobs from Adzuna & Naukri"} · cached & refreshed every 6h
             </p>
           </div>
           <Button
@@ -296,6 +298,17 @@ function JobsPage() {
                   min={0} max={50} step={1}
                   className="mt-3"
                 />
+              </div>
+              <div>
+                <Label className="text-xs">Source</Label>
+                <Select value={source} onValueChange={(v) => setSource(v as "all" | "Adzuna" | "Naukri")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All sources</SelectItem>
+                    <SelectItem value="Adzuna">Adzuna</SelectItem>
+                    <SelectItem value="Naukri">Naukri</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="sm:col-span-4 flex justify-end">
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
