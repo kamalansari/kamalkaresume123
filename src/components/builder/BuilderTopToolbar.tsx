@@ -821,7 +821,64 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
               + Insert category preset
             </button>
           )}
+          <div className="mt-3">
+            <Label className="text-xs text-muted-foreground">Balance strategy</Label>
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
+              {([
+                { v: "length", label: "Length", hint: "Balance by estimated wrapped lines (default)" },
+                { v: "count", label: "Count", hint: "Equal number of items per column" },
+                { v: "chars", label: "Chars", hint: "Weight by raw character count" },
+              ] as const).map((opt) => {
+                const active = (data.skillsBalanceStrategy ?? "length") === opt.v;
+                return (
+                  <button
+                    key={opt.v}
+                    title={opt.hint}
+                    onClick={() => onPatch({ skillsBalanceStrategy: opt.v })}
+                    className={cn(
+                      "inline-flex items-center justify-center rounded-md border h-9 px-2 text-xs font-medium",
+                      active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40",
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <Label className="text-xs text-muted-foreground">Bias</Label>
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {(data.skillsBalanceBias ?? 1).toFixed(2)}×
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0.5}
+              max={1.5}
+              step={0.05}
+              value={data.skillsBalanceBias ?? 1}
+              onChange={(e) => onPatch({ skillsBalanceBias: Number(e.target.value) })}
+              className="mt-1 w-full accent-primary"
+              aria-label="Skills balance bias"
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>Fill left</span>
+              <span>Even</span>
+              <span>Spread</span>
+            </div>
+            {(data.skillsBalanceStrategy ?? "length") !== "length" ||
+            (data.skillsBalanceBias ?? 1) !== 1 ? (
+              <button
+                type="button"
+                onClick={() => onPatch({ skillsBalanceStrategy: "length", skillsBalanceBias: 1 })}
+                className="mt-2 text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+              >
+                Reset to default
+              </button>
+            ) : null}
+          </div>
         </div>
+
         <div>
           <Label className="text-xs text-muted-foreground">Text style</Label>
           <div className="mt-2 flex gap-2">
