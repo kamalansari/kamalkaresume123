@@ -20,7 +20,30 @@ const VariationsInput = z.object({
   length: z.enum(["short", "medium", "long"]).optional().default("medium"),
 });
 
-async function callAiForLetter(data: z.infer<typeof Input>): Promise<string> {
+export interface LetterResult {
+  letter: string;
+  matches: string[];
+}
+
+function extractJson(text: string): { letter?: string; matches?: unknown } | null {
+  const trimmed = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/i, "").trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(trimmed.slice(start, end + 1));
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+async function callAiForLetter(data: z.infer<typeof Input>): Promise<LetterResult> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("AI service is not configured.");
 
@@ -34,10 +57,24 @@ Rules:
 - Use ONLY facts present in the candidate's resume. Never invent employers, degrees, metrics, or skills.
 - Mirror keywords and requirements from the job description where the resume genuinely supports them.
 - Avoid clichés ("hardworking team player", "I am writing to apply"). Open with a concrete hook.
-- No markdown, no bullet lists, no headers. Plain prose paragraphs only.
+- The letter body must be plain prose paragraphs only — no markdown, no bullet lists, no headers.
 - Do not include the date or postal addresses. Start with the greeting line.
 - End with "Sincerely," on its own line, then the candidate's name on the next line.
-- Tone: ${data.tone}. Length: ${lengthHint}.`;
+- Tone: ${data.tone}. Length: ${lengthHint}.
+
+Respond with a single JSON object only — no prose before or after, no markdown fences. Shape:
+{
+  "letter": "<the full cover letter as plain text with \\n line breaks>",
+  "matches": [
+    "<Resume section name> — <one short sentence on which detail mapped to which job requirement>",
+    ...
+  ]
+}
+Rules for "matches":
+- 3 to 5 concise bullets, each under 22 words.
+- Start every bullet with the resume section actually used (e.g. "Experience", "Summary", "Skills", "Projects", "Education", "Certifications", "Headline").
+- Reference a specific resume detail (role, project, skill, metric) AND the job requirement it satisfies.
+- Do NOT list sections that were not actually used.`;
 
   const user = `JOB TITLE: ${data.jobTitle || "(not provided)"}
 COMPANY: ${data.company || "(not provided)"}
@@ -49,7 +86,7 @@ ${data.jobDescription}
 === CANDIDATE RESUME ===
 ${data.resumeText}
 
-Write the cover letter now.`;
+Return the JSON object now.`;
 
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -81,14 +118,25 @@ Write the cover letter now.`;
   const json = await resp.json();
   const content: string = json?.choices?.[0]?.message?.content ?? "";
   if (!content.trim()) throw new Error("Empty response from AI.");
-  return content.trim();
+
+  const parsed = extractJson(content);
+  const letter = typeof parsed?.letter === "string" ? parsed.letter.trim() : "";
+  const matches = Array.isArray(parsed?.matches)
+    ? (parsed!.matches as unknown[]).filter((m): m is string => typeof m === "string" && m.trim().length > 0).map((m) => m.trim())
+    : [];
+
+  if (!letter) {
+    // Fallback: model didn't follow JSON contract — use raw content as letter, no matches.
+    return { letter: content.trim(), matches: [] };
+  }
+  return { letter, matches };
 }
 
 export const generateCoverLetter = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
   .handler(async ({ data }) => {
-    const letter = await callAiForLetter(data);
-    return { letter };
+    const result = await callAiForLetter(data);
+    return result;
   });
 
 export const generateCoverLetterVariations = createServerFn({ method: "POST" })
@@ -98,11 +146,11 @@ export const generateCoverLetterVariations = createServerFn({ method: "POST" })
     const results = await Promise.all(
       tones.map(async (tone) => {
         try {
-          const letter = await callAiForLetter({ ...data, tone });
-          return { tone, letter };
+          const { letter, matches } = await callAiForLetter({ ...data, tone });
+          return { tone, letter, matches };
         } catch (err) {
           console.error(`Failed to generate ${tone} variation:`, err);
-          return { tone, letter: "", error: err instanceof Error ? err.message : "Failed" };
+          return { tone, letter: "", matches: [], error: err instanceof Error ? err.message : "Failed" };
         }
       })
     );
