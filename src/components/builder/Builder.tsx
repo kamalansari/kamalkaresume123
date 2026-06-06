@@ -2349,6 +2349,16 @@ export function Builder() {
 
 
       <AiAssistantDock data={data} atsScore={score.score} />
+
+      {/* Polite ARIA live region for screen-reader status (AI rewrites, PDF/DOCX exports, tailoring). */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {liveMsg}
+      </div>
     </div>
   );
 }
