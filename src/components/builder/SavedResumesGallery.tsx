@@ -34,11 +34,7 @@ export function SavedResumesGallery({
   saved, currentId, primaryId,
   onOpen, onRename, onDuplicate, onDelete, onNew, onSetPrimary,
 }: Props) {
-  const [open, setOpen] = useState(() => {
-    if (typeof window === "undefined") return true;
-    // Collapse by default on small screens to reduce vertical clutter.
-    return window.innerWidth >= 1024;
-  });
+  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "list";
