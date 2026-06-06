@@ -189,6 +189,7 @@ function isRapidApiSubscriptionError(status: number, body: string): boolean {
 }
 
 export const getProviderStatus = createServerFn({ method: "POST" })
+  .inputValidator(() => ({}))
   .handler(async () => {
     const { getServiceClient } = await import("@/lib/jobs.server");
     const supabase = getServiceClient();
