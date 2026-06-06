@@ -34,16 +34,61 @@ const TWO_COL_TEMPLATES = new Set([
 ]);
 
 export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras, onUpdate }: Props) {
-  const share = async () => {
+  const buildShareUrl = () => {
+    const payload = compressToEncodedURIComponent(JSON.stringify(getData?.() ?? data));
+    return `${window.location.origin}/builder#r=${payload}`;
+  };
+  const copyLink = async () => {
     try {
-      const payload = compressToEncodedURIComponent(JSON.stringify(getData?.() ?? data));
-      const url = `${window.location.origin}/builder#r=${payload}`;
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(buildShareUrl());
       toast.success("Share link copied to clipboard");
     } catch {
       toast.error("Could not generate share link");
     }
   };
+  const shareName = data.fullName ? `${data.fullName}'s resume` : "my resume";
+  const shareVia = (platform: "email" | "twitter" | "linkedin" | "whatsapp" | "facebook") => {
+    try {
+      const url = buildShareUrl();
+      const text = `Check out ${shareName}`;
+      const enc = encodeURIComponent;
+      let target = "";
+      switch (platform) {
+        case "email":
+          target = `mailto:?subject=${enc(text)}&body=${enc(text + "\n\n" + url)}`;
+          break;
+        case "twitter":
+          target = `https://twitter.com/intent/tweet?text=${enc(text)}&url=${enc(url)}`;
+          break;
+        case "linkedin":
+          target = `https://www.linkedin.com/sharing/share-offsite/?url=${enc(url)}`;
+          break;
+        case "whatsapp":
+          target = `https://wa.me/?text=${enc(text + " " + url)}`;
+          break;
+        case "facebook":
+          target = `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}`;
+          break;
+      }
+      window.open(target, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error("Could not open share window");
+    }
+  };
+  const nativeShare = async () => {
+    try {
+      const url = buildShareUrl();
+      if (navigator.share) {
+        await navigator.share({ title: shareName, text: `Check out ${shareName}`, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Share link copied to clipboard");
+      }
+    } catch {
+      // user cancelled or unsupported
+    }
+  };
+
   const scale = data.printScale ?? 1;
   const sidebarWidth = data.sidebarWidth ?? 2.55;
   const autoFit = data.sidebarAutoFit !== false;
