@@ -135,6 +135,8 @@ export function AtsPanel({
   const resumePct = Math.round((score.checks.filter(c => !c.label.startsWith("Job description") && c.pass).reduce((s, c) => s + c.weight, 0) / Math.max(resumeMax, 1)) * 100);
 
   const atsPct = Math.round(score.coverage * 100);
+  const status = atsPct >= 80 ? "Excellent" : atsPct >= 60 ? "Solid Match" : atsPct >= 40 ? "Almost There" : "Needs Work";
+  const statusTone = atsPct >= 80 ? "bg-emerald-500" : atsPct >= 60 ? "bg-[var(--navy-light)]" : atsPct >= 40 ? "bg-amber-500" : "bg-rose-500";
   const readabilityPct = useMemo(() => computeReadability(data), [data]);
   const formattingPct = useMemo(() => computeFormatting(data), [data]);
   const overallHealth = Math.round((resumePct + atsPct + readabilityPct + formattingPct) / 4);
