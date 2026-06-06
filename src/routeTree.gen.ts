@@ -33,6 +33,7 @@ import { Route as ApiJobTipRouteImport } from './routes/api/job-tip'
 import { Route as ApiInterviewScoreRouteImport } from './routes/api/interview-score'
 import { Route as ApiInterviewQuestionRouteImport } from './routes/api/interview-question'
 import { Route as ApiGenerateFromJdRouteImport } from './routes/api/generate-from-jd'
+import { Route as ApiExtractJdRouteImport } from './routes/api/extract-jd'
 import { Route as ApiAlignResumeRouteImport } from './routes/api/align-resume'
 import { Route as AdminSkillDictionaryRouteImport } from './routes/admin.skill-dictionary'
 
@@ -156,6 +157,11 @@ const ApiGenerateFromJdRoute = ApiGenerateFromJdRouteImport.update({
   path: '/api/generate-from-jd',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiExtractJdRoute = ApiExtractJdRouteImport.update({
+  id: '/api/extract-jd',
+  path: '/api/extract-jd',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAlignResumeRoute = ApiAlignResumeRouteImport.update({
   id: '/api/align-resume',
   path: '/api/align-resume',
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/roadmap': typeof RoadmapRoute
   '/admin/skill-dictionary': typeof AdminSkillDictionaryRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
+  '/api/extract-jd': typeof ApiExtractJdRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/interview-question': typeof ApiInterviewQuestionRoute
   '/api/interview-score': typeof ApiInterviewScoreRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/roadmap': typeof RoadmapRoute
   '/admin/skill-dictionary': typeof AdminSkillDictionaryRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
+  '/api/extract-jd': typeof ApiExtractJdRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/interview-question': typeof ApiInterviewQuestionRoute
   '/api/interview-score': typeof ApiInterviewScoreRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/roadmap': typeof RoadmapRoute
   '/admin/skill-dictionary': typeof AdminSkillDictionaryRoute
   '/api/align-resume': typeof ApiAlignResumeRoute
+  '/api/extract-jd': typeof ApiExtractJdRoute
   '/api/generate-from-jd': typeof ApiGenerateFromJdRoute
   '/api/interview-question': typeof ApiInterviewQuestionRoute
   '/api/interview-score': typeof ApiInterviewScoreRoute
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/admin/skill-dictionary'
     | '/api/align-resume'
+    | '/api/extract-jd'
     | '/api/generate-from-jd'
     | '/api/interview-question'
     | '/api/interview-score'
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/admin/skill-dictionary'
     | '/api/align-resume'
+    | '/api/extract-jd'
     | '/api/generate-from-jd'
     | '/api/interview-question'
     | '/api/interview-score'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/admin/skill-dictionary'
     | '/api/align-resume'
+    | '/api/extract-jd'
     | '/api/generate-from-jd'
     | '/api/interview-question'
     | '/api/interview-score'
@@ -354,6 +366,7 @@ export interface RootRouteChildren {
   RoadmapRoute: typeof RoadmapRoute
   AdminSkillDictionaryRoute: typeof AdminSkillDictionaryRoute
   ApiAlignResumeRoute: typeof ApiAlignResumeRoute
+  ApiExtractJdRoute: typeof ApiExtractJdRoute
   ApiGenerateFromJdRoute: typeof ApiGenerateFromJdRoute
   ApiInterviewQuestionRoute: typeof ApiInterviewQuestionRoute
   ApiInterviewScoreRoute: typeof ApiInterviewScoreRoute
@@ -538,6 +551,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateFromJdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/extract-jd': {
+      id: '/api/extract-jd'
+      path: '/api/extract-jd'
+      fullPath: '/api/extract-jd'
+      preLoaderRoute: typeof ApiExtractJdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/align-resume': {
       id: '/api/align-resume'
       path: '/api/align-resume'
@@ -570,6 +590,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoadmapRoute: RoadmapRoute,
   AdminSkillDictionaryRoute: AdminSkillDictionaryRoute,
   ApiAlignResumeRoute: ApiAlignResumeRoute,
+  ApiExtractJdRoute: ApiExtractJdRoute,
   ApiGenerateFromJdRoute: ApiGenerateFromJdRoute,
   ApiInterviewQuestionRoute: ApiInterviewQuestionRoute,
   ApiInterviewScoreRoute: ApiInterviewScoreRoute,
