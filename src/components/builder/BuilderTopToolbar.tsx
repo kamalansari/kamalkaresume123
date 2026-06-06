@@ -1028,7 +1028,3 @@ function AlignPicker({
     </div>
   );
 }
-      </PopoverContent>
-    </Popover>
-  );
-}
