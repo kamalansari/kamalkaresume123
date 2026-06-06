@@ -37,6 +37,16 @@ const ListInput = z.object({
   pageSize: z.number().min(5).max(50).optional().default(20),
 });
 
+function escapePostgrestFilterValue(value: string): string {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+function makeIlikePattern(value: string): string | null {
+  const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+  if (!cleaned) return null;
+  return escapePostgrestFilterValue(`%${cleaned}%`);
+}
+
 export const listJobs = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ListInput.parse(input))
   .handler(async ({ data }) => {
@@ -48,8 +58,8 @@ export const listJobs = createServerFn({ method: "POST" })
       .eq("is_active", true);
 
     if (data.search.trim()) {
-      const s = data.search.trim();
-      q = q.or(`title.ilike.%${s}%,description.ilike.%${s}%`);
+      const pattern = makeIlikePattern(data.search);
+      if (pattern) q = q.or(`title.ilike.${pattern},description.ilike.${pattern}`);
     }
     if (data.company.trim()) {
       const c = data.company.trim();
