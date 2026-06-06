@@ -19,7 +19,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   listJobs, saveJob, unsaveJob, listSavedJobs, triggerJobSync,
-  type JobRow,
+  getProviderStatus,
+  type JobRow, type ProviderStatus,
 } from "@/lib/jobs.functions";
 import {
   buildResumeProfile, scoreJobBreakdown, describeLevel,
