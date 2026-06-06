@@ -1770,6 +1770,10 @@ export function Builder() {
         onSetPrimary={setAsPrimary}
       />
 
+      <div className="print-only-resume" aria-hidden="true">
+        {printData && <ResumeDocument data={printData} />}
+      </div>
+
       <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-4 sm:px-6 py-6 grid-cols-1",
         atsOpen
           ? "lg:grid-cols-[3fr_7fr] xl:grid-cols-[3fr_7fr] 2xl:grid-cols-[3fr_5fr_2fr]"
