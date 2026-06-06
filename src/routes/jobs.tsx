@@ -81,6 +81,7 @@ function JobsPage() {
   const [workMode, setWorkMode] = useState<WorkMode>("any");
   const [experience, setExperience] = useState<ExpId>("any");
   const [minSalary, setMinSalary] = useState<number>(0);
+  const [source, setSource] = useState<"all" | "Adzuna" | "Naukri">("all");
   const [showFilters, setShowFilters] = useState(false);
   const [tab, setTab] = useState<"all" | "saved">("all");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
