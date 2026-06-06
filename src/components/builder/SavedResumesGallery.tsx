@@ -34,12 +34,9 @@ export function SavedResumesGallery({
   saved, currentId, primaryId,
   onOpen, onRename, onDuplicate, onDelete, onNew, onSetPrimary,
 }: Props) {
-  const [open, setOpen] = useState(() => {
-    if (typeof window === "undefined") return true;
-    // Collapse by default on small screens to reduce vertical clutter.
-    return window.innerWidth >= 1024;
-  });
+  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const currentResume = useMemo(() => saved.find(r => r.id === currentId) ?? null, [saved, currentId]);
   const [view, setView] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "list";
     return (localStorage.getItem("resumeforge.gallery.view") as "grid" | "list") || "list";
@@ -211,19 +208,36 @@ export function SavedResumesGallery({
   }
 
   return (
-    <section className="no-print mx-auto max-w-[1600px] px-6 pt-6">
+    <section className="no-print mx-auto max-w-[1600px] px-6 pt-3">
       <div className="rounded-xl border border-border bg-card/40 backdrop-blur-sm">
         <button
           onClick={() => setOpen(o => !o)}
-          className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+          className="w-full flex items-center justify-between gap-3 px-4 py-2 text-left"
+          aria-expanded={open}
         >
-          <div className="flex items-center gap-2">
-            <FolderOpen className="h-4 w-4 text-[var(--navy-light)]" />
+          <div className="flex items-center gap-2 min-w-0">
+            <FolderOpen className="h-4 w-4 text-[var(--navy-light)] shrink-0" />
             <span className="font-display font-semibold">My Resumes</span>
             <span className="text-xs text-muted-foreground">({saved.length})</span>
+            {!open && currentResume && (
+              <>
+                <span className="text-muted-foreground/50 mx-1">·</span>
+                <span className="truncate text-sm text-muted-foreground">
+                  {currentResume.name}
+                </span>
+              </>
+            )}
           </div>
-          {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          <div className="flex items-center gap-2 shrink-0">
+            {!open && (
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                {open ? "Hide" : "Manage"}
+              </span>
+            )}
+            {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
         </button>
+
 
         {open && (
           <div className="px-4 pb-4">
