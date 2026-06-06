@@ -16,6 +16,7 @@ const QUICK_ACTIONS = [
 
 export function AiAssistantDock({ data, atsScore }: { data: ResumeData; atsScore?: number }) {
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
