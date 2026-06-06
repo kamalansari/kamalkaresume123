@@ -1,4 +1,4 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate, type LinkProps } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   FileStack,
@@ -34,12 +34,21 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const navGroups = [
+type NavItem = {
+  title: string;
+  url: LinkProps["to"];
+  icon: typeof LayoutDashboard;
+  match?: string;
+  hash?: string;
+  scrollTo?: string;
+};
+
+const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Workspace",
     items: [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-      { title: "My Resumes", url: "/dashboard", icon: FileStack, match: "/dashboard" },
+      { title: "My Resumes", url: "/dashboard", icon: FileStack, hash: "my-resumes", scrollTo: "my-resumes", match: "/dashboard#my-resumes" },
       { title: "Create Resume", url: "/builder", icon: PlusCircle },
     ],
   },
@@ -66,10 +75,11 @@ const navGroups = [
       { title: "Skill Dictionary", url: "/admin/skill-dictionary", icon: BookOpen },
     ],
   },
-] as const;
+];
 
 export function AppSidebar() {
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
+  const currentHash = useRouterState({ select: (s) => s.location.hash });
   const navigate = useNavigate();
   const [email, setEmail] = useState<string | null>(null);
 
@@ -81,8 +91,18 @@ export function AppSidebar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const isActive = (path: string) =>
-    currentPath === path || currentPath.startsWith(path + "/");
+  const isActive = (item: NavItem) => {
+    // Items with a hash anchor are active only when the hash matches.
+    if (item.hash) {
+      return currentPath === item.url && currentHash === item.hash;
+    }
+    const target = item.match ?? item.url;
+    // Plain dashboard link should NOT light up when a hash-anchored sibling is selected.
+    if (item.url === "/dashboard" && currentPath === "/dashboard" && currentHash) {
+      return false;
+    }
+    return currentPath === target || currentPath.startsWith(target + "/");
+  };
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -119,11 +139,23 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive(("match" in item && item.match) || item.url)}
+                      isActive={isActive(item)}
                       tooltip={item.title}
                       className="h-9 rounded-lg transition-all data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-medium hover:translate-x-0.5"
                     >
-                      <Link to={item.url} className="flex items-center gap-3">
+                      <Link
+                        to={item.url}
+                        hash={item.hash}
+                        className="flex items-center gap-3"
+                        onClick={() => {
+                          if (item.scrollTo) {
+                            // Smooth-scroll on single click, even when already on the route.
+                            requestAnimationFrame(() => {
+                              document.getElementById(item.scrollTo!)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            });
+                          }
+                        }}
+                      >
                         <item.icon className="h-[18px] w-[18px]" />
                         <span className="text-sm">{item.title}</span>
                       </Link>
@@ -140,7 +172,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive("/settings")}
+                  isActive={currentPath === "/settings" || currentPath.startsWith("/settings/")}
                   tooltip="Settings"
                   className="h-9 rounded-lg transition-all hover:translate-x-0.5"
                 >

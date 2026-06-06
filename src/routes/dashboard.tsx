@@ -313,7 +313,7 @@ function DashboardPage() {
       </section>
 
       {/* Search + filters */}
-      <section className="rounded-xl border border-border bg-card p-4">
+      <section id="my-resumes" className="rounded-xl border border-border bg-card p-4 scroll-mt-20">
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
