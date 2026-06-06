@@ -1044,6 +1044,7 @@ export function Builder() {
     if (!data.jobDescription.trim()) { toast.error("Paste a job description first."); return; }
     setTailorConfirmOpen(false);
     setGenerating(true);
+    announce("AI is tailoring your resume to the job description. This can take up to 30 seconds…");
     try {
       // Always tailor from Primary Resume if set, and save the result as a NEW resume
       // so the Primary stays untouched.
