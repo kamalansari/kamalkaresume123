@@ -300,7 +300,7 @@ function SectionRow({ group, pass, fail }: { group: SectionGroup; pass: number; 
 
 function AtsScoreView({
   data, score, status, statusTone, atsPct,
-  onAppendBulletsToFirstExperience, onAddExtraKeywords, onOneClickOptimize, optimizing,
+  onAppendBulletsToFirstExperience, onAddExtraKeywords, onOneClickOptimize, onApplyBaselineFix, optimizing,
 }: {
   data: ResumeData;
   score: ReturnType<typeof computeScore>;
@@ -310,6 +310,7 @@ function AtsScoreView({
   onAppendBulletsToFirstExperience: (bullets: string[], targetExperienceId?: string) => void;
   onAddExtraKeywords: (kw: string[]) => void;
   onOneClickOptimize: () => void;
+  onApplyBaselineFix?: (patch: BaselineFixPatch) => void;
   optimizing: boolean;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
