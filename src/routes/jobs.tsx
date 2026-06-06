@@ -424,6 +424,7 @@ function JobsPage() {
 
       {/* Content */}
       <main className="container max-w-7xl mx-auto px-4 py-6">
+        <ProviderStatusBanner query={statusQuery} />
         {jobsQuery.isLoading && tab === "all" ? (
           <SkeletonGrid />
         ) : visibleList.length === 0 ? (
