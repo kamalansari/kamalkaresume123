@@ -73,19 +73,60 @@ export const listJobs = createServerFn({ method: "POST" })
     }
     if (data.source !== "all") {
       q = q.eq("source", data.source);
+
+      const from = data.cursor;
+      const to = data.cursor + data.pageSize - 1;
+      const { data: rows, count, error } = await q
+        .order("created_date", { ascending: false, nullsFirst: false })
+        .range(from, to);
+      if (error) throw new Error(error.message);
+
+      return {
+        jobs: (rows ?? []) as JobRow[],
+        total: count ?? 0,
+        nextCursor: (rows?.length ?? 0) === data.pageSize ? data.cursor + data.pageSize : null,
+      };
     }
 
-    const from = data.cursor;
-    const to = data.cursor + data.pageSize - 1;
     const { data: rows, count, error } = await q
       .order("created_date", { ascending: false, nullsFirst: false })
-      .range(from, to);
+      .range(0, 4999);
     if (error) throw new Error(error.message);
 
+    const sourceOrder = ["LinkedIn", "Indeed", "Naukri", "Glassdoor", "Adzuna"];
+    const grouped = new Map<string, JobRow[]>();
+    for (const row of (rows ?? []) as JobRow[]) {
+      const bucket = grouped.get(row.source) ?? [];
+      bucket.push(row);
+      grouped.set(row.source, bucket);
+    }
+
+    const orderedSources = [
+      ...sourceOrder.filter((sourceName) => grouped.has(sourceName)),
+      ...Array.from(grouped.keys()).filter((sourceName) => !sourceOrder.includes(sourceName)),
+    ];
+    const indexes: Record<string, number> = {};
+    const blended: JobRow[] = [];
+    while (blended.length < (rows?.length ?? 0)) {
+      let added = false;
+      for (const sourceName of orderedSources) {
+        const bucket = grouped.get(sourceName) ?? [];
+        const index = indexes[sourceName] ?? 0;
+        if (index < bucket.length) {
+          blended.push(bucket[index]);
+          indexes[sourceName] = index + 1;
+          added = true;
+        }
+      }
+      if (!added) break;
+    }
+
+    const pageRows = blended.slice(data.cursor, data.cursor + data.pageSize);
+
     return {
-      jobs: (rows ?? []) as JobRow[],
+      jobs: pageRows,
       total: count ?? 0,
-      nextCursor: (rows?.length ?? 0) === data.pageSize ? data.cursor + data.pageSize : null,
+      nextCursor: data.cursor + data.pageSize < blended.length ? data.cursor + data.pageSize : null,
     };
   });
 

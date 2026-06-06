@@ -327,10 +327,12 @@ const PUBLISHERS: PublisherConfig[] = [
   {
     source: "Naukri",
     idPrefix: "naukri",
-    queryTag: "via Naukri",
+    queryTag: "Naukri jobs",
     match: (j) =>
-      (j.job_publisher ?? "").toLowerCase().includes("naukri") ||
-      (j.job_apply_link ?? "").toLowerCase().includes("naukri.com"),
+      `${j.job_publisher ?? ""} ${j.job_apply_link ?? ""} ${j.job_title ?? ""} ${j.job_description ?? ""}`
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .includes("naukri"),
   },
   {
     source: "LinkedIn",
