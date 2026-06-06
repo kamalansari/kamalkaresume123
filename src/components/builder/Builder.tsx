@@ -338,6 +338,26 @@ export function Builder() {
   }, [data.name, data.headline, data.email, data.phone, data.location, data.links, data.education]);
 
   useEffect(() => { setSaved(resumeStore.list()); setPrimaryId(resumeStore.getPrimaryId()); }, []);
+  // Restore the last working draft (or fall back to Primary) on first mount so
+  // skills, experience, summary, etc. survive page reloads. Skipped if the URL
+  // is opening a specific resume (?open=ID) or loading a shared payload (#r=).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("open")) return;
+    if (window.location.hash.startsWith("#r=")) return;
+    const draft = resumeStore.getDraft();
+    if (draft) {
+      setData(d => ({ ...d, ...draft }));
+      return;
+    }
+    const primary = resumeStore.getPrimary();
+    if (primary) {
+      setData(d => ({ ...d, ...primary.data }));
+      setCurrentId(primary.id);
+      setCurrentName(primary.name);
+    }
+  }, []);
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
