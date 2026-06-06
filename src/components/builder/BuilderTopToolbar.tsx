@@ -781,6 +781,48 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
           </div>
         </div>
         <div>
+          <Label className="text-xs text-muted-foreground">Skills view</Label>
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
+            {([
+              { v: "compact", label: "Compact" },
+              { v: "categorized", label: "Categorized" },
+            ] as const).map((opt) => {
+              const active = (data.skillsViewMode ?? "compact") === opt.v;
+              return (
+                <button
+                  key={opt.v}
+                  onClick={() => onPatch({ skillsViewMode: opt.v })}
+                  className={cn(
+                    "inline-flex items-center justify-center rounded-md border h-9 px-3 text-xs font-medium",
+                    active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40",
+                  )}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          {(data.skillsViewMode ?? "compact") === "categorized" && (
+            <button
+              type="button"
+              onClick={() => {
+                const preset = [
+                  "Programming & Analytics: ",
+                  "BI & Reporting: ",
+                  "Data Engineering: ",
+                  "Domain Knowledge: ",
+                  "Leadership & Management: ",
+                ].join("\n");
+                const existing = (data.skills ?? "").trim();
+                onPatch({ skills: existing ? `${existing}\n\n${preset}` : preset });
+              }}
+              className="mt-2 w-full text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+            >
+              + Insert category preset
+            </button>
+          )}
+        </div>
+        <div>
           <Label className="text-xs text-muted-foreground">Text style</Label>
           <div className="mt-2 flex gap-2">
             <button onClick={() => onPatch({ justifyText: !data.justifyText })}
