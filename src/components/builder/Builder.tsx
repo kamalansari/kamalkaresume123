@@ -1291,6 +1291,15 @@ export function Builder() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => setHistoryOpen(true)}
+              title={currentId ? "Version history" : "Save this resume to start tracking versions"}
+            >
+              <HistoryIcon className="h-4 w-4" /> <span className="hidden sm:inline">History</span>
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8">
