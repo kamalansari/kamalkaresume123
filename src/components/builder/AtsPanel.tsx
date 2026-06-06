@@ -1,11 +1,12 @@
 import { useMemo, useRef, useState } from "react";
-import { Sparkles, Loader2, Pencil, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight, Trash2, Mic, ArrowUpRight, Briefcase, Lightbulb, Gauge, MessageSquareText, ChevronDown, SpellCheck, Target, UserCheck, Copy, AlertTriangle, Plus, KeyRound, FileWarning, Zap, GraduationCap } from "lucide-react";
+import { Sparkles, Loader2, Pencil, Send, CheckCircle2, XCircle, X, Wand2, ChevronRight, Trash2, Mic, ArrowUpRight, Briefcase, Lightbulb, Gauge, MessageSquareText, ChevronDown, SpellCheck, Target, UserCheck, Copy, AlertTriangle, Plus, KeyRound, FileWarning, Zap, GraduationCap, Activity, AlignLeft, Type } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { computeScore } from "./atsScore";
 import { useSkillDictVersion } from "@/lib/skillDictionaryStore";
@@ -13,6 +14,90 @@ import type { ResumeData } from "./types";
 import { AtsDebugPanel } from "./AtsDebugPanel";
 import { authFetch } from "@/lib/authFetch";
 import { autoActionVerbsDetailed, loadCustomVerbs } from "./ExperienceSection";
+
+function computeReadability(data: ResumeData): number {
+  const text = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
+  const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
+  const exp = Array.isArray(data.experience) ? data.experience : [];
+  const expText = exp.map(e => text(e.bullets)).join(" ");
+  const totalBullets = exp.reduce((n, e) => n + text(e.bullets).split("\n").filter(Boolean).length, 0);
+  const summary = text(data.summary);
+  const summaryWords = words(summary);
+  const allText = [data.name, data.headline, data.summary, data.skills, expText].join(" ");
+  const totalWords = words(allText);
+
+  let pts = 0;
+  // Word count 250-800
+  if (totalWords >= 250 && totalWords <= 800) pts += 25;
+  else if (totalWords >= 150) pts += 15;
+  else if (totalWords > 0) pts += 8;
+
+  // Summary 20-60 words
+  if (summaryWords >= 20 && summaryWords <= 60) pts += 25;
+  else if (summaryWords >= 10) pts += 15;
+  else if (summaryWords > 0) pts += 5;
+
+  // Bullet count 3+
+  if (totalBullets >= 3) pts += 25;
+  else if (totalBullets > 0) pts += 12;
+
+  // Average bullet length 60-180 chars
+  const bullets = expText.split("\n").filter(Boolean);
+  const avgBullet = bullets.length ? bullets.reduce((s, b) => s + b.length, 0) / bullets.length : 0;
+  if (avgBullet >= 60 && avgBullet <= 180) pts += 15;
+  else if (avgBullet > 0) pts += 8;
+  else pts += 12; // no bullets yet, give partial
+
+  // Sentence length check (no sentences > 40 words)
+  const sentences = allText.split(/[.!?]+/).filter(Boolean);
+  const longSentences = sentences.filter(s => words(s) > 40).length;
+  if (longSentences === 0) pts += 10;
+  else pts += 5;
+
+  return Math.min(100, pts);
+}
+
+function computeFormatting(data: ResumeData): number {
+  const text = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
+  const exp = Array.isArray(data.experience) ? data.experience : [];
+  const edu = Array.isArray(data.education) ? data.education : [];
+
+  let pts = 0;
+  // Contact info complete
+  if (text(data.name).trim() && text(data.email).trim() && text(data.phone).trim()) pts += 25;
+  else if (text(data.name).trim() && text(data.email).trim()) pts += 15;
+
+  // Dates on all experience
+  if (exp.length > 0 && exp.every(e => text(e.date).trim())) pts += 20;
+  else if (exp.length > 0 && exp.some(e => text(e.date).trim())) pts += 10;
+  else if (exp.length === 0) pts += 5;
+
+  // Dates on all education
+  if (edu.length > 0 && edu.every(e => text(e.date).trim())) pts += 15;
+  else if (edu.length > 0 && edu.some(e => text(e.date).trim())) pts += 8;
+  else if (edu.length === 0) pts += 5;
+
+  // Company + title on all experience
+  if (exp.length > 0 && exp.every(e => text(e.title).trim() && text(e.company).trim())) pts += 20;
+  else if (exp.length > 0 && exp.some(e => text(e.title).trim())) pts += 10;
+
+  // Skills present and well-formatted
+  const skills = text(data.skills);
+  if (skills.trim()) {
+    const hasSeparators = /[,|]/.test(skills);
+    pts += hasSeparators ? 15 : 10;
+  } else {
+    pts += 0;
+  }
+
+  // No empty sections in order
+  const requiredSections = ["summary", "experience", "education", "skills"];
+  const hasAll = requiredSections.every(s => data.sectionOrder.includes(s as any));
+  if (hasAll) pts += 5;
+
+  return Math.min(100, pts);
+}
+
 
 type Tab = "resume" | "ats" | "nova";
 
