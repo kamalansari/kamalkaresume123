@@ -455,7 +455,7 @@ function JobsPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {visibleList.map(({ job, score, breakdown }) => (
                 <JobCard
                   key={job.id}
@@ -496,7 +496,7 @@ function JobsPage() {
 
 function SkeletonGrid() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="border rounded-xl p-5 space-y-3 animate-pulse">
           <div className="flex items-start gap-3">
