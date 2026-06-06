@@ -369,6 +369,12 @@ export function ResumeDocument({
     editorial: "classic",
     aurora: "sidebar-right",
     monochrome: "classic",
+    "novo-dark": "two-column",
+    "marketer-band": "two-column",
+    "ats-blue": "sidebar-right",
+    "teal-chips": "sidebar-right",
+    "hybrid-photo": "two-column",
+    "dark-sidebar": "two-column",
   };
   const variant = VARIANT_MAP[data.template] ?? "classic";
 
