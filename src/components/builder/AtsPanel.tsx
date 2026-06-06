@@ -12,8 +12,14 @@ import { useSkillDictVersion } from "@/lib/skillDictionaryStore";
 import type { ResumeData } from "./types";
 import { AtsDebugPanel } from "./AtsDebugPanel";
 import { authFetch } from "@/lib/authFetch";
+import { autoActionVerbsDetailed, loadCustomVerbs } from "./ExperienceSection";
 
 type Tab = "resume" | "ats" | "nova";
+
+export type BaselineFixPatch = {
+  extraKeywords?: string[];
+  rewrites?: { id: string; bullets: string }[];
+};
 
 export function AtsPanel({
   data,
@@ -21,6 +27,7 @@ export function AtsPanel({
   onAppendBulletsToFirstExperience,
   onAddExtraKeywords,
   onOneClickOptimize,
+  onApplyBaselineFix,
   optimizing,
 }: {
   data: ResumeData;
@@ -28,6 +35,7 @@ export function AtsPanel({
   onAppendBulletsToFirstExperience: (bullets: string[], targetExperienceId?: string) => void;
   onAddExtraKeywords: (kw: string[]) => void;
   onOneClickOptimize: () => void;
+  onApplyBaselineFix?: (patch: BaselineFixPatch) => void;
   optimizing: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("ats");
@@ -68,6 +76,7 @@ export function AtsPanel({
           onAppendBulletsToFirstExperience={onAppendBulletsToFirstExperience}
           onAddExtraKeywords={onAddExtraKeywords}
           onOneClickOptimize={onOneClickOptimize}
+          onApplyBaselineFix={onApplyBaselineFix}
           optimizing={optimizing}
         />
       )}
@@ -292,7 +301,7 @@ function SectionRow({ group, pass, fail }: { group: SectionGroup; pass: number; 
 
 function AtsScoreView({
   data, score, status, statusTone, atsPct,
-  onAppendBulletsToFirstExperience, onAddExtraKeywords, onOneClickOptimize, optimizing,
+  onAppendBulletsToFirstExperience, onAddExtraKeywords, onOneClickOptimize, onApplyBaselineFix, optimizing,
 }: {
   data: ResumeData;
   score: ReturnType<typeof computeScore>;
@@ -302,6 +311,7 @@ function AtsScoreView({
   onAppendBulletsToFirstExperience: (bullets: string[], targetExperienceId?: string) => void;
   onAddExtraKeywords: (kw: string[]) => void;
   onOneClickOptimize: () => void;
+  onApplyBaselineFix?: (patch: BaselineFixPatch) => void;
   optimizing: boolean;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -382,6 +392,7 @@ function AtsScoreView({
           score={score}
           onAddExtraKeywords={onAddExtraKeywords}
           onOneClickOptimize={onOneClickOptimize}
+          onApplyBaselineFix={onApplyBaselineFix}
           optimizing={optimizing}
         />
       </>
@@ -837,15 +848,19 @@ type DiagCategory = {
 };
 
 function BaselineDiagnostics({
-  data, score, onAddExtraKeywords, onOneClickOptimize, optimizing,
+  data, score, onAddExtraKeywords, onOneClickOptimize, onApplyBaselineFix, optimizing,
 }: {
   data: ResumeData;
   score: ReturnType<typeof computeScore>;
   onAddExtraKeywords: (kw: string[]) => void;
   onOneClickOptimize: () => void;
+  onApplyBaselineFix?: (patch: BaselineFixPatch) => void;
   optimizing: boolean;
 }) {
-  const cats = useMemo<DiagCategory[]>(() => {
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  // Compute missing keywords + planned bullet rewrites (preview payload)
+  const fixPlan = useMemo(() => {
     const text = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
     const skillsText = text(data.skills);
     const allText = [
@@ -853,9 +868,26 @@ function BaselineDiagnostics({
       (data.experience ?? []).map(e => text(e.bullets)).join(" "),
       data.extraKeywords ?? "",
     ].join(" ").toLowerCase();
-
-    // 1) Missing keywords
     const missingKw = COMMON_TOOL_KEYWORDS.filter(k => !allText.includes(k)).slice(0, 6);
+
+    const verbState = loadCustomVerbs();
+    const rewrites: { id: string; title: string; company: string; before: string; after: string; changes: { before: string; after: string }[] }[] = [];
+    for (const e of (data.experience ?? [])) {
+      const before = text(e.bullets);
+      if (!before.trim()) continue;
+      const { text: after, changes } = autoActionVerbsDetailed(before, verbState.fallback);
+      if (changes.length > 0) {
+        rewrites.push({ id: e.id, title: e.title, company: e.company, before, after, changes });
+      }
+    }
+    return { missingKw, rewrites };
+  }, [data]);
+
+  const cats = useMemo<DiagCategory[]>(() => {
+    const text = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
+    const skillsText = text(data.skills);
+    const missingKw = fixPlan.missingKw;
+
     const keywords: DiagCategory = {
       id: "keywords",
       label: "Missing Keywords",
@@ -871,7 +903,6 @@ function BaselineDiagnostics({
         : undefined,
     };
 
-    // 2) Formatting issues — from existing scoring checks
     const failingChecks = score.checks.filter(c => !c.pass).slice(0, 4);
     const formatting: DiagCategory = {
       id: "formatting",
@@ -884,39 +915,25 @@ function BaselineDiagnostics({
       items: failingChecks.map(c => c.hint ? `${c.label} — ${c.hint}` : c.label),
     };
 
-    // 3) Weak action verbs
     const bulletsRaw = (data.experience ?? [])
       .flatMap(e => text(e.bullets).split("\n"))
       .map(b => b.replace(/^[-•·*\s]+/, "").trim())
       .filter(Boolean);
-    const weakBullets: string[] = [];
-    let hasStrong = false;
-    for (const b of bulletsRaw) {
-      const lower = b.toLowerCase();
-      const startsWeak = WEAK_VERBS.some(w => lower.startsWith(w));
-      const startsStrong = STRONG_VERBS.some(v => new RegExp(`^${v}\\b`).test(lower));
-      if (startsStrong) hasStrong = true;
-      if (startsWeak || (!startsStrong && bulletsRaw.length > 0 && weakBullets.length < 4)) {
-        if (startsWeak) weakBullets.push(b.length > 70 ? b.slice(0, 70) + "…" : b);
-      }
-    }
+    const weakCount = fixPlan.rewrites.reduce((n, r) => n + r.changes.length, 0);
     const verbs: DiagCategory = {
       id: "verbs",
       label: "Weak Action Verbs",
       icon: Zap,
-      severity: weakBullets.length >= 3 ? "bad" : weakBullets.length >= 1 ? "warn" : (hasStrong ? "ok" : "warn"),
+      severity: weakCount >= 3 ? "bad" : weakCount >= 1 ? "warn" : "ok",
       summary: bulletsRaw.length === 0
         ? "Add accomplishment bullets to your experience."
-        : weakBullets.length
-          ? `${weakBullets.length} bullet${weakBullets.length === 1 ? "" : "s"} start with weak phrasing`
+        : weakCount
+          ? `${weakCount} bullet${weakCount === 1 ? "" : "s"} start with weak phrasing`
           : "Bullets open with strong action verbs.",
-      items: weakBullets.length
-        ? weakBullets
-        : (bulletsRaw.length === 0 ? ["No bullets found in Work Experience."] : []),
-      hint: weakBullets.length ? "Replace with verbs like Led, Built, Shipped, Drove, Reduced." : undefined,
+      items: fixPlan.rewrites.flatMap(r => r.changes.map(c => c.before)).slice(0, 4),
+      hint: weakCount ? "Replace with verbs like Led, Built, Shipped, Drove, Reduced." : undefined,
     };
 
-    // 4) Skills gap
     const skillTokens = skillsText.split(/[,\n|;]/).map(s => s.trim()).filter(Boolean);
     const grouped = /[:|]/.test(skillsText);
     const skillsIssues: string[] = [];
@@ -935,9 +952,24 @@ function BaselineDiagnostics({
     };
 
     return [keywords, formatting, verbs, skills];
-  }, [data, score, onAddExtraKeywords]);
+  }, [data, score, fixPlan, onAddExtraKeywords]);
 
   const issuesTotal = cats.filter(c => c.severity !== "ok").length;
+  const hasPlan = fixPlan.missingKw.length > 0 || fixPlan.rewrites.length > 0;
+
+  const applyFix = () => {
+    if (!onApplyBaselineFix) {
+      onOneClickOptimize();
+      return;
+    }
+    onApplyBaselineFix({
+      extraKeywords: fixPlan.missingKw.length ? fixPlan.missingKw : undefined,
+      rewrites: fixPlan.rewrites.length
+        ? fixPlan.rewrites.map(r => ({ id: r.id, bullets: r.after }))
+        : undefined,
+    });
+    setPreviewOpen(false);
+  };
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -953,17 +985,101 @@ function BaselineDiagnostics({
       <ul className="divide-y divide-border">
         {cats.map(c => <DiagnosticRow key={c.id} cat={c} />)}
       </ul>
-      <button
-        onClick={onOneClickOptimize}
-        disabled={optimizing}
-        className="w-full inline-flex items-center justify-center gap-2 px-3 py-3 text-sm font-medium border-t border-border bg-[var(--navy-light)] text-white hover:opacity-95 disabled:opacity-60 transition-opacity"
-      >
-        {optimizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-        Fix with AI
-      </button>
+
+      {previewOpen && (
+        <div className="border-t border-border bg-secondary/30 p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <Wand2 className="h-4 w-4 text-[var(--navy-light)]" />
+              Preview AI fixes
+            </div>
+            <button
+              onClick={() => setPreviewOpen(false)}
+              className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-secondary"
+              aria-label="Close preview"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {fixPlan.missingKw.length > 0 && (
+            <div className="rounded-md border border-border bg-card p-2.5">
+              <div className="text-[11px] font-semibold tracking-widest text-muted-foreground mb-1.5">
+                ADD KEYWORDS ({fixPlan.missingKw.length})
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {fixPlan.missingKw.map(k => (
+                  <span key={k} className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[11px] font-medium capitalize">
+                    <Plus className="h-3 w-3" /> {k}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {fixPlan.rewrites.length > 0 && (
+            <div className="rounded-md border border-border bg-card p-2.5 space-y-2">
+              <div className="text-[11px] font-semibold tracking-widest text-muted-foreground">
+                STRENGTHEN BULLETS ({fixPlan.rewrites.reduce((n, r) => n + r.changes.length, 0)})
+              </div>
+              <ul className="space-y-2 max-h-56 overflow-auto">
+                {fixPlan.rewrites.flatMap(r => r.changes.map((c, i) => ({ ...c, id: `${r.id}-${i}`, role: r.title }))).slice(0, 8).map(c => (
+                  <li key={c.id} className="text-xs space-y-0.5">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{c.role}</div>
+                    <div className="flex gap-1.5">
+                      <span className="text-rose-500 shrink-0">−</span>
+                      <span className="line-through text-muted-foreground">{c.before}</span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <span className="text-emerald-600 shrink-0">+</span>
+                      <span className="text-foreground font-medium">{c.after}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {!hasPlan && (
+            <div className="text-xs text-muted-foreground">Nothing to fix — your resume already passes these checks.</div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPreviewOpen(false)}
+              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-secondary transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={applyFix}
+              disabled={!hasPlan}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-[var(--navy-light)] px-3 py-2 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Apply changes
+            </button>
+          </div>
+          <div className="text-[10px] text-muted-foreground text-center">
+            You can undo right after applying.
+          </div>
+        </div>
+      )}
+
+      {!previewOpen && (
+        <button
+          onClick={() => (hasPlan ? setPreviewOpen(true) : onOneClickOptimize())}
+          disabled={optimizing}
+          className="w-full inline-flex items-center justify-center gap-2 px-3 py-3 text-sm font-medium border-t border-border bg-[var(--navy-light)] text-white hover:opacity-95 disabled:opacity-60 transition-opacity"
+        >
+          {optimizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+          {hasPlan ? "Preview AI fixes" : "Fix with AI"}
+        </button>
+      )}
     </div>
   );
 }
+
 
 function DiagnosticRow({ cat }: { cat: DiagCategory }) {
   const [open, setOpen] = useState(cat.severity === "bad");

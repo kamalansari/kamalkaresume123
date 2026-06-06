@@ -948,6 +948,44 @@ export function Builder() {
     setTailorConfirmOpen(true);
   };
 
+  const applyBaselineFix = (patch: {
+    extraKeywords?: string[];
+    rewrites?: { id: string; bullets: string }[];
+  }) => {
+    const prev = data;
+    setData(d => {
+      const existing = (d.extraKeywords ?? "").split(",").map(s => s.trim()).filter(Boolean);
+      const merged = patch.extraKeywords?.length
+        ? Array.from(new Set([...existing, ...patch.extraKeywords])).join(", ")
+        : d.extraKeywords;
+      const exp = d.experience.map(e => {
+        const r = patch.rewrites?.find(x => x.id === e.id);
+        return r ? { ...e, bullets: r.bullets } : e;
+      });
+      const next = { ...d, extraKeywords: merged, experience: exp };
+      resumeStore.saveDraft(next);
+      return next;
+    });
+    const kwCount = patch.extraKeywords?.length ?? 0;
+    const verbCount = (patch.rewrites ?? []).reduce(
+      (n, r) => n + r.bullets.split("\n").filter(Boolean).length, 0,
+    );
+    toast.success(
+      `Applied AI fixes${kwCount ? ` · ${kwCount} keyword${kwCount === 1 ? "" : "s"}` : ""}${verbCount ? ` · rewrote ${patch.rewrites!.length} role${patch.rewrites!.length === 1 ? "" : "s"}` : ""}`,
+      {
+        duration: 12000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            setData(prev);
+            resumeStore.saveDraft(prev);
+            toast.success("Reverted to previous version");
+          },
+        },
+      },
+    );
+  };
+
   const generateFromJD = async () => {
     if (!data.jobDescription.trim()) { toast.error("Paste a job description first."); return; }
     setTailorConfirmOpen(false);
@@ -1930,6 +1968,7 @@ export function Builder() {
                       update("extraKeywords", merged);
                     }}
                     onOneClickOptimize={generateFromJD}
+                    onApplyBaselineFix={applyBaselineFix}
                     optimizing={generating}
                   />
                 </div>
@@ -1983,6 +2022,7 @@ export function Builder() {
             update("extraKeywords", merged);
           }}
           onOneClickOptimize={generateFromJD}
+          onApplyBaselineFix={applyBaselineFix}
           optimizing={generating}
         />
         </div>
