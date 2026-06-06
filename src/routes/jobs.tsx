@@ -324,11 +324,12 @@ function JobsPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {visibleList.map(({ job, score }) => (
+              {visibleList.map(({ job, score, breakdown }) => (
                 <JobCard
                   key={job.id}
                   job={job}
                   score={score}
+                  breakdown={breakdown}
                   saved={savedIds.has(job.id)}
                   authed={authed}
                   onToggleSave={() => {
