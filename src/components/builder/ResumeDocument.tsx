@@ -227,24 +227,13 @@ function SkillsGridContent({
     wordBreak: "break-word",
   };
 
-  const editableProps = ed
-    ? {
-        contentEditable: true,
-        suppressContentEditableWarning: true,
-        "data-preview-edit": "skills",
-        className: "preview-editable",
-        onClick: (e: React.MouseEvent) => e.stopPropagation(),
-        onBlur: (e: React.FocusEvent<HTMLDivElement>) => {
-          const lines = e.currentTarget.innerText
-            .split("\n")
-            .map((s) => s.replace(/^[•\-\u2022]\s*/, "").trim())
-            .filter(Boolean);
-          if (!sameSkillSet(parseSkills(lines.join("\n")), parseSkills(data.skills))) {
-            ed.onUpdate({ skills: lines.join("\n") });
-          }
-        },
-      }
-    : {};
+  // NOTE: We deliberately do NOT make the skills wrapper `contentEditable`.
+  // Wrapping a `<ul><li>` structure in a contentEditable div lets the browser
+  // mutate DOM that React owns; the next reconciliation throws
+  // `Failed to execute 'removeChild' on 'Node'` and the error boundary blanks
+  // the entire preview. Skills are edited through the form panel.
+  void ed;
+  void sameSkillSet;
 
   const renderList = (items: string[], key?: React.Key) => (
     <ul key={key} style={listStyle}>
@@ -260,7 +249,6 @@ function SkillsGridContent({
         <div
           data-skills-list
           data-skills-column-count={1}
-          {...editableProps}
           style={{ width: "100%" }}
         >
           {renderList(items)}
@@ -273,7 +261,6 @@ function SkillsGridContent({
         data-skills-list
         data-skills-balanced
         data-skills-column-count={desktopCols}
-        {...editableProps}
         style={gridStyle}
       >
         {columns.map((col, ci) => renderList(col, ci))}
