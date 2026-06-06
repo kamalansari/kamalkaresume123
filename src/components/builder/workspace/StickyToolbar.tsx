@@ -212,7 +212,6 @@ type MobileSheetProps = {
   onZoom: (n: number) => void;
   decZoom: () => void;
   incZoom: () => void;
-  share: () => void;
 };
 
 function MobileActionsSheet({
@@ -226,7 +225,6 @@ function MobileActionsSheet({
   onZoom,
   decZoom,
   incZoom,
-  share,
 }: MobileSheetProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -301,15 +299,6 @@ function MobileActionsSheet({
       onClick: () => { incZoom(); },
       group: "Zoom",
     },
-    {
-      id: "share",
-      label: "Copy share link",
-      description: "Copy a shareable URL to your clipboard",
-      icon: <Share2 className="h-5 w-5" aria-hidden="true" />,
-      keywords: "share link copy url",
-      onClick: () => { share(); setOpen(false); },
-      group: "Share",
-    },
   ];
 
   const q = query.trim().toLowerCase();
@@ -321,7 +310,7 @@ function MobileActionsSheet({
       )
     : actions;
 
-  const groups: Action["group"][] = ["View", "History", "Zoom", "Share"];
+  const groups: Action["group"][] = ["View", "History", "Zoom"];
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
