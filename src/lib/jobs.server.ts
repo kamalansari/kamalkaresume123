@@ -193,3 +193,138 @@ export async function syncAdzunaJobs(opts?: { queries?: string[]; cities?: strin
 
   return { fetched: rows.length, upserted, deactivated: count ?? 0, errors };
 }
+
+// ───────────────────────── JSearch (RapidAPI) ─────────────────────────
+// Used to surface Naukri.com jobs (Adzuna India does not include naukri).
+
+type JSearchJob = {
+  job_id: string;
+  employer_name?: string | null;
+  employer_logo?: string | null;
+  job_publisher?: string | null;
+  job_title: string;
+  job_description?: string | null;
+  job_apply_link: string;
+  job_city?: string | null;
+  job_country?: string | null;
+  job_is_remote?: boolean;
+  job_min_salary?: number | null;
+  job_max_salary?: number | null;
+  job_salary_currency?: string | null;
+  job_employment_type?: string | null;
+  job_posted_at_datetime_utc?: string | null;
+};
+
+type JSearchResponse = { data?: JSearchJob[] };
+
+async function callJSearch(
+  rapidKey: string,
+  query: string,
+  page: number,
+): Promise<JSearchJob[]> {
+  const params = new URLSearchParams({
+    query: `${query} in India via Naukri`,
+    page: String(page),
+    num_pages: "1",
+    country: "in",
+    date_posted: "month",
+  });
+  const url = `https://jsearch.p.rapidapi.com/search?${params.toString()}`;
+  const res = await fetch(url, {
+    headers: {
+      "X-RapidAPI-Key": rapidKey,
+      "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
+      accept: "application/json",
+    },
+  });
+  if (!res.ok) {
+    const body = (await res.text()).slice(0, 200);
+    console.warn(`[jsearch] ${res.status} ${query} p${page}: ${body}`);
+    return [];
+  }
+  const data = (await res.json()) as JSearchResponse;
+  return data.data ?? [];
+}
+
+function isNaukri(job: JSearchJob): boolean {
+  const pub = (job.job_publisher ?? "").toLowerCase();
+  const link = (job.job_apply_link ?? "").toLowerCase();
+  return pub.includes("naukri") || link.includes("naukri.com");
+}
+
+function jsearchToRow(job: JSearchJob): UpsertRow {
+  const description = (job.job_description || "").replace(/\s+/g, " ").trim();
+  const loc = [job.job_city, job.job_country].filter(Boolean).join(", ");
+  return {
+    external_job_id: `naukri_${job.job_id}`,
+    title: job.job_title,
+    company_name: job.employer_name ?? null,
+    location: loc || null,
+    country: job.job_country ?? "IN",
+    category: null,
+    salary_min: job.job_min_salary ?? null,
+    salary_max: job.job_max_salary ?? null,
+    salary_currency: job.job_salary_currency ?? "INR",
+    description: description.slice(0, 4000),
+    redirect_url: job.job_apply_link,
+    contract_type: null,
+    contract_time: job.job_employment_type ?? null,
+    created_date: job.job_posted_at_datetime_utc ?? null,
+    source: "Naukri",
+    company_logo: job.employer_logo ?? null,
+    skills: extractSkills(`${job.job_title} ${description}`),
+    is_remote: Boolean(job.job_is_remote),
+    is_active: true,
+    fetched_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 14 * 86400000).toISOString(),
+  };
+}
+
+export async function syncJSearchNaukriJobs(opts?: { queries?: string[]; pages?: number }): Promise<SyncResult> {
+  const rapidKey = process.env.RAPIDAPI_KEY;
+  if (!rapidKey) {
+    return { fetched: 0, upserted: 0, deactivated: 0, errors: ["Missing RAPIDAPI_KEY"] };
+  }
+  const queries = opts?.queries ?? TARGET_QUERIES;
+  const pages = opts?.pages ?? 1;
+  const supabase = getServiceClient();
+  const errors: string[] = [];
+  const allRows = new Map<string, UpsertRow>();
+
+  for (const q of queries) {
+    for (let p = 1; p <= pages; p++) {
+      try {
+        const jobs = await callJSearch(rapidKey, q, p);
+        for (const j of jobs) {
+          if (!isNaukri(j)) continue;
+          const row = jsearchToRow(j);
+          if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
+        }
+      } catch (e) {
+        errors.push(`${q} p${p}: ${(e as Error).message}`);
+      }
+    }
+  }
+
+  const rows = Array.from(allRows.values());
+  let upserted = 0;
+  for (let i = 0; i < rows.length; i += 200) {
+    const slice = rows.slice(i, i + 200);
+    const { error } = await supabase.from("jobs").upsert(slice, { onConflict: "external_job_id" });
+    if (error) errors.push(`upsert: ${error.message}`);
+    else upserted += slice.length;
+  }
+
+  return { fetched: rows.length, upserted, deactivated: 0, errors };
+}
+
+export async function syncAllJobs(): Promise<SyncResult> {
+  const a = await syncAdzunaJobs();
+  const n = await syncJSearchNaukriJobs();
+  return {
+    fetched: a.fetched + n.fetched,
+    upserted: a.upserted + n.upserted,
+    deactivated: a.deactivated + n.deactivated,
+    errors: [...a.errors.map((e) => `adzuna:${e}`), ...n.errors.map((e) => `naukri:${e}`)],
+  };
+}
