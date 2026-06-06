@@ -880,7 +880,31 @@ export function StylePopover({ data, onPatch }: { data: ResumeData; onPatch: (p:
         </div>
 
         <div>
-          <Label className="text-xs text-muted-foreground">Text style</Label>
+          <Label className="text-xs text-muted-foreground">Skills text style</Label>
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
+            {([
+              { v: "chips", label: "Chips" },
+              { v: "plain", label: "Plain" },
+            ] as const).map((opt) => {
+              const active = (data.skillsTextStyle ?? data.textStyle ?? "chips") === opt.v;
+              return (
+                <button
+                  key={opt.v}
+                  onClick={() => onPatch({ skillsTextStyle: opt.v, textStyle: opt.v })}
+                  className={cn(
+                    "inline-flex items-center justify-center rounded-md border h-9 px-3 text-xs font-medium",
+                    active ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-foreground/40",
+                  )}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-xs text-muted-foreground">Body text style</Label>
           <div className="mt-2 flex gap-2">
             <button onClick={() => onPatch({ justifyText: !data.justifyText })}
               className={cn("flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border h-9 px-3 text-xs font-medium",
