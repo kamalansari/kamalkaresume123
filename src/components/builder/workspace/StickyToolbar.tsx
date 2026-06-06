@@ -452,8 +452,3 @@ function MobileActionsSheet({
     </Sheet>
   );
 }
-
-      </div>
-    </div>
-  );
-}
