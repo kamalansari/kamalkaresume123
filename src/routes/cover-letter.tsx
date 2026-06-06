@@ -46,14 +46,14 @@ function resumeToPlainText(r: ResumeData): string {
   }
   if (r.education?.length) {
     lines.push("", "EDUCATION");
-    for (const ed of r.education as Array<Record<string, string>>) {
+    for (const ed of r.education as Array<Record<string, unknown>>) {
       lines.push([ed.degree, ed.school, ed.date, ed.location].filter(Boolean).join(" — "));
     }
   }
   if (r.skills) lines.push("", "SKILLS", r.skills);
   if (r.certifications?.length) {
     lines.push("", "CERTIFICATIONS");
-    for (const c of r.certifications as Array<Record<string, string>>) {
+    for (const c of r.certifications as Array<Record<string, unknown>>) {
       lines.push([c.name, c.issuer, c.date].filter(Boolean).join(" — "));
     }
   }
