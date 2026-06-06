@@ -231,14 +231,18 @@ export const getProviderStatus = createServerFn({ method: "POST" })
     const { getServiceClient } = await import("@/lib/jobs.server");
     const supabase = getServiceClient();
 
-    const { data: rows } = await supabase
-      .from("jobs")
-      .select("source")
-      .eq("is_active", true);
-    const dbCounts = (rows ?? []).reduce<Record<string, number>>((acc, r) => {
-      acc[r.source] = (acc[r.source] ?? 0) + 1;
-      return acc;
-    }, {});
+    const sources = ["Adzuna", "Naukri", "LinkedIn", "Indeed", "Glassdoor"];
+    const dbCounts: Record<string, number> = {};
+    await Promise.all(
+      sources.map(async (src) => {
+        const { count } = await supabase
+          .from("jobs")
+          .select("*", { count: "exact", head: true })
+          .eq("is_active", true)
+          .eq("source", src);
+        dbCounts[src] = count ?? 0;
+      }),
+    );
 
     const adzunaId = process.env.ADZUNA_APP_ID;
     const adzunaKey = process.env.ADZUNA_APP_KEY;
