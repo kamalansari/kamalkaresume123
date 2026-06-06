@@ -70,8 +70,6 @@ export function StickyToolbar({
   onZoom,
   previewOnly,
   onTogglePreview,
-  onPdf,
-  getData,
 }: Props) {
   const [editingName, setEditingName] = useState(false);
   const [draft, setDraft] = useState(name);
