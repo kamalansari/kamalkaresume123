@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Search, Filter, MapPin, Briefcase, Calendar, Building2, Tag, Bookmark, Sparkles, Loader2, ArrowLeft, ExternalLink, Gauge, ChevronDown, Download, ChevronRight, FileText, Wand2, MessageSquare } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Search, Filter, MapPin, Briefcase, Calendar, Building2, Tag, Bookmark, Sparkles, Loader2, ArrowLeft, ExternalLink, Gauge, ChevronDown, Download, ChevronRight, FileText, Wand2, MessageSquare, RefreshCw, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
