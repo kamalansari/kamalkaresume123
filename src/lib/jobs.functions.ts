@@ -76,8 +76,8 @@ export const listJobs = createServerFn({ method: "POST" })
 export const triggerJobSync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const { syncAdzunaJobs } = await import("@/lib/jobs.server");
-    return syncAdzunaJobs();
+    const { syncAllJobs } = await import("@/lib/jobs.server");
+    return syncAllJobs();
   });
 
 const SaveInput = z.object({ jobId: z.string().uuid() });
