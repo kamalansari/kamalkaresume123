@@ -26,6 +26,7 @@ import {
   type MatchBreakdown,
 } from "@/lib/jobMatch";
 import { supabase } from "@/integrations/supabase/client";
+import { AskNovaJobDialog } from "@/components/AskNovaJobDialog";
 
 export const Route = createFileRoute("/jobs")({
   head: () => ({
