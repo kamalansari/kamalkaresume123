@@ -1848,7 +1848,7 @@ export function Builder() {
       />
 
       <div className="print-only-resume" aria-hidden="true">
-        {printData && <ResumeDocument data={printData} />}
+        <ResumeDocument data={printData ?? data} />
       </div>
 
       <div className={cn("mx-auto max-w-[1600px] grid gap-6 px-4 sm:px-6 py-6 grid-cols-1",
