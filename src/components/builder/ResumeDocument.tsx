@@ -376,6 +376,7 @@ export function ResumeDocument({
     "teal-chips": "sidebar-right",
     "hybrid-photo": "two-column",
     "dark-sidebar": "two-column",
+    novoresume: "sidebar-right",
   };
   const variant = VARIANT_MAP[data.template] ?? "classic";
 
