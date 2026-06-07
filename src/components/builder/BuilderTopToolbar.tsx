@@ -85,6 +85,7 @@ const TEMPLATE_THUMB_ACCENT: Partial<Record<TemplateId, string>> = {
   editorial: "#1c1c1c",
   aurora: "#5b6cff",
   monochrome: "#2a2a2a",
+  novoresume: "#3879b0",
 };
 
 function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active: boolean }) {
