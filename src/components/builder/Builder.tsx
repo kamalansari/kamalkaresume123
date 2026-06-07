@@ -876,7 +876,12 @@ export function Builder() {
     return next;
   });
 
-  const commitPreviewEdits = (source: ResumeData = data, opts: { sync?: boolean } = { sync: true }): ResumeData => {
+  const readPreviewText = (el: HTMLElement, trim = false) => {
+    const text = el.innerText.replace(/\u200B/g, "");
+    return trim ? text.trim() : text;
+  };
+
+  const commitPreviewEdits = (source: ResumeData = dataRef.current, opts: { sync?: boolean } = { sync: true }): ResumeData => {
     if (typeof document === "undefined") return source;
     const root = document.getElementById("resume-preview");
     if (!root) return source;
@@ -893,29 +898,60 @@ export function Builder() {
     let dirty = false;
     root.querySelectorAll<HTMLElement>("[data-preview-edit]").forEach(el => {
       const kind = el.dataset.previewEdit;
+      if (kind === "name") {
+        const value = readPreviewText(el, true);
+        if (!(value === "Your Name" && !source.name) && value !== next.name) {
+          next = { ...next, name: value };
+          dirty = true;
+        }
+      }
+      if (kind === "headline") {
+        const value = readPreviewText(el, true);
+        if (value !== next.headline) {
+          next = { ...next, headline: value };
+          dirty = true;
+        }
+      }
+      if (kind === "contact-email" || kind === "contact-phone" || kind === "contact-location") {
+        const field = kind.replace("contact-", "") as "email" | "phone" | "location";
+        const value = readPreviewText(el, true);
+        if (value !== next[field]) {
+          next = { ...next, [field]: value };
+          dirty = true;
+        }
+      }
       if (kind === "summary") {
-        const value = el.innerText;
-        if (value !== source.summary) { next = { ...next, summary: value }; dirty = true; }
+        const value = readPreviewText(el);
+        if (value !== next.summary) { next = { ...next, summary: value }; dirty = true; }
       }
       if (kind === "skills") {
-        const value = el.innerText;
-        const displayed = parseSkills(source.skills).join(" | ");
-        if (value !== displayed && value !== source.skills && !sameSkillSet(parseSkills(value), parseSkills(source.skills))) {
+        const value = readPreviewText(el);
+        const displayed = parseSkills(next.skills).join(" | ");
+        if (value !== displayed && value !== next.skills && !sameSkillSet(parseSkills(value), parseSkills(next.skills))) {
           next = { ...next, skills: value };
           dirty = true;
         }
       }
       if (kind === "experience-bullets") {
         const id = el.dataset.previewExpId;
-        const current = source.experience.find(e => e.id === id);
+        const current = next.experience.find(e => e.id === id);
         if (!id || !current) return;
-        const bullets = normalizeBulletText(el.innerText);
+        const bullets = normalizeBulletText(readPreviewText(el));
         if (bullets !== current.bullets) {
           next = { ...next, experience: next.experience.map(e => e.id === id ? { ...e, bullets } : e) };
           dirty = true;
         }
       }
     });
+
+    const linkEls = Array.from(root.querySelectorAll<HTMLElement>("[data-preview-edit='contact-links']"));
+    if (linkEls.length > 0) {
+      const links = linkEls.map((el) => readPreviewText(el, true)).filter(Boolean).join(" · ");
+      if (links !== next.links) {
+        next = { ...next, links };
+        dirty = true;
+      }
+    }
 
     if (dirty && opts.sync !== false) flushSync(() => setData(next));
     return next;
@@ -931,10 +967,14 @@ export function Builder() {
     window.addEventListener("afterprint", cleanup);
     flushSync(() => setPrintData({ ...defaultResume, ...resume }));
     announce("Preparing PDF for download…");
-    requestAnimationFrame(() => {
-      window.print();
-      announce("PDF ready. Use your browser's save dialog to download.");
-    });
+    const openPrintDialog = () =>
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.print();
+          announce("PDF ready. Use your browser's save dialog to download.");
+        });
+      });
+    void (document.fonts?.ready ?? Promise.resolve()).then(openPrintDialog, openPrintDialog);
   };
 
   const printCurrentResume = () => {
