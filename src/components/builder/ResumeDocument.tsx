@@ -777,6 +777,69 @@ export function ResumeDocument({
           className="print-area resume-document mx-auto shadow-[var(--shadow-soft)]"
           style={base}
         >
+          {isNovo && (
+            <header
+              {...headerClickProps}
+              style={{ cursor: onSectionClick ? "pointer" : undefined }}
+            >
+              <div style={{ padding: "0.45in 0.5in 0.18in 0.5in" }}>
+                <h1
+                  {...(ed
+                    ? {
+                        contentEditable: true,
+                        suppressContentEditableWarning: true,
+                        "data-preview-edit": "name",
+                        className: "preview-editable",
+                        onClick: (e: React.MouseEvent) => e.stopPropagation(),
+                        onBlur: (e: React.FocusEvent<HTMLHeadingElement>) =>
+                          ed.onUpdate({ name: e.currentTarget.innerText }),
+                      }
+                    : {})}
+                  style={{
+                    fontFamily: headingFont,
+                    fontSize: `${fs * 2.8}pt`,
+                    fontWeight: 700,
+                    lineHeight: 1.05,
+                    color: "#1a1a1a",
+                  }}
+                >
+                  {data.name || "Your Name"}
+                </h1>
+                {data.headline && (
+                  <div
+                    {...(ed
+                      ? {
+                          contentEditable: true,
+                          suppressContentEditableWarning: true,
+                          "data-preview-edit": "headline",
+                          className: "preview-editable",
+                          onClick: (e: React.MouseEvent) => e.stopPropagation(),
+                          onBlur: (e: React.FocusEvent<HTMLDivElement>) =>
+                            ed.onUpdate({ headline: e.currentTarget.innerText }),
+                        }
+                      : {})}
+                    style={{
+                      fontSize: `${fs + 3}pt`,
+                      color: accent,
+                      marginTop: 6,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {data.headline}
+                  </div>
+                )}
+              </div>
+              <div
+                style={{
+                  background: accent,
+                  color: "#fff",
+                  padding: "10px 0.5in",
+                }}
+              >
+                <ContactRow data={data} color="#ffffff" />
+              </div>
+            </header>
+          )}
           <div
             className={`grid resume-layout-grid${sidebarRight ? " resume-layout-sidebar-right" : ""}`}
             ref={layoutRef}
@@ -784,7 +847,7 @@ export function ResumeDocument({
               gridTemplateColumns: sidebarRight
                 ? `1fr ${safeSidebarWidth}in`
                 : `${safeSidebarWidth}in 1fr`,
-              minHeight: "11in",
+              minHeight: isNovo ? "9in" : "11in",
               alignItems: "stretch",
               width: "100%",
             }}
@@ -796,6 +859,7 @@ export function ResumeDocument({
       </KeywordContext.Provider>
     );
   }
+
 
   if (variant === "modern") {
     const exec = data.template === "executive" || data.template === "bold";
