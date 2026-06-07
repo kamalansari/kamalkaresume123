@@ -758,7 +758,7 @@ export function ResumeDocument({
       <main
         className="resume-main"
         style={{
-          padding: "0.5in 0.45in 0.5in 0.4in",
+          padding: isNovo ? "0.3in 0.3in 0.4in 0.5in" : "0.5in 0.45in 0.5in 0.4in",
           minWidth: 0,
           overflow: "visible",
           overflowWrap: "anywhere",
@@ -766,6 +766,7 @@ export function ResumeDocument({
       >
         {data.sectionOrder
           .filter((id) => !sidebarSectionIds.includes(id))
+          .filter((id) => !(isNovo && id === "summary"))
           .map((id) => sections[id])}
         {customBlocks}
       </main>
