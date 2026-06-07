@@ -400,6 +400,8 @@ export function Builder() {
       resumeStore.saveDraft(data);
       if (currentId) {
         resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data });
+        setSaved(resumeStore.list());
+        setPrimaryId(resumeStore.getPrimaryId());
       }
       setSavedAt(Date.now());
       setSaving(false);
@@ -520,21 +522,42 @@ export function Builder() {
     toast.success(`Loaded Primary: "${p.name}"`);
   };
 
+  const suggestedResumeName = (resume: ResumeData) => {
+    const name = resume.name?.trim();
+    if (name) return `${name}'s resume`;
+    const headline = resume.headline?.trim();
+    if (headline) return headline;
+    return "Untitled resume";
+  };
+
   const saveCurrent = () => {
-    if (!currentId) { setNameDraft(data.name ? `${data.name}'s resume` : "Untitled resume"); setSaveAsOpen(true); return; }
-    resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data });
-    resumeStore.saveDraft(data);
-    historyStore.push(currentId, data, `Saved "${currentName}"`);
+    const latest = commitPreviewEdits();
+    if (!currentId) {
+      const id = newId();
+      const name = suggestedResumeName(latest);
+      resumeStore.upsert({ id, name, updatedAt: Date.now(), data: latest });
+      resumeStore.saveDraft(latest);
+      historyStore.push(id, latest, `Created "${name}"`);
+      setCurrentId(id);
+      setCurrentName(name);
+      refreshList();
+      toast.success(`Saved "${name}" to My Resumes`);
+      return;
+    }
+    resumeStore.upsert({ id: currentId, name: currentName, updatedAt: Date.now(), data: latest });
+    resumeStore.saveDraft(latest);
+    historyStore.push(currentId, latest, `Saved "${currentName}"`);
     refreshList();
     toast.success(`Saved "${currentName}"`);
   };
 
   const saveAs = (name: string) => {
+    const latest = commitPreviewEdits();
     const trimmed = name.trim() || "Untitled resume";
     const id = newId();
-    resumeStore.upsert({ id, name: trimmed, updatedAt: Date.now(), data });
-    resumeStore.saveDraft(data);
-    historyStore.push(id, data, `Created "${trimmed}"`);
+    resumeStore.upsert({ id, name: trimmed, updatedAt: Date.now(), data: latest });
+    resumeStore.saveDraft(latest);
+    historyStore.push(id, latest, `Created "${trimmed}"`);
     setCurrentId(id);
     setCurrentName(trimmed);
     setSaveAsOpen(false);
@@ -1566,7 +1589,7 @@ export function Builder() {
             </Button>
             <Button variant="outline" size="sm" className="h-8" onClick={() => {
               try {
-                const payload = lzString.compressToEncodedURIComponent(JSON.stringify(data));
+                const payload = lzString.compressToEncodedURIComponent(JSON.stringify(commitPreviewEdits()));
                 const url = `${window.location.origin}/builder#r=${payload}`;
                 navigator.clipboard.writeText(url).then(() => toast.success("Share link copied to clipboard")).catch(() => toast.error("Could not copy link"));
               } catch {
