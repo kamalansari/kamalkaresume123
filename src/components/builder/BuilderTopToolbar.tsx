@@ -48,6 +48,7 @@ export const ALL_TEMPLATES: TemplateMeta[] = [
   { id: "creative", label: "Creative", desc: "Violet right rail", cols: 2 },
   { id: "aurora", label: "Aurora", desc: "Indigo gradient rail", cols: 2 },
   { id: "startup", label: "Startup", desc: "Orange compact two-col", cols: 2 },
+  { id: "novoresume", label: "Novoresume", desc: "Blue contact band, right rail", cols: 2 },
 ];
 
 const BG_PRESETS = [
@@ -84,6 +85,7 @@ const TEMPLATE_THUMB_ACCENT: Partial<Record<TemplateId, string>> = {
   editorial: "#1c1c1c",
   aurora: "#5b6cff",
   monochrome: "#2a2a2a",
+  novoresume: "#3879b0",
 };
 
 function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active: boolean }) {

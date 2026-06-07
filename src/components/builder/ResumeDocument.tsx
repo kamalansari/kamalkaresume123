@@ -336,6 +336,7 @@ export function ResumeDocument({
     editorial: "#1c1c1c",
     aurora: "#5b6cff",
     monochrome: "#2a2a2a",
+    novoresume: "#3879b0",
   };
   const accent = TEMPLATE_ACCENT[data.template] ?? data.accentHex;
   const fs = data.fontSize ?? 10.5;
@@ -375,6 +376,7 @@ export function ResumeDocument({
     "teal-chips": "sidebar-right",
     "hybrid-photo": "two-column",
     "dark-sidebar": "two-column",
+    novoresume: "sidebar-right",
   };
   const variant = VARIANT_MAP[data.template] ?? "classic";
 
@@ -576,9 +578,10 @@ export function ResumeDocument({
     : {};
 
   if (variant === "two-column" || variant === "sidebar-right" || variant === "compact-two") {
+    const isNovo = data.template === "novoresume";
     const sidebarRight = variant === "sidebar-right";
-    const compact = variant === "compact-two";
-    const sidebarBg = compact ? "#f4f3ef" : accent;
+    const compact = variant === "compact-two" || isNovo;
+    const sidebarBg = isNovo ? "transparent" : compact ? "#f4f3ef" : accent;
     const sidebarText = compact ? "#1a1a1a" : "#ffffff";
     const sidebarSectionIds = getSidebarSectionIds(data);
     const sidebarRenderers: Partial<Record<SectionId, React.ReactNode>> = {
@@ -686,7 +689,7 @@ export function ResumeDocument({
         style={{
           background: sidebarBg,
           color: sidebarText,
-          padding: "0.55in 0.4in",
+          padding: isNovo ? "0.3in 0.35in 0.5in 0.35in" : "0.55in 0.4in",
           cursor: onSectionClick ? "pointer" : undefined,
           wordBreak: "break-word",
           overflowWrap: "anywhere",
@@ -694,54 +697,58 @@ export function ResumeDocument({
           alignSelf: "stretch",
         }}
       >
-        <h1
-          {...(ed
-            ? {
-                contentEditable: true,
-                suppressContentEditableWarning: true,
-                "data-preview-edit": "name",
-                className: "preview-editable",
-                onClick: (e: React.MouseEvent) => e.stopPropagation(),
-                onBlur: (e: React.FocusEvent<HTMLHeadingElement>) =>
-                  ed.onUpdate({ name: e.currentTarget.innerText }),
-              }
-            : {})}
-          style={{
-            fontFamily: headingFont,
-            fontSize: `${fs * 2}pt`,
-            lineHeight: 1.1,
-            fontWeight: 700,
-            color: compact ? accent : sidebarText,
-          }}
-        >
-          {data.name || "Your Name"}
-        </h1>
-        <div
-          {...(ed
-            ? {
-                contentEditable: true,
-                suppressContentEditableWarning: true,
-                "data-preview-edit": "headline",
-                className: "preview-editable",
-                onClick: (e: React.MouseEvent) => e.stopPropagation(),
-                onBlur: (e: React.FocusEvent<HTMLDivElement>) =>
-                  ed.onUpdate({ headline: e.currentTarget.innerText }),
-              }
-            : {})}
-          style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}
-        >
-          {data.headline}
-        </div>
-        <div
-          style={{
-            height: 1,
-            background: compact ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.3)",
-            margin: "16px 0",
-          }}
-        />
-        <SidebarBlock title="Contact" headingFont={headingFont} dark={!compact}>
-          <SidebarContact data={data} dark={!compact} ed={ed} />
-        </SidebarBlock>
+        {!isNovo && (
+          <>
+            <h1
+              {...(ed
+                ? {
+                    contentEditable: true,
+                    suppressContentEditableWarning: true,
+                    "data-preview-edit": "name",
+                    className: "preview-editable",
+                    onClick: (e: React.MouseEvent) => e.stopPropagation(),
+                    onBlur: (e: React.FocusEvent<HTMLHeadingElement>) =>
+                      ed.onUpdate({ name: e.currentTarget.innerText }),
+                  }
+                : {})}
+              style={{
+                fontFamily: headingFont,
+                fontSize: `${fs * 2}pt`,
+                lineHeight: 1.1,
+                fontWeight: 700,
+                color: compact ? accent : sidebarText,
+              }}
+            >
+              {data.name || "Your Name"}
+            </h1>
+            <div
+              {...(ed
+                ? {
+                    contentEditable: true,
+                    suppressContentEditableWarning: true,
+                    "data-preview-edit": "headline",
+                    className: "preview-editable",
+                    onClick: (e: React.MouseEvent) => e.stopPropagation(),
+                    onBlur: (e: React.FocusEvent<HTMLDivElement>) =>
+                      ed.onUpdate({ headline: e.currentTarget.innerText }),
+                  }
+                : {})}
+              style={{ fontSize: `${fs}pt`, opacity: compact ? 0.85 : 0.9, marginTop: 4 }}
+            >
+              {data.headline}
+            </div>
+            <div
+              style={{
+                height: 1,
+                background: compact ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.3)",
+                margin: "16px 0",
+              }}
+            />
+            <SidebarBlock title="Contact" headingFont={headingFont} dark={!compact}>
+              <SidebarContact data={data} dark={!compact} ed={ed} />
+            </SidebarBlock>
+          </>
+        )}
         {data.sectionOrder
           .filter((id) => sidebarSectionIds.includes(id))
           .map((id) => sidebarRenderers[id])}
@@ -770,6 +777,69 @@ export function ResumeDocument({
           className="print-area resume-document mx-auto shadow-[var(--shadow-soft)]"
           style={base}
         >
+          {isNovo && (
+            <header
+              {...headerClickProps}
+              style={{ cursor: onSectionClick ? "pointer" : undefined }}
+            >
+              <div style={{ padding: "0.45in 0.5in 0.18in 0.5in" }}>
+                <h1
+                  {...(ed
+                    ? {
+                        contentEditable: true,
+                        suppressContentEditableWarning: true,
+                        "data-preview-edit": "name",
+                        className: "preview-editable",
+                        onClick: (e: React.MouseEvent) => e.stopPropagation(),
+                        onBlur: (e: React.FocusEvent<HTMLHeadingElement>) =>
+                          ed.onUpdate({ name: e.currentTarget.innerText }),
+                      }
+                    : {})}
+                  style={{
+                    fontFamily: headingFont,
+                    fontSize: `${fs * 2.8}pt`,
+                    fontWeight: 700,
+                    lineHeight: 1.05,
+                    color: "#1a1a1a",
+                  }}
+                >
+                  {data.name || "Your Name"}
+                </h1>
+                {data.headline && (
+                  <div
+                    {...(ed
+                      ? {
+                          contentEditable: true,
+                          suppressContentEditableWarning: true,
+                          "data-preview-edit": "headline",
+                          className: "preview-editable",
+                          onClick: (e: React.MouseEvent) => e.stopPropagation(),
+                          onBlur: (e: React.FocusEvent<HTMLDivElement>) =>
+                            ed.onUpdate({ headline: e.currentTarget.innerText }),
+                        }
+                      : {})}
+                    style={{
+                      fontSize: `${fs + 3}pt`,
+                      color: accent,
+                      marginTop: 6,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {data.headline}
+                  </div>
+                )}
+              </div>
+              <div
+                style={{
+                  background: accent,
+                  color: "#fff",
+                  padding: "10px 0.5in",
+                }}
+              >
+                <ContactRow data={data} color="#ffffff" />
+              </div>
+            </header>
+          )}
           <div
             className={`grid resume-layout-grid${sidebarRight ? " resume-layout-sidebar-right" : ""}`}
             ref={layoutRef}
@@ -777,7 +847,7 @@ export function ResumeDocument({
               gridTemplateColumns: sidebarRight
                 ? `1fr ${safeSidebarWidth}in`
                 : `${safeSidebarWidth}in 1fr`,
-              minHeight: "11in",
+              minHeight: isNovo ? "9in" : "11in",
               alignItems: "stretch",
               width: "100%",
             }}
@@ -789,6 +859,7 @@ export function ResumeDocument({
       </KeywordContext.Provider>
     );
   }
+
 
   if (variant === "modern") {
     const exec = data.template === "executive" || data.template === "bold";

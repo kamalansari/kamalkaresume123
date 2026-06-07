@@ -54,7 +54,8 @@ export type TemplateId =
   | "ats-blue"
   | "teal-chips"
   | "hybrid-photo"
-  | "dark-sidebar";
+  | "dark-sidebar"
+  | "novoresume";
 export type SectionId =
   | "summary"
   | "experience"
@@ -93,6 +94,7 @@ export const TEMPLATE_SIDEBAR_DEFAULTS: Partial<Record<TemplateId, SectionId[]>>
   "teal-chips":    ["skills", "languages", "education"],
   "hybrid-photo":  ["skills", "languages", "education"],
   "dark-sidebar":  ["skills", "languages", "education"],
+  "novoresume":    ["skills", "languages", "certifications"],
 };
 
 // Templates that render a sidebar column at all.
