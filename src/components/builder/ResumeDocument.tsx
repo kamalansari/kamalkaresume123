@@ -336,6 +336,7 @@ export function ResumeDocument({
     editorial: "#1c1c1c",
     aurora: "#5b6cff",
     monochrome: "#2a2a2a",
+    novoresume: "#3879b0",
   };
   const accent = TEMPLATE_ACCENT[data.template] ?? data.accentHex;
   const fs = data.fontSize ?? 10.5;
