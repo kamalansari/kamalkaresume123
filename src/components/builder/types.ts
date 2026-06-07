@@ -54,7 +54,8 @@ export type TemplateId =
   | "ats-blue"
   | "teal-chips"
   | "hybrid-photo"
-  | "dark-sidebar";
+  | "dark-sidebar"
+  | "novoresume";
 export type SectionId =
   | "summary"
   | "experience"
