@@ -798,10 +798,10 @@ export function ResumeDocument({
                     : {})}
                   style={{
                     fontFamily: headingFont,
-                    fontSize: `${fs * 3.0}pt`,
+                    fontSize: `${fs * 3.05}pt`,
                     fontWeight: 700,
-                    lineHeight: 1.0,
-                    letterSpacing: "-0.01em",
+                    lineHeight: 0.98,
+                    letterSpacing: "-0.015em",
                     color: "#1a1a1a",
                   }}
                 >
@@ -822,11 +822,12 @@ export function ResumeDocument({
                       : {})}
                     style={{
                       fontFamily: headingFont,
-                      fontSize: `${fs + 2.5}pt`,
+                      fontSize: `${fs + 3.5}pt`,
                       color: accent,
-                      marginTop: 2,
+                      marginTop: 4,
                       fontWeight: 500,
-                      lineHeight: 1.2,
+                      lineHeight: 1.15,
+                      letterSpacing: "0",
                     }}
                   >
                     {data.headline}
@@ -836,8 +837,8 @@ export function ResumeDocument({
                   <div
                     style={{
                       marginTop: 10,
-                      fontSize: `${fs}pt`,
-                      lineHeight: 1.45,
+                      fontSize: `${fs - 0.5}pt`,
+                      lineHeight: 1.4,
                       color: "#2a2a2a",
                       textAlign: data.summaryAlign ?? (data.justifyText ? "justify" : "left"),
                     }}
@@ -850,8 +851,9 @@ export function ResumeDocument({
                 style={{
                   background: accent,
                   color: "#fff",
-                  padding: "7px 0.5in",
+                  padding: "8px 0.5in",
                   fontSize: `${fs - 0.5}pt`,
+                  letterSpacing: "0.01em",
                 }}
               >
                 <ContactRow data={data} color="#ffffff" />
