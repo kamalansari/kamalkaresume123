@@ -48,6 +48,7 @@ export const ALL_TEMPLATES: TemplateMeta[] = [
   { id: "creative", label: "Creative", desc: "Violet right rail", cols: 2 },
   { id: "aurora", label: "Aurora", desc: "Indigo gradient rail", cols: 2 },
   { id: "startup", label: "Startup", desc: "Orange compact two-col", cols: 2 },
+  { id: "novoresume", label: "Novoresume", desc: "Blue contact band, right rail", cols: 2 },
 ];
 
 const BG_PRESETS = [
