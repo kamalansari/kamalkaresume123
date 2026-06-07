@@ -783,7 +783,7 @@ export function ResumeDocument({
               {...headerClickProps}
               style={{ cursor: onSectionClick ? "pointer" : undefined }}
             >
-              <div style={{ padding: "0.45in 0.5in 0.18in 0.5in" }}>
+              <div style={{ padding: "0.4in 0.5in 0.14in 0.5in" }}>
                 <h1
                   {...(ed
                     ? {
@@ -798,9 +798,10 @@ export function ResumeDocument({
                     : {})}
                   style={{
                     fontFamily: headingFont,
-                    fontSize: `${fs * 2.8}pt`,
+                    fontSize: `${fs * 3.0}pt`,
                     fontWeight: 700,
-                    lineHeight: 1.05,
+                    lineHeight: 1.0,
+                    letterSpacing: "-0.01em",
                     color: "#1a1a1a",
                   }}
                 >
@@ -820,13 +821,28 @@ export function ResumeDocument({
                         }
                       : {})}
                     style={{
-                      fontSize: `${fs + 3}pt`,
+                      fontFamily: headingFont,
+                      fontSize: `${fs + 2.5}pt`,
                       color: accent,
-                      marginTop: 6,
+                      marginTop: 2,
                       fontWeight: 500,
+                      lineHeight: 1.2,
                     }}
                   >
                     {data.headline}
+                  </div>
+                )}
+                {data.summary && (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      fontSize: `${fs}pt`,
+                      lineHeight: 1.45,
+                      color: "#2a2a2a",
+                      textAlign: data.summaryAlign ?? (data.justifyText ? "justify" : "left"),
+                    }}
+                  >
+                    <InlineText text={data.summary} />
                   </div>
                 )}
               </div>
@@ -834,7 +850,8 @@ export function ResumeDocument({
                 style={{
                   background: accent,
                   color: "#fff",
-                  padding: "10px 0.5in",
+                  padding: "7px 0.5in",
+                  fontSize: `${fs - 0.5}pt`,
                 }}
               >
                 <ContactRow data={data} color="#ffffff" />
