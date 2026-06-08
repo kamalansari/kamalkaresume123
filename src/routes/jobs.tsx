@@ -18,7 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
-  listJobs, saveJob, unsaveJob, listSavedJobs, triggerJobSync,
+  listJobs, saveJob, unsaveJob, listSavedJobs, triggerJobSync, triggerJoobleSync,
   getProviderStatus,
   type JobRow, type ProviderStatus,
 } from "@/lib/jobs.functions";
