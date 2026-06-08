@@ -390,7 +390,7 @@ async function callJSearch(
   }
 }
 
-function jsearchToRow(job: JSearchJob, pub: PublisherConfig): UpsertRow {
+function jsearchToRow(job: JSearchJob, pub: PublisherConfig, link: string): UpsertRow {
   const description = (job.job_description || "").replace(/\s+/g, " ").trim();
   const loc = [job.job_city, job.job_country].filter(Boolean).join(", ");
   return {
@@ -404,7 +404,7 @@ function jsearchToRow(job: JSearchJob, pub: PublisherConfig): UpsertRow {
     salary_max: job.job_max_salary ?? null,
     salary_currency: job.job_salary_currency ?? "INR",
     description: description.slice(0, 4000),
-    redirect_url: job.job_apply_link,
+    redirect_url: link,
     contract_type: null,
     contract_time: job.job_employment_type ?? null,
     created_date: job.job_posted_at_datetime_utc ?? null,
@@ -429,22 +429,26 @@ export async function syncJSearchJobs(opts?: { queries?: string[]; pages?: numbe
   const errors: string[] = [];
   const allRows = new Map<string, UpsertRow>();
 
-  const tasks: { q: string; pub: PublisherConfig; p: number }[] = [];
+  // One JSearch call per (query, page). Each returned job is fanned out to
+  // every publisher present in its apply_options, so a single API call yields
+  // Indeed + LinkedIn + Naukri + Glassdoor rows when the listing is mirrored.
+  const tasks: { q: string; p: number }[] = [];
   for (const q of queries) {
-    for (const pub of PUBLISHERS) {
-      for (let p = 1; p <= pages; p++) tasks.push({ q, pub, p });
-    }
+    for (let p = 1; p <= pages; p++) tasks.push({ q, p });
   }
-  await mapWithConcurrency(tasks, 6, async ({ q, pub, p }) => {
+  await mapWithConcurrency(tasks, 4, async ({ q, p }) => {
     try {
-      const jobs = await callJSearch(rapidKey, `${q} ${pub.queryTag}`, p);
+      const jobs = await callJSearch(rapidKey, q, p);
       for (const j of jobs) {
-        if (!pub.match(j)) continue;
-        const row = jsearchToRow(j, pub);
-        if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
+        for (const pub of PUBLISHERS) {
+          const m = matchPublisher(j, pub);
+          if (!m) continue;
+          const row = jsearchToRow(j, pub, m.link);
+          if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
+        }
       }
     } catch (e) {
-      errors.push(`${pub.source} ${q} p${p}: ${(e as Error).message}`);
+      errors.push(`${q} p${p}: ${(e as Error).message}`);
     }
   });
 
