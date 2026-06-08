@@ -283,6 +283,12 @@ export async function syncAdzunaJobs(opts?: { queries?: string[]; cities?: strin
 // ───────────────────────── JSearch (RapidAPI) ─────────────────────────
 // Surfaces jobs from Naukri, LinkedIn, Indeed, and Glassdoor (Adzuna India does not include these).
 
+type JSearchApplyOption = {
+  publisher?: string | null;
+  apply_link?: string | null;
+  is_direct?: boolean;
+};
+
 type JSearchJob = {
   job_id: string;
   employer_name?: string | null;
@@ -299,6 +305,7 @@ type JSearchJob = {
   job_salary_currency?: string | null;
   job_employment_type?: string | null;
   job_posted_at_datetime_utc?: string | null;
+  apply_options?: JSearchApplyOption[] | null;
 };
 
 type JSearchResponse = { data?: JSearchJob[] };
@@ -319,46 +326,35 @@ function isRapidApiSubscriptionError(status: number, body: string): boolean {
 type PublisherConfig = {
   source: string;
   idPrefix: string;
-  queryTag: string;
-  match: (j: JSearchJob) => boolean;
+  // Substrings (lower-cased) that identify this publisher in JSearch's
+  // job_publisher field or in any apply_options[].publisher / apply_link entry.
+  needles: string[];
 };
 
 const PUBLISHERS: PublisherConfig[] = [
-  {
-    source: "Naukri",
-    idPrefix: "naukri",
-    queryTag: "Naukri jobs",
-    match: (j) =>
-      `${j.job_publisher ?? ""} ${j.job_apply_link ?? ""} ${j.job_title ?? ""} ${j.job_description ?? ""}`
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, " ")
-        .includes("naukri"),
-  },
-  {
-    source: "LinkedIn",
-    idPrefix: "linkedin",
-    queryTag: "via LinkedIn",
-    match: (j) =>
-      (j.job_publisher ?? "").toLowerCase().includes("linkedin") ||
-      (j.job_apply_link ?? "").toLowerCase().includes("linkedin.com"),
-  },
-  {
-    source: "Indeed",
-    idPrefix: "indeed",
-    queryTag: "via Indeed",
-    match: (j) =>
-      (j.job_publisher ?? "").toLowerCase().includes("indeed") ||
-      (j.job_apply_link ?? "").toLowerCase().includes("indeed.com"),
-  },
-  {
-    source: "Glassdoor",
-    idPrefix: "glassdoor",
-    queryTag: "via Glassdoor",
-    match: (j) =>
-      (j.job_publisher ?? "").toLowerCase().includes("glassdoor") ||
-      (j.job_apply_link ?? "").toLowerCase().includes("glassdoor."),
-  },
+  { source: "Indeed",    idPrefix: "indeed",    needles: ["indeed"] },
+  { source: "LinkedIn",  idPrefix: "linkedin",  needles: ["linkedin"] },
+  { source: "Naukri",    idPrefix: "naukri",    needles: ["naukri"] },
+  { source: "Glassdoor", idPrefix: "glassdoor", needles: ["glassdoor"] },
 ];
+
+function matchPublisher(j: JSearchJob, pub: PublisherConfig): { link: string } | null {
+  const pubField = (j.job_publisher ?? "").toLowerCase();
+  const mainLink = (j.job_apply_link ?? "").toLowerCase();
+  for (const needle of pub.needles) {
+    if (pubField.includes(needle) || mainLink.includes(needle)) {
+      return { link: j.job_apply_link };
+    }
+    for (const opt of j.apply_options ?? []) {
+      const op = (opt.publisher ?? "").toLowerCase();
+      const al = (opt.apply_link ?? "").toLowerCase();
+      if (op.includes(needle) || al.includes(needle)) {
+        return { link: opt.apply_link || j.job_apply_link };
+      }
+    }
+  }
+  return null;
+}
 
 async function callJSearch(
   rapidKey: string,
@@ -394,7 +390,7 @@ async function callJSearch(
   }
 }
 
-function jsearchToRow(job: JSearchJob, pub: PublisherConfig): UpsertRow {
+function jsearchToRow(job: JSearchJob, pub: PublisherConfig, link: string): UpsertRow {
   const description = (job.job_description || "").replace(/\s+/g, " ").trim();
   const loc = [job.job_city, job.job_country].filter(Boolean).join(", ");
   return {
@@ -408,7 +404,7 @@ function jsearchToRow(job: JSearchJob, pub: PublisherConfig): UpsertRow {
     salary_max: job.job_max_salary ?? null,
     salary_currency: job.job_salary_currency ?? "INR",
     description: description.slice(0, 4000),
-    redirect_url: job.job_apply_link,
+    redirect_url: link,
     contract_type: null,
     contract_time: job.job_employment_type ?? null,
     created_date: job.job_posted_at_datetime_utc ?? null,
@@ -428,27 +424,31 @@ export async function syncJSearchJobs(opts?: { queries?: string[]; pages?: numbe
     return { fetched: 0, upserted: 0, deactivated: 0, errors: ["Missing RAPIDAPI_KEY"] };
   }
   const queries = opts?.queries ?? TARGET_QUERIES;
-  const pages = opts?.pages ?? 1;
+  const pages = opts?.pages ?? 2;
   const supabase = getServiceClient();
   const errors: string[] = [];
   const allRows = new Map<string, UpsertRow>();
 
-  const tasks: { q: string; pub: PublisherConfig; p: number }[] = [];
+  // One JSearch call per (query, page). Each returned job is fanned out to
+  // every publisher present in its apply_options, so a single API call yields
+  // Indeed + LinkedIn + Naukri + Glassdoor rows when the listing is mirrored.
+  const tasks: { q: string; p: number }[] = [];
   for (const q of queries) {
-    for (const pub of PUBLISHERS) {
-      for (let p = 1; p <= pages; p++) tasks.push({ q, pub, p });
-    }
+    for (let p = 1; p <= pages; p++) tasks.push({ q, p });
   }
-  await mapWithConcurrency(tasks, 6, async ({ q, pub, p }) => {
+  await mapWithConcurrency(tasks, 4, async ({ q, p }) => {
     try {
-      const jobs = await callJSearch(rapidKey, `${q} ${pub.queryTag}`, p);
+      const jobs = await callJSearch(rapidKey, q, p);
       for (const j of jobs) {
-        if (!pub.match(j)) continue;
-        const row = jsearchToRow(j, pub);
-        if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
+        for (const pub of PUBLISHERS) {
+          const m = matchPublisher(j, pub);
+          if (!m) continue;
+          const row = jsearchToRow(j, pub, m.link);
+          if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
+        }
       }
     } catch (e) {
-      errors.push(`${pub.source} ${q} p${p}: ${(e as Error).message}`);
+      errors.push(`${q} p${p}: ${(e as Error).message}`);
     }
   });
 
