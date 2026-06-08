@@ -326,47 +326,35 @@ function isRapidApiSubscriptionError(status: number, body: string): boolean {
 type PublisherConfig = {
   source: string;
   idPrefix: string;
-  queryTag: string;
-  match: (j: JSearchJob) => boolean;
+  // Substrings (lower-cased) that identify this publisher in JSearch's
+  // job_publisher field or in any apply_options[].publisher / apply_link entry.
+  needles: string[];
 };
 
 const PUBLISHERS: PublisherConfig[] = [
-  {
-    source: "Naukri",
-    idPrefix: "naukri",
-    queryTag: "site:naukri.com",
-    match: (j) =>
-      `${j.job_publisher ?? ""} ${j.job_apply_link ?? ""} ${j.job_title ?? ""} ${j.job_description ?? ""}`
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, " ")
-        .includes("naukri"),
-  },
-  {
-    source: "LinkedIn",
-    idPrefix: "linkedin",
-    queryTag: "site:linkedin.com/jobs",
-    match: (j) =>
-      (j.job_publisher ?? "").toLowerCase().includes("linkedin") ||
-      (j.job_apply_link ?? "").toLowerCase().includes("linkedin.com"),
-  },
-  {
-    source: "Indeed",
-    idPrefix: "indeed",
-    queryTag: "site:indeed.com",
-    match: (j) =>
-      (j.job_publisher ?? "").toLowerCase().includes("indeed") ||
-      (j.job_apply_link ?? "").toLowerCase().includes("indeed.com") ||
-      (j.job_apply_link ?? "").toLowerCase().includes("in.indeed.com"),
-  },
-  {
-    source: "Glassdoor",
-    idPrefix: "glassdoor",
-    queryTag: "site:glassdoor.co.in OR site:glassdoor.com",
-    match: (j) =>
-      (j.job_publisher ?? "").toLowerCase().includes("glassdoor") ||
-      (j.job_apply_link ?? "").toLowerCase().includes("glassdoor."),
-  },
+  { source: "Indeed",    idPrefix: "indeed",    needles: ["indeed"] },
+  { source: "LinkedIn",  idPrefix: "linkedin",  needles: ["linkedin"] },
+  { source: "Naukri",    idPrefix: "naukri",    needles: ["naukri"] },
+  { source: "Glassdoor", idPrefix: "glassdoor", needles: ["glassdoor"] },
 ];
+
+function matchPublisher(j: JSearchJob, pub: PublisherConfig): { link: string } | null {
+  const pubField = (j.job_publisher ?? "").toLowerCase();
+  const mainLink = (j.job_apply_link ?? "").toLowerCase();
+  for (const needle of pub.needles) {
+    if (pubField.includes(needle) || mainLink.includes(needle)) {
+      return { link: j.job_apply_link };
+    }
+    for (const opt of j.apply_options ?? []) {
+      const op = (opt.publisher ?? "").toLowerCase();
+      const al = (opt.apply_link ?? "").toLowerCase();
+      if (op.includes(needle) || al.includes(needle)) {
+        return { link: opt.apply_link || j.job_apply_link };
+      }
+    }
+  }
+  return null;
+}
 
 async function callJSearch(
   rapidKey: string,
