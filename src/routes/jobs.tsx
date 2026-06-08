@@ -219,8 +219,20 @@ function JobsPage() {
     onSuccess: (r) => {
       toast.success(`Refreshed: ${r.upserted} jobs cached`);
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["providerStatus"] });
     },
     onError: (e: Error) => toast.error(`Refresh failed: ${e.message}`),
+  });
+
+  const joobleSyncFn = useServerFn(triggerJoobleSync);
+  const joobleSyncMut = useMutation({
+    mutationFn: () => joobleSyncFn(),
+    onSuccess: (r) => {
+      toast.success(`Jooble synced: ${r.upserted} jobs added`);
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["providerStatus"] });
+    },
+    onError: (e: Error) => toast.error(`Jooble sync failed: ${e.message}`),
   });
 
   // Infinite scroll
