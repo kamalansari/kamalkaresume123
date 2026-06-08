@@ -285,7 +285,7 @@ function JobsPage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-base sm:text-lg font-semibold truncate">Find Jobs</h1>
             <p className="text-xs text-muted-foreground">
-              {total > 0 ? `${total.toLocaleString()} live jobs` : "Live jobs from Adzuna, Naukri, LinkedIn, Indeed, Glassdoor"} · cached & refreshed every 6h
+              {total > 0 ? `${total.toLocaleString()} live jobs` : "Live jobs from Adzuna, Naukri, LinkedIn, Indeed, Glassdoor, Jooble"} · cached & refreshed every 6h
             </p>
           </div>
           <Button
