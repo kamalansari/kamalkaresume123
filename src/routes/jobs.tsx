@@ -76,7 +76,7 @@ function formatSalary(min: number | null, max: number | null): string {
   return `₹${toLpa((max ?? min)!)}`;
 }
 
-type SourceFilter = "all" | "Adzuna" | "Naukri" | "LinkedIn" | "Indeed" | "Glassdoor";
+type SourceFilter = "all" | "Adzuna" | "Naukri" | "LinkedIn" | "Indeed" | "Glassdoor" | "Jooble";
 
 function sourceBadgeClass(source: string): string {
   switch (source) {
@@ -84,6 +84,7 @@ function sourceBadgeClass(source: string): string {
     case "LinkedIn":  return "border-blue-500/40 text-blue-700 dark:text-blue-300 bg-blue-500/10";
     case "Indeed":    return "border-indigo-500/40 text-indigo-700 dark:text-indigo-300 bg-indigo-500/10";
     case "Glassdoor": return "border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10";
+    case "Jooble":    return "border-fuchsia-500/40 text-fuchsia-700 dark:text-fuchsia-300 bg-fuchsia-500/10";
     default:          return "border-sky-500/40 text-sky-700 dark:text-sky-300 bg-sky-500/10";
   }
 }
