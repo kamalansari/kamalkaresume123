@@ -18,7 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
-  listJobs, saveJob, unsaveJob, listSavedJobs, triggerJobSync,
+  listJobs, saveJob, unsaveJob, listSavedJobs, triggerJobSync, triggerJoobleSync,
   getProviderStatus,
   type JobRow, type ProviderStatus,
 } from "@/lib/jobs.functions";
@@ -219,8 +219,20 @@ function JobsPage() {
     onSuccess: (r) => {
       toast.success(`Refreshed: ${r.upserted} jobs cached`);
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["providerStatus"] });
     },
     onError: (e: Error) => toast.error(`Refresh failed: ${e.message}`),
+  });
+
+  const joobleSyncFn = useServerFn(triggerJoobleSync);
+  const joobleSyncMut = useMutation({
+    mutationFn: () => joobleSyncFn(),
+    onSuccess: (r) => {
+      toast.success(`Jooble synced: ${r.upserted} jobs added`);
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["providerStatus"] });
+    },
+    onError: (e: Error) => toast.error(`Jooble sync failed: ${e.message}`),
   });
 
   // Infinite scroll
@@ -427,7 +439,7 @@ function JobsPage() {
 
       {/* Content */}
       <main className="container max-w-7xl mx-auto px-4 py-6">
-        <ProviderStatusBanner query={statusQuery} />
+        <ProviderStatusBanner query={statusQuery} onSyncJooble={() => joobleSyncMut.mutate()} syncingJooble={joobleSyncMut.isPending} authed={authed} />
         {jobsQuery.isLoading && tab === "all" ? (
           <SkeletonGrid />
         ) : visibleList.length === 0 ? (
@@ -782,8 +794,14 @@ function MatchPopoverBody({ breakdown }: { breakdown: MatchBreakdown }) {
 
 function ProviderStatusBanner({
   query,
+  onSyncJooble,
+  syncingJooble,
+  authed,
 }: {
   query: ReturnType<typeof useQuery<{ providers: ProviderStatus[] }>>;
+  onSyncJooble?: () => void;
+  syncingJooble?: boolean;
+  authed?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   if (query.isLoading || !query.data) return null;
@@ -796,7 +814,7 @@ function ProviderStatusBanner({
         onClick={() => setExpanded(true)}
         className="mb-4 w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition"
       >
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1 flex-wrap">
           {providers.map((p) => (
             <span
               key={p.name}
@@ -839,6 +857,7 @@ function ProviderStatusBanner({
               : p.status === "error"
               ? "API error"
               : undefined;
+          const isJooble = p.name === "Jooble";
           return (
             <div
               key={p.name}
@@ -850,6 +869,16 @@ function ProviderStatusBanner({
                 <span className="text-muted-foreground">{p.count} jobs</span>
               ) : (
                 <span className="text-rose-600 dark:text-rose-400">{reason}</span>
+              )}
+              {isJooble && authed && onSyncJooble && (
+                <button
+                  onClick={onSyncJooble}
+                  disabled={syncingJooble}
+                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 text-[11px] font-medium text-fuchsia-700 dark:text-fuchsia-300 hover:bg-fuchsia-500/20 transition disabled:opacity-50"
+                >
+                  <RefreshCw className={cn("h-3 w-3", syncingJooble && "animate-spin")} />
+                  {syncingJooble ? "Syncing…" : "Sync now"}
+                </button>
               )}
             </div>
           );

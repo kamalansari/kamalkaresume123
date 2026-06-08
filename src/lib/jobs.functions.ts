@@ -137,6 +137,13 @@ export const triggerJobSync = createServerFn({ method: "POST" })
     return syncAllJobs();
   });
 
+export const triggerJoobleSync = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { syncJoobleJobs } = await import("@/lib/jobs.server");
+    return syncJoobleJobs();
+  });
+
 const SaveInput = z.object({ jobId: z.string().uuid() });
 
 export const saveJob = createServerFn({ method: "POST" })
