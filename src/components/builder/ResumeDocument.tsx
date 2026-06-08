@@ -337,6 +337,16 @@ export function ResumeDocument({
     aurora: "#5b6cff",
     monochrome: "#2a2a2a",
     novoresume: "#3879b0",
+    elegant: "#3a2a4d",
+    bold: "#111827",
+    fresher: "#1e4b6e",
+    contemporary: "#0e7490",
+    "novo-dark": "#1e293b",
+    "marketer-band": "#e85d3a",
+    "ats-blue": "#1d4ed8",
+    "teal-chips": "#0d8a8a",
+    "hybrid-photo": "#374151",
+    "dark-sidebar": "#0f172a",
   };
   const accent = TEMPLATE_ACCENT[data.template] ?? data.accentHex;
   const fs = data.fontSize ?? 10.5;
