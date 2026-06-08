@@ -794,8 +794,14 @@ function MatchPopoverBody({ breakdown }: { breakdown: MatchBreakdown }) {
 
 function ProviderStatusBanner({
   query,
+  onSyncJooble,
+  syncingJooble,
+  authed,
 }: {
   query: ReturnType<typeof useQuery<{ providers: ProviderStatus[] }>>;
+  onSyncJooble?: () => void;
+  syncingJooble?: boolean;
+  authed?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   if (query.isLoading || !query.data) return null;
@@ -808,7 +814,7 @@ function ProviderStatusBanner({
         onClick={() => setExpanded(true)}
         className="mb-4 w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition"
       >
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1 flex-wrap">
           {providers.map((p) => (
             <span
               key={p.name}
@@ -851,6 +857,7 @@ function ProviderStatusBanner({
               : p.status === "error"
               ? "API error"
               : undefined;
+          const isJooble = p.name === "Jooble";
           return (
             <div
               key={p.name}
@@ -862,6 +869,16 @@ function ProviderStatusBanner({
                 <span className="text-muted-foreground">{p.count} jobs</span>
               ) : (
                 <span className="text-rose-600 dark:text-rose-400">{reason}</span>
+              )}
+              {isJooble && authed && onSyncJooble && (
+                <button
+                  onClick={onSyncJooble}
+                  disabled={syncingJooble}
+                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 text-[11px] font-medium text-fuchsia-700 dark:text-fuchsia-300 hover:bg-fuchsia-500/20 transition disabled:opacity-50"
+                >
+                  <RefreshCw className={cn("h-3 w-3", syncingJooble && "animate-spin")} />
+                  {syncingJooble ? "Syncing…" : "Sync now"}
+                </button>
               )}
             </div>
           );
