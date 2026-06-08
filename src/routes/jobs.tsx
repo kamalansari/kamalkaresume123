@@ -391,6 +391,7 @@ function JobsPage() {
                     <SelectItem value="LinkedIn">LinkedIn</SelectItem>
                     <SelectItem value="Indeed">Indeed</SelectItem>
                     <SelectItem value="Glassdoor">Glassdoor</SelectItem>
+                    <SelectItem value="Jooble">Jooble</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
