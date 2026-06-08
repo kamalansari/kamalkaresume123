@@ -468,13 +468,127 @@ export async function syncJSearchJobs(opts?: { queries?: string[]; pages?: numbe
 // Back-compat alias
 export const syncJSearchNaukriJobs = syncJSearchJobs;
 
-export async function syncAllJobs(): Promise<SyncResult> {
-  const [a, j] = await Promise.all([syncAdzunaJobs(), syncJSearchJobs()]);
+// ───────────────────────── Jooble ─────────────────────────
+// Free job aggregator covering 70+ countries. Surfaces Indeed, LinkedIn, Naukri,
+// and many company sites. Auth is a POST with the API key in the URL path.
+
+type JoobleJob = {
+  id?: string | number;
+  title: string;
+  location?: string;
+  snippet?: string;
+  salary?: string;
+  source?: string;
+  type?: string;
+  link: string;
+  company?: string;
+  updated?: string;
+};
+
+type JoobleResponse = { jobs?: JoobleJob[]; totalCount?: number };
+
+function joobleToRow(job: JoobleJob, location: string): UpsertRow {
+  const description = (job.snippet || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const idBase = job.id != null ? String(job.id) : job.link;
+  const loc = job.location || location;
+  const hay = `${job.title} ${loc} ${description}`.toLowerCase();
+  const remote = /remote|work\s*from\s*home|wfh|anywhere/.test(hay);
   return {
-    fetched: a.fetched + j.fetched,
-    upserted: a.upserted + j.upserted,
-    deactivated: a.deactivated + j.deactivated,
-    errors: [...a.errors.map((e) => `adzuna:${e}`), ...j.errors.map((e) => `jsearch:${e}`)],
+    external_job_id: `jooble_${idBase}`,
+    title: job.title,
+    company_name: job.company || null,
+    location: loc || null,
+    country: "IN",
+    category: null,
+    salary_min: null,
+    salary_max: null,
+    salary_currency: "INR",
+    description: description.slice(0, 4000),
+    redirect_url: job.link,
+    contract_type: null,
+    contract_time: job.type ?? null,
+    created_date: job.updated ? new Date(job.updated).toISOString() : null,
+    source: "Jooble",
+    company_logo: null,
+    skills: extractSkills(`${job.title} ${description}`),
+    is_remote: remote,
+    is_active: true,
+    fetched_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 14 * 86400000).toISOString(),
+  };
+}
+
+async function callJooble(apiKey: string, keywords: string, location: string, page: number): Promise<JoobleJob[]> {
+  const url = `https://jooble.org/api/${encodeURIComponent(apiKey)}`;
+  try {
+    const res = await fetchWithRetry(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ keywords, location, page: String(page) }),
+      timeoutMs: 12000,
+    }, { label: `jooble ${keywords}@${location} p${page}` });
+    const data = (await res.json()) as JoobleResponse;
+    return data.jobs ?? [];
+  } catch (e) {
+    console.warn(`[jooble] ${keywords} @ ${location} p${page}: ${(e as Error).message}`);
+    return [];
+  }
+}
+
+export async function syncJoobleJobs(opts?: { queries?: string[]; cities?: string[]; pages?: number }): Promise<SyncResult> {
+  const apiKey = process.env.JOOBLE_API_KEY;
+  if (!apiKey) {
+    return { fetched: 0, upserted: 0, deactivated: 0, errors: ["Missing JOOBLE_API_KEY"] };
+  }
+  const queries = opts?.queries ?? TARGET_QUERIES;
+  const cities = opts?.cities ?? TARGET_CITIES;
+  const pages = opts?.pages ?? 1;
+  const supabase = getServiceClient();
+  const errors: string[] = [];
+  const allRows = new Map<string, UpsertRow>();
+
+  const tasks: { q: string; city: string; p: number }[] = [];
+  for (const q of queries) {
+    for (const city of cities) {
+      for (let p = 1; p <= pages; p++) tasks.push({ q, city, p });
+    }
+  }
+  await mapWithConcurrency(tasks, 6, async ({ q, city, p }) => {
+    try {
+      const jobs = await callJooble(apiKey, q, city, p);
+      for (const j of jobs) {
+        const row = joobleToRow(j, city);
+        if (!allRows.has(row.external_job_id)) allRows.set(row.external_job_id, row);
+      }
+    } catch (e) {
+      errors.push(`${q}@${city} p${p}: ${(e as Error).message}`);
+    }
+  });
+
+  const rows = Array.from(allRows.values());
+  let upserted = 0;
+  const batches: UpsertRow[][] = [];
+  for (let i = 0; i < rows.length; i += 200) batches.push(rows.slice(i, i + 200));
+  await mapWithConcurrency(batches, 4, async (slice) => {
+    const { error } = await supabase.from("jobs").upsert(slice, { onConflict: "external_job_id" });
+    if (error) errors.push(`upsert: ${error.message}`);
+    else upserted += slice.length;
+  });
+
+  return { fetched: rows.length, upserted, deactivated: 0, errors };
+}
+
+export async function syncAllJobs(): Promise<SyncResult> {
+  const [a, j, jb] = await Promise.all([syncAdzunaJobs(), syncJSearchJobs(), syncJoobleJobs()]);
+  return {
+    fetched: a.fetched + j.fetched + jb.fetched,
+    upserted: a.upserted + j.upserted + jb.upserted,
+    deactivated: a.deactivated + j.deactivated + jb.deactivated,
+    errors: [
+      ...a.errors.map((e) => `adzuna:${e}`),
+      ...j.errors.map((e) => `jsearch:${e}`),
+      ...jb.errors.map((e) => `jooble:${e}`),
+    ],
   };
 }
 

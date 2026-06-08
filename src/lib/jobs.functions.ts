@@ -231,7 +231,7 @@ export const getProviderStatus = createServerFn({ method: "POST" })
     const { getServiceClient } = await import("@/lib/jobs.server");
     const supabase = getServiceClient();
 
-    const sources = ["Adzuna", "Naukri", "LinkedIn", "Indeed", "Glassdoor"];
+    const sources = ["Adzuna", "Naukri", "LinkedIn", "Indeed", "Glassdoor", "Jooble"];
     const dbCounts: Record<string, number> = {};
     await Promise.all(
       sources.map(async (src) => {
@@ -285,9 +285,23 @@ export const getProviderStatus = createServerFn({ method: "POST" })
       } catch (e) {
         jsearchDetail = (e as Error).message;
         console.warn(`[providerStatus] jsearch threw: ${jsearchDetail}`);
-        // Network/timeout on the probe doesn't mean the API is broken — stay
-        // optimistic when a key is configured. Real failures surface during sync.
         jsearchStatus = "available";
+      }
+    }
+
+    const joobleKey = process.env.JOOBLE_API_KEY;
+    let joobleStatus: ProviderStatus["status"] = "missing_credentials";
+    if (joobleKey) {
+      try {
+        const res = await fetch(`https://jooble.org/api/${encodeURIComponent(joobleKey)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keywords: "developer", location: "India", page: "1" }),
+          signal: AbortSignal.timeout(6000),
+        });
+        joobleStatus = res.ok ? "available" : "error";
+      } catch {
+        joobleStatus = "available"; // stay optimistic; real failures surface during sync
       }
     }
 
@@ -298,6 +312,7 @@ export const getProviderStatus = createServerFn({ method: "POST" })
         { name: "LinkedIn", status: jsearchStatus, count: dbCounts["LinkedIn"] ?? 0 },
         { name: "Indeed", status: jsearchStatus, count: dbCounts["Indeed"] ?? 0 },
         { name: "Glassdoor", status: jsearchStatus, count: dbCounts["Glassdoor"] ?? 0 },
+        { name: "Jooble", status: joobleStatus, count: dbCounts["Jooble"] ?? 0 },
       ] as ProviderStatus[],
     };
   });
