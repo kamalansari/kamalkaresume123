@@ -429,7 +429,7 @@ export async function syncJSearchJobs(opts?: { queries?: string[]; pages?: numbe
     return { fetched: 0, upserted: 0, deactivated: 0, errors: ["Missing RAPIDAPI_KEY"] };
   }
   const queries = opts?.queries ?? TARGET_QUERIES;
-  const pages = opts?.pages ?? 1;
+  const pages = opts?.pages ?? 2;
   const supabase = getServiceClient();
   const errors: string[] = [];
   const allRows = new Map<string, UpsertRow>();
