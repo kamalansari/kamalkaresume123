@@ -31,24 +31,38 @@ export type TemplateMeta = {
 };
 
 export const ALL_TEMPLATES: TemplateMeta[] = [
+  // Single column
   { id: "classic", label: "Classic", desc: "Timeless centered", cols: 1 },
   { id: "professional", label: "Professional", desc: "Uppercase formal", cols: 1 },
   { id: "executive", label: "Executive", desc: "Authoritative band", cols: 1 },
   { id: "minimal", label: "Minimal", desc: "Quiet & spacious", cols: 1 },
   { id: "modern", label: "Modern", desc: "Bold header bar", cols: 1 },
+  { id: "elegant", label: "Elegant", desc: "Refined serif centered", cols: 1 },
+  { id: "bold", label: "Bold", desc: "Heavy display header", cols: 1 },
   { id: "technical", label: "Technical", desc: "Slate engineering band", cols: 1 },
   { id: "academic", label: "Academic", desc: "Burgundy scholarly", cols: 1 },
   { id: "editorial", label: "Editorial", desc: "Magazine serif", cols: 1 },
   { id: "noir", label: "Noir", desc: "Black header, sharp", cols: 1 },
   { id: "luxe", label: "Luxe", desc: "Gold accents, premium", cols: 1 },
   { id: "monochrome", label: "Monochrome", desc: "All black & white", cols: 1 },
+  { id: "corporate", label: "Corporate", desc: "Deep navy formal", cols: 1 },
+  // Two column
   { id: "two-column", label: "Two column", desc: "Dark sidebar", cols: 2 },
   { id: "sidebar-right", label: "Sidebar right", desc: "Right rail accent", cols: 2 },
+  { id: "compact-two", label: "Compact two", desc: "Tight two-column", cols: 2 },
+  { id: "fresher", label: "Fresher", desc: "Cream sidebar, modern", cols: 2 },
+  { id: "contemporary", label: "Contemporary", desc: "Right rail, soft accent", cols: 2 },
   { id: "iconic", label: "Iconic", desc: "Teal sidebar, icons", cols: 2 },
   { id: "creative", label: "Creative", desc: "Violet right rail", cols: 2 },
   { id: "aurora", label: "Aurora", desc: "Indigo gradient rail", cols: 2 },
   { id: "startup", label: "Startup", desc: "Orange compact two-col", cols: 2 },
   { id: "novoresume", label: "Novoresume", desc: "Blue contact band, right rail", cols: 2 },
+  { id: "novo-dark", label: "Novo Dark", desc: "Dark slate sidebar", cols: 2 },
+  { id: "marketer-band", label: "Marketer", desc: "Coral band, bold two-col", cols: 2 },
+  { id: "ats-blue", label: "ATS Blue", desc: "Crisp blue, ATS-friendly", cols: 2 },
+  { id: "teal-chips", label: "Teal Chips", desc: "Teal rail, chip skills", cols: 2 },
+  { id: "hybrid-photo", label: "Hybrid Photo", desc: "Photo-ready sidebar", cols: 2 },
+  { id: "dark-sidebar", label: "Dark Sidebar", desc: "Charcoal rail, modern", cols: 2 },
 ];
 
 const BG_PRESETS = [
@@ -86,6 +100,16 @@ const TEMPLATE_THUMB_ACCENT: Partial<Record<TemplateId, string>> = {
   aurora: "#5b6cff",
   monochrome: "#2a2a2a",
   novoresume: "#3879b0",
+  elegant: "#3a2a4d",
+  bold: "#111827",
+  fresher: "#1e4b6e",
+  contemporary: "#0e7490",
+  "novo-dark": "#1e293b",
+  "marketer-band": "#e85d3a",
+  "ats-blue": "#1d4ed8",
+  "teal-chips": "#0d8a8a",
+  "hybrid-photo": "#374151",
+  "dark-sidebar": "#0f172a",
 };
 
 function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active: boolean }) {
