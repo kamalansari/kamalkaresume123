@@ -283,6 +283,12 @@ export async function syncAdzunaJobs(opts?: { queries?: string[]; cities?: strin
 // ───────────────────────── JSearch (RapidAPI) ─────────────────────────
 // Surfaces jobs from Naukri, LinkedIn, Indeed, and Glassdoor (Adzuna India does not include these).
 
+type JSearchApplyOption = {
+  publisher?: string | null;
+  apply_link?: string | null;
+  is_direct?: boolean;
+};
+
 type JSearchJob = {
   job_id: string;
   employer_name?: string | null;
@@ -299,6 +305,7 @@ type JSearchJob = {
   job_salary_currency?: string | null;
   job_employment_type?: string | null;
   job_posted_at_datetime_utc?: string | null;
+  apply_options?: JSearchApplyOption[] | null;
 };
 
 type JSearchResponse = { data?: JSearchJob[] };
