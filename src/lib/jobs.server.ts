@@ -327,7 +327,7 @@ const PUBLISHERS: PublisherConfig[] = [
   {
     source: "Naukri",
     idPrefix: "naukri",
-    queryTag: "Naukri jobs",
+    queryTag: "site:naukri.com",
     match: (j) =>
       `${j.job_publisher ?? ""} ${j.job_apply_link ?? ""} ${j.job_title ?? ""} ${j.job_description ?? ""}`
         .toLowerCase()
@@ -337,7 +337,7 @@ const PUBLISHERS: PublisherConfig[] = [
   {
     source: "LinkedIn",
     idPrefix: "linkedin",
-    queryTag: "via LinkedIn",
+    queryTag: "site:linkedin.com/jobs",
     match: (j) =>
       (j.job_publisher ?? "").toLowerCase().includes("linkedin") ||
       (j.job_apply_link ?? "").toLowerCase().includes("linkedin.com"),
@@ -345,15 +345,16 @@ const PUBLISHERS: PublisherConfig[] = [
   {
     source: "Indeed",
     idPrefix: "indeed",
-    queryTag: "via Indeed",
+    queryTag: "site:indeed.com",
     match: (j) =>
       (j.job_publisher ?? "").toLowerCase().includes("indeed") ||
-      (j.job_apply_link ?? "").toLowerCase().includes("indeed.com"),
+      (j.job_apply_link ?? "").toLowerCase().includes("indeed.com") ||
+      (j.job_apply_link ?? "").toLowerCase().includes("in.indeed.com"),
   },
   {
     source: "Glassdoor",
     idPrefix: "glassdoor",
-    queryTag: "via Glassdoor",
+    queryTag: "site:glassdoor.co.in OR site:glassdoor.com",
     match: (j) =>
       (j.job_publisher ?? "").toLowerCase().includes("glassdoor") ||
       (j.job_apply_link ?? "").toLowerCase().includes("glassdoor."),
