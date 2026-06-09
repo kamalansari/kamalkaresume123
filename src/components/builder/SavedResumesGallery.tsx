@@ -318,17 +318,8 @@ export function SavedResumesGallery({
                     e.target.value = "";
                   }}
                 />
-                <input
-                  ref={uploadRef}
-                  type="file"
-                  accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) importResumeUpload(f);
-                    e.target.value = "";
-                  }}
-                />
+              </div>
+
               </div>
             </div>
             {view === "grid" ? (
