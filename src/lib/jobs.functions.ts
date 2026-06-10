@@ -32,7 +32,7 @@ const ListInput = z.object({
   workMode: z.enum(["any", "remote", "hybrid", "onsite"]).optional().default("any"),
   experience: z.enum(["any", "fresher", "1-3", "3-5", "5-8", "8+"]).optional().default("any"),
   minSalaryLpa: z.number().min(0).max(200).optional().default(0),
-  source: z.enum(["all", "Adzuna", "Naukri", "LinkedIn", "Indeed", "Glassdoor"]).optional().default("all"),
+  source: z.enum(["all", "Adzuna", "Naukri", "LinkedIn", "Indeed", "Glassdoor", "Jooble"]).optional().default("all"),
   cursor: z.number().min(0).optional().default(0),
   pageSize: z.number().min(5).max(50).optional().default(20),
 });
