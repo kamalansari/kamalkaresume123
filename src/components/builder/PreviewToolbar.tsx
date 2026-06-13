@@ -111,41 +111,120 @@ export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras,
       {extras && <div className="flex items-center gap-1.5">{extras}</div>}
       <div className="ml-auto flex items-center gap-1.5">
         {onUpdate && isTwoCol && (
-          <Button
-            size="sm"
-            variant={autoFit ? "default" : "outline"}
-            onClick={() => onUpdate({ sidebarAutoFit: !autoFit })}
-            title="Auto-fit: slightly widens the sidebar when a heading would clip"
-          >
-            <Wand2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Auto-fit {autoFit ? "on" : "off"}</span>
-          </Button>
-        )}
-        {onUpdate && isTwoCol && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <Button
                 size="sm"
                 variant="outline"
-                title="Sidebar column width — widen to prevent clipped headings"
+                title="Sidebar options — width, auto-fit, side"
               >
                 <Columns2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Sidebar {sidebarWidth.toFixed(2)}in</span>
                 <ChevronDown className="h-3.5 w-3.5 opacity-80" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              {SIDEBAR_WIDTH_OPTIONS.map((w) => (
-                <DropdownMenuItem
-                  key={w}
-                  onClick={() => onUpdate({ sidebarWidth: w })}
-                  className={Math.abs(w - sidebarWidth) < 0.01 ? "font-semibold" : ""}
-                >
-                  {w.toFixed(2)}in {Math.abs(w - 2.55) < 0.01 ? "· default" : ""}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-4 space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Width</div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs tabular-nums text-muted-foreground">{sidebarWidth.toFixed(2)}in</span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      title="Reset to default"
+                      onClick={() => onUpdate({ sidebarWidth: SIDEBAR_DEFAULT_IN })}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-7 w-7"
+                    title="Narrower"
+                    onClick={() => onUpdate({ sidebarWidth: Math.max(SIDEBAR_MIN_IN, +(sidebarWidth - 0.05).toFixed(2)) })}
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </Button>
+                  <Slider
+                    value={[Math.round(sidebarWidth * 100)]}
+                    min={Math.round(SIDEBAR_MIN_IN * 100)}
+                    max={Math.round(SIDEBAR_MAX_IN * 100)}
+                    step={5}
+                    onValueChange={(v) => onUpdate({ sidebarWidth: +(v[0] / 100).toFixed(2) })}
+                    className="flex-1"
+                  />
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-7 w-7"
+                    title="Wider"
+                    onClick={() => onUpdate({ sidebarWidth: Math.min(SIDEBAR_MAX_IN, +(sidebarWidth + 0.05).toFixed(2)) })}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {SIDEBAR_PRESETS.map((p) => {
+                    const active = Math.abs(p.value - sidebarWidth) < 0.01;
+                    return (
+                      <Button
+                        key={p.label}
+                        size="sm"
+                        variant={active ? "default" : "outline"}
+                        className="h-7 px-1 text-[11px]"
+                        title={p.hint}
+                        onClick={() => onUpdate({ sidebarWidth: p.value })}
+                      >
+                        {p.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="h-px bg-border" />
+
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="text-sm font-medium leading-none flex items-center gap-1.5">
+                    <Wand2 className="h-3.5 w-3.5 text-primary" /> Auto-fit
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">Slightly widens the sidebar when a heading would clip.</p>
+                </div>
+                <Switch checked={autoFit} onCheckedChange={(c) => onUpdate({ sidebarAutoFit: c })} />
+              </div>
+
+              {SIDEBAR_SIDE_SWAP[data.template as string] && (
+                <>
+                  <div className="h-px bg-border" />
+                  <div className="space-y-1.5">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Side</div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Button
+                        size="sm"
+                        variant={data.template !== "sidebar-right" ? "default" : "outline"}
+                        onClick={() => onUpdate({ template: "two-column" as ResumeData["template"] })}
+                      >
+                        <PanelLeft className="h-3.5 w-3.5" /> Left
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={data.template === "sidebar-right" ? "default" : "outline"}
+                        onClick={() => onUpdate({ template: "sidebar-right" as ResumeData["template"] })}
+                      >
+                        <PanelRight className="h-3.5 w-3.5" /> Right
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </PopoverContent>
+          </Popover>
         )}
         {onUpdate && (
           <DropdownMenu>
