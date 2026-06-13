@@ -1,15 +1,19 @@
 import { Button } from "@/components/ui/button";
-import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2, Columns2, Wand2, Link2, Mail, Twitter, Linkedin, MessageCircle, Facebook } from "lucide-react";
+import { Printer, FileText, FileType, Share2, Loader2, Download, ChevronDown, Maximize2, Columns2, Wand2, Link2, Mail, Twitter, Linkedin, MessageCircle, Facebook, RotateCcw, Minus, Plus, PanelLeft, PanelRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import lzString from "lz-string";
 const { compressToEncodedURIComponent } = lzString;
 import type { ResumeData } from "./types";
+import { SIDEBAR_MIN_IN, SIDEBAR_MAX_IN, SIDEBAR_DEFAULT_IN } from "./sidebarAutoFit";
 
 type Props = {
   data: ResumeData;
@@ -22,7 +26,12 @@ type Props = {
 };
 
 const SCALE_OPTIONS = [0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15];
-const SIDEBAR_WIDTH_OPTIONS = [1.9, 2.1, 2.3, 2.55, 2.8, 3.0, 3.3];
+const SIDEBAR_PRESETS: { label: string; value: number; hint: string }[] = [
+  { label: "Narrow", value: 2.1, hint: "More room for main content" },
+  { label: "Standard", value: SIDEBAR_DEFAULT_IN, hint: "Balanced default" },
+  { label: "Wide", value: 2.9, hint: "Fits longer headings" },
+  { label: "Extra wide", value: SIDEBAR_MAX_IN, hint: "Max — long names / titles" },
+];
 const TWO_COL_TEMPLATES = new Set([
   "two-column",
   "sidebar-right",
@@ -32,6 +41,10 @@ const TWO_COL_TEMPLATES = new Set([
   "iconic",
   "creative",
 ]);
+const SIDEBAR_SIDE_SWAP: Record<string, string> = {
+  "two-column": "sidebar-right",
+  "sidebar-right": "two-column",
+};
 
 export function PreviewToolbar({ data, getData, onPdf, onDocx, docxBusy, extras, onUpdate }: Props) {
   const buildShareUrl = () => {
