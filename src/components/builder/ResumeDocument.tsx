@@ -347,38 +347,28 @@ export function ResumeDocument({
   // Map new template ids onto base layouts while preserving distinct vibes.
   const VARIANT_MAP: Record<
     typeof data.template,
-    "classic" | "modern" | "two-column" | "sidebar-right" | "compact-two"
+    "classic" | "modern" | "two-column" | "sidebar-right"
   > = {
     classic: "classic",
     "two-column": "two-column",
     modern: "modern",
     "sidebar-right": "sidebar-right",
-    "compact-two": "compact-two",
-    professional: "classic",
     minimal: "classic",
     elegant: "classic",
     executive: "modern",
-    bold: "modern",
-    fresher: "compact-two",
+    fresher: "two-column",
     contemporary: "sidebar-right",
-    iconic: "two-column",
-    creative: "sidebar-right",
-    technical: "modern",
-    academic: "classic",
-    startup: "compact-two",
-    corporate: "classic",
-    luxe: "classic",
-    noir: "modern",
-    editorial: "classic",
+    startup: "two-column",
     aurora: "sidebar-right",
-    monochrome: "classic",
-    "novo-dark": "two-column",
-    "marketer-band": "two-column",
     "ats-blue": "sidebar-right",
-    "teal-chips": "sidebar-right",
-    "hybrid-photo": "two-column",
     "dark-sidebar": "two-column",
-    novoresume: "sidebar-right",
+    // New modern templates
+    "gradient-mesh": "modern",
+    sunset: "modern",
+    "graphite-pro": "classic",
+    "indigo-pro": "classic",
+    "neo-mint": "sidebar-right",
+    "coral-edge": "two-column",
   };
   const variant = VARIANT_MAP[data.template] ?? "classic";
 
