@@ -874,7 +874,7 @@ export function ResumeDocument({
 
 
   if (variant === "modern") {
-    const exec = data.template === "executive" || data.template === "bold";
+    const exec = data.template === "executive";
     return (
       <KeywordContext.Provider value={kwSet}>
         <div
