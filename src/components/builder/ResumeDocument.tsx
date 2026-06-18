@@ -569,11 +569,11 @@ export function ResumeDocument({
       }
     : {};
 
-  if (variant === "two-column" || variant === "sidebar-right" || variant === "compact-two") {
-    const isNovo = data.template === "novoresume";
+  if (variant === "two-column" || variant === "sidebar-right") {
+    const isNovo = false;
     const sidebarRight = variant === "sidebar-right";
-    const compact = variant === "compact-two" || isNovo;
-    const sidebarBg = isNovo ? "transparent" : compact ? "#f4f3ef" : accent;
+    const compact = false;
+    const sidebarBg = compact ? "#f4f3ef" : accent;
     const sidebarText = compact ? "#1a1a1a" : "#ffffff";
     const sidebarSectionIds = getSidebarSectionIds(data);
     const sidebarRenderers: Partial<Record<SectionId, React.ReactNode>> = {
