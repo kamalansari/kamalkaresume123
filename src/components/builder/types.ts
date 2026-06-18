@@ -72,19 +72,14 @@ export const SIDEBAR_ELIGIBLE: SectionId[] = [
 export const TEMPLATE_SIDEBAR_DEFAULTS: Partial<Record<TemplateId, SectionId[]>> = {
   "two-column":    ["skills", "languages", "education"],
   "sidebar-right": ["skills", "languages", "education"],
-  "compact-two":   ["skills", "languages", "certifications"],
   "fresher":       ["skills", "languages", "education"],
   "contemporary":  ["skills", "languages", "education"],
-  "iconic":        ["skills", "languages", "education", "certifications"],
-  "creative":      ["skills", "languages", "education"],
   "startup":       ["skills", "languages", "certifications"],
-  "novo-dark":     ["skills", "languages", "education", "certifications"],
-  "marketer-band": ["skills", "languages", "education"],
+  "aurora":        ["skills", "languages", "education"],
   "ats-blue":      ["skills", "languages", "certifications"],
-  "teal-chips":    ["skills", "languages", "education"],
-  "hybrid-photo":  ["skills", "languages", "education"],
   "dark-sidebar":  ["skills", "languages", "education"],
-  "novoresume":    ["skills", "languages", "certifications"],
+  "neo-mint":      ["skills", "languages", "education"],
+  "coral-edge":    ["skills", "languages", "education"],
 };
 
 // Templates that render a sidebar column at all.
