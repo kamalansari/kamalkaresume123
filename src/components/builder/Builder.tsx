@@ -149,35 +149,26 @@ const SECTION_LABELS: Record<SectionId, string> = {
 };
 
 const TEMPLATES: { id: TemplateId; label: string; desc: string }[] = [
-  { id: "professional", label: "Professional", desc: "Uppercase classic" },
+  { id: "classic", label: "Classic", desc: "Traditional single column" },
   { id: "modern", label: "Modern", desc: "Bold header bar" },
   { id: "executive", label: "Executive", desc: "Centered band & gold rule" },
   { id: "minimal", label: "Minimal", desc: "Quiet & spacious" },
-  { id: "classic", label: "Classic", desc: "Traditional single column" },
   { id: "elegant", label: "Elegant", desc: "Serif headings, refined" },
   { id: "two-column", label: "Two column", desc: "Skills sidebar left" },
   { id: "sidebar-right", label: "Sidebar right", desc: "Skills sidebar right" },
-  { id: "compact-two", label: "Compact two", desc: "Dense two-column" },
   { id: "fresher", label: "Fresher", desc: "Friendly cream sidebar" },
   { id: "contemporary", label: "Contemporary", desc: "Teal icons & two-column" },
-  { id: "iconic", label: "Iconic", desc: "Dark header + photo + gold" },
-  { id: "creative", label: "Creative", desc: "Hybrid photo header + sidebar" },
   { id: "startup", label: "Startup", desc: "Punchy modern two-column" },
-  { id: "bold", label: "Bold", desc: "Strong executive band" },
-  { id: "technical", label: "Technical", desc: "ATS-friendly clean grid" },
-  { id: "academic", label: "Academic", desc: "Scholarly serif layout" },
-  { id: "corporate", label: "Corporate", desc: "Enterprise navy & white" },
-  { id: "luxe", label: "Luxe", desc: "Premium serif with gold" },
-  { id: "noir", label: "Noir", desc: "High-contrast dark accents" },
-  { id: "editorial", label: "Editorial", desc: "Magazine-style headings" },
   { id: "aurora", label: "Aurora", desc: "Soft gradient accents" },
-  { id: "monochrome", label: "Monochrome", desc: "Black & white minimal" },
-  { id: "novo-dark", label: "Novo Dark", desc: "Navy header + photo + gold rules" },
-  { id: "marketer-band", label: "Marketer Band", desc: "Centered uppercase navy band" },
   { id: "ats-blue", label: "ATS Blue", desc: "Clean blue band, ATS-friendly" },
-  { id: "teal-chips", label: "Teal Chips", desc: "Minimal teal with skill chips" },
-  { id: "hybrid-photo", label: "Hybrid Photo", desc: "Photo header + icon sidebar" },
   { id: "dark-sidebar", label: "Dark Sidebar", desc: "Dark left rail with timeline" },
+  // New modern templates
+  { id: "gradient-mesh", label: "Gradient Mesh", desc: "Indigo gradient header" },
+  { id: "sunset", label: "Sunset", desc: "Warm sunset gradient band" },
+  { id: "graphite-pro", label: "Graphite Pro", desc: "Charcoal minimal classic" },
+  { id: "indigo-pro", label: "Indigo Pro", desc: "Refined indigo serif" },
+  { id: "neo-mint", label: "Neo Mint", desc: "Fresh mint sidebar right" },
+  { id: "coral-edge", label: "Coral Edge", desc: "Coral two-column accent" },
 ];
 
 
