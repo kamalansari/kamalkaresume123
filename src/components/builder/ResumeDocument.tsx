@@ -918,7 +918,7 @@ export function ResumeDocument({
   }
 
   // classic (also used for "professional" and "minimal")
-  const isProfessional = data.template === "professional";
+  const isProfessional = false;
   const isMinimal = data.template === "minimal";
   return (
     <KeywordContext.Provider value={kwSet}>
