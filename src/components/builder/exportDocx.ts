@@ -204,9 +204,9 @@ export async function exportDocx(data: ResumeData) {
 
   let body: Paragraph[] | Table[] = [];
 
-  const twoCol = data.template === "two-column" || data.template === "sidebar-right" || data.template === "compact-two" || data.template === "fresher";
+  const twoCol = data.template === "two-column" || data.template === "sidebar-right" || data.template === "fresher";
   if (twoCol) {
-    const compact = data.template === "compact-two" || data.template === "fresher";
+    const compact = data.template === "fresher";
     const sidebarFill = compact ? "F4F3EF" : color;
     const sidebarText = compact ? "1A1A1A" : "FFFFFF";
     const sidebarMuted = compact ? "555555" : "EEEEEE";

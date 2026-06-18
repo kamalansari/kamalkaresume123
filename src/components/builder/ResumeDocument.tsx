@@ -325,28 +325,20 @@ export function ResumeDocument({
   // user immediately sees a visual difference even when they share a layout.
   const TEMPLATE_ACCENT: Partial<Record<typeof data.template, string>> = {
     minimal: "#1f1f1f",
-    iconic: "#0d8a8a",
-    creative: "#7c3aed",
-    technical: "#334155",
-    academic: "#7a1f3d",
-    startup: "#ea580c",
-    corporate: "#0f2a52",
-    luxe: "#a17a2d",
-    noir: "#0a0a0a",
-    editorial: "#1c1c1c",
-    aurora: "#5b6cff",
-    monochrome: "#2a2a2a",
-    novoresume: "#3879b0",
     elegant: "#3a2a4d",
-    bold: "#111827",
+    executive: "#1f3a68",
     fresher: "#1e4b6e",
     contemporary: "#0e7490",
-    "novo-dark": "#1e293b",
-    "marketer-band": "#e85d3a",
+    aurora: "#5b6cff",
     "ats-blue": "#1d4ed8",
-    "teal-chips": "#0d8a8a",
-    "hybrid-photo": "#374151",
     "dark-sidebar": "#0f172a",
+    startup: "#ea580c",
+    "gradient-mesh": "#6366f1",
+    sunset: "#f97316",
+    "graphite-pro": "#475569",
+    "indigo-pro": "#4f46e5",
+    "neo-mint": "#10b981",
+    "coral-edge": "#fb7185",
   };
   const accent = TEMPLATE_ACCENT[data.template] ?? data.accentHex;
   const fs = data.fontSize ?? 10.5;
@@ -355,38 +347,28 @@ export function ResumeDocument({
   // Map new template ids onto base layouts while preserving distinct vibes.
   const VARIANT_MAP: Record<
     typeof data.template,
-    "classic" | "modern" | "two-column" | "sidebar-right" | "compact-two"
+    "classic" | "modern" | "two-column" | "sidebar-right"
   > = {
     classic: "classic",
     "two-column": "two-column",
     modern: "modern",
     "sidebar-right": "sidebar-right",
-    "compact-two": "compact-two",
-    professional: "classic",
     minimal: "classic",
     elegant: "classic",
     executive: "modern",
-    bold: "modern",
-    fresher: "compact-two",
+    fresher: "two-column",
     contemporary: "sidebar-right",
-    iconic: "two-column",
-    creative: "sidebar-right",
-    technical: "modern",
-    academic: "classic",
-    startup: "compact-two",
-    corporate: "classic",
-    luxe: "classic",
-    noir: "modern",
-    editorial: "classic",
+    startup: "two-column",
     aurora: "sidebar-right",
-    monochrome: "classic",
-    "novo-dark": "two-column",
-    "marketer-band": "two-column",
     "ats-blue": "sidebar-right",
-    "teal-chips": "sidebar-right",
-    "hybrid-photo": "two-column",
     "dark-sidebar": "two-column",
-    novoresume: "sidebar-right",
+    // New modern templates
+    "gradient-mesh": "modern",
+    sunset: "modern",
+    "graphite-pro": "classic",
+    "indigo-pro": "classic",
+    "neo-mint": "sidebar-right",
+    "coral-edge": "two-column",
   };
   const variant = VARIANT_MAP[data.template] ?? "classic";
 
@@ -492,7 +474,7 @@ export function ResumeDocument({
   const userSidebarWidth = Math.min(Math.max(data.sidebarWidth ?? 2.75, 2.1), 3.4);
   const autoFit = data.sidebarAutoFit !== false;
   const isTwoColVariant =
-    variant === "two-column" || variant === "sidebar-right" || variant === "compact-two";
+    variant === "two-column" || variant === "sidebar-right";
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const [autoExtraIn, setAutoExtraIn] = useState(0);
   useEffect(() => {
@@ -587,11 +569,11 @@ export function ResumeDocument({
       }
     : {};
 
-  if (variant === "two-column" || variant === "sidebar-right" || variant === "compact-two") {
-    const isNovo = data.template === "novoresume";
+  if (variant === "two-column" || variant === "sidebar-right") {
+    const isNovo = false;
     const sidebarRight = variant === "sidebar-right";
-    const compact = variant === "compact-two" || isNovo;
-    const sidebarBg = isNovo ? "transparent" : compact ? "#f4f3ef" : accent;
+    const compact = false;
+    const sidebarBg = compact ? "#f4f3ef" : accent;
     const sidebarText = compact ? "#1a1a1a" : "#ffffff";
     const sidebarSectionIds = getSidebarSectionIds(data);
     const sidebarRenderers: Partial<Record<SectionId, React.ReactNode>> = {
@@ -892,7 +874,7 @@ export function ResumeDocument({
 
 
   if (variant === "modern") {
-    const exec = data.template === "executive" || data.template === "bold";
+    const exec = data.template === "executive";
     return (
       <KeywordContext.Provider value={kwSet}>
         <div
@@ -936,7 +918,7 @@ export function ResumeDocument({
   }
 
   // classic (also used for "professional" and "minimal")
-  const isProfessional = data.template === "professional";
+  const isProfessional = false;
   const isMinimal = data.template === "minimal";
   return (
     <KeywordContext.Provider value={kwSet}>

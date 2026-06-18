@@ -33,36 +33,25 @@ export type TemplateMeta = {
 export const ALL_TEMPLATES: TemplateMeta[] = [
   // Single column
   { id: "classic", label: "Classic", desc: "Timeless centered", cols: 1 },
-  { id: "professional", label: "Professional", desc: "Uppercase formal", cols: 1 },
+  { id: "modern", label: "Modern", desc: "Bold header bar", cols: 1 },
   { id: "executive", label: "Executive", desc: "Authoritative band", cols: 1 },
   { id: "minimal", label: "Minimal", desc: "Quiet & spacious", cols: 1 },
-  { id: "modern", label: "Modern", desc: "Bold header bar", cols: 1 },
   { id: "elegant", label: "Elegant", desc: "Refined serif centered", cols: 1 },
-  { id: "bold", label: "Bold", desc: "Heavy display header", cols: 1 },
-  { id: "technical", label: "Technical", desc: "Slate engineering band", cols: 1 },
-  { id: "academic", label: "Academic", desc: "Burgundy scholarly", cols: 1 },
-  { id: "editorial", label: "Editorial", desc: "Magazine serif", cols: 1 },
-  { id: "noir", label: "Noir", desc: "Black header, sharp", cols: 1 },
-  { id: "luxe", label: "Luxe", desc: "Gold accents, premium", cols: 1 },
-  { id: "monochrome", label: "Monochrome", desc: "All black & white", cols: 1 },
-  { id: "corporate", label: "Corporate", desc: "Deep navy formal", cols: 1 },
+  { id: "gradient-mesh", label: "Gradient Mesh", desc: "Indigo gradient header", cols: 1 },
+  { id: "sunset", label: "Sunset", desc: "Warm sunset gradient", cols: 1 },
+  { id: "graphite-pro", label: "Graphite Pro", desc: "Charcoal minimal classic", cols: 1 },
+  { id: "indigo-pro", label: "Indigo Pro", desc: "Refined indigo serif", cols: 1 },
   // Two column
   { id: "two-column", label: "Two column", desc: "Dark sidebar", cols: 2 },
   { id: "sidebar-right", label: "Sidebar right", desc: "Right rail accent", cols: 2 },
-  { id: "compact-two", label: "Compact two", desc: "Tight two-column", cols: 2 },
   { id: "fresher", label: "Fresher", desc: "Cream sidebar, modern", cols: 2 },
   { id: "contemporary", label: "Contemporary", desc: "Right rail, soft accent", cols: 2 },
-  { id: "iconic", label: "Iconic", desc: "Teal sidebar, icons", cols: 2 },
-  { id: "creative", label: "Creative", desc: "Violet right rail", cols: 2 },
   { id: "aurora", label: "Aurora", desc: "Indigo gradient rail", cols: 2 },
-  { id: "startup", label: "Startup", desc: "Orange compact two-col", cols: 2 },
-  { id: "novoresume", label: "Novoresume", desc: "Blue contact band, right rail", cols: 2 },
-  { id: "novo-dark", label: "Novo Dark", desc: "Dark slate sidebar", cols: 2 },
-  { id: "marketer-band", label: "Marketer", desc: "Coral band, bold two-col", cols: 2 },
+  { id: "startup", label: "Startup", desc: "Orange two-column", cols: 2 },
   { id: "ats-blue", label: "ATS Blue", desc: "Crisp blue, ATS-friendly", cols: 2 },
-  { id: "teal-chips", label: "Teal Chips", desc: "Teal rail, chip skills", cols: 2 },
-  { id: "hybrid-photo", label: "Hybrid Photo", desc: "Photo-ready sidebar", cols: 2 },
   { id: "dark-sidebar", label: "Dark Sidebar", desc: "Charcoal rail, modern", cols: 2 },
+  { id: "neo-mint", label: "Neo Mint", desc: "Fresh mint right rail", cols: 2 },
+  { id: "coral-edge", label: "Coral Edge", desc: "Coral two-column accent", cols: 2 },
 ];
 
 const BG_PRESETS = [
@@ -88,28 +77,19 @@ const SECTION_LABELS: Record<SectionId, string> = {
 // each template's signature color even before the user picks one.
 const TEMPLATE_THUMB_ACCENT: Partial<Record<TemplateId, string>> = {
   minimal: "#1f1f1f",
-  iconic: "#0d8a8a",
-  creative: "#7c3aed",
-  technical: "#334155",
-  academic: "#7a1f3d",
   startup: "#ea580c",
-  corporate: "#0f2a52",
-  luxe: "#a17a2d",
-  noir: "#0a0a0a",
-  editorial: "#1c1c1c",
   aurora: "#5b6cff",
-  monochrome: "#2a2a2a",
-  novoresume: "#3879b0",
   elegant: "#3a2a4d",
-  bold: "#111827",
   fresher: "#1e4b6e",
   contemporary: "#0e7490",
-  "novo-dark": "#1e293b",
-  "marketer-band": "#e85d3a",
   "ats-blue": "#1d4ed8",
-  "teal-chips": "#0d8a8a",
-  "hybrid-photo": "#374151",
   "dark-sidebar": "#0f172a",
+  "gradient-mesh": "#6366f1",
+  sunset: "#f97316",
+  "graphite-pro": "#475569",
+  "indigo-pro": "#4f46e5",
+  "neo-mint": "#10b981",
+  "coral-edge": "#fb7185",
 };
 
 function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active: boolean }) {
@@ -136,64 +116,41 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
         </div>
       );
     }
-    if (id === "noir") {
+    if (id === "sunset") {
       return (
         <div className="h-full w-full">
-          <div className="h-1/3 w-full p-1 flex items-end" style={{ background: "#0a0a0a" }}>
-            <div className="h-1 w-2/3 rounded" style={{ background: "#f5d77a" }} />
+          <div
+            className="h-1/4 w-full p-1 flex items-end"
+            style={{ background: "linear-gradient(90deg, #f97316 0%, #fb7185 100%)" }}
+          >
+            <div className="h-1 w-2/3 rounded bg-white/85" />
           </div>
           <div className="p-1 space-y-1">
-            <div className="h-0.5 w-full rounded bg-foreground/15" />
-            <div className="h-0.5 w-5/6 rounded bg-foreground/15" />
-            <div className="h-0.5 w-2/3 rounded bg-foreground/15" />
-          </div>
-        </div>
-      );
-    }
-    if (id === "luxe") {
-      return (
-        <div className="h-full w-full p-1.5 flex flex-col items-center">
-          <div className="h-1 w-2/3 rounded" style={{ background: "#a17a2d" }} />
-          <div className="mt-0.5 h-0.5 w-1/2 rounded bg-foreground/30" />
-          <div className="mt-1 h-px w-full" style={{ background: "linear-gradient(90deg, transparent, #a17a2d, transparent)" }} />
-          <div className="mt-1 self-stretch space-y-1">
             <div className="h-0.5 w-full rounded bg-foreground/10" />
             <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
-            <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+            <div className="h-0.5 w-2/3 rounded bg-foreground/10" />
           </div>
         </div>
       );
     }
-    if (id === "editorial") {
+    if (id === "gradient-mesh") {
       return (
-        <div className="h-full w-full p-1.5 flex flex-col">
-          <div className="font-serif italic text-[7px] leading-none text-foreground/80">Aa</div>
-          <div className="mt-0.5 h-1 w-2/3 rounded bg-foreground/80" />
-          <div className="mt-0.5 h-0.5 w-1/3 rounded bg-foreground/30" />
-          <div className="mt-1 h-px w-full bg-foreground/30" />
-          <div className="mt-1 space-y-1">
+        <div className="h-full w-full">
+          <div
+            className="h-1/3 w-full p-1 flex items-end"
+            style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)" }}
+          >
+            <div className="h-1 w-2/3 rounded bg-white/85" />
+          </div>
+          <div className="p-1 space-y-1">
             <div className="h-0.5 w-full rounded bg-foreground/10" />
             <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
-            <div className="h-0.5 w-3/4 rounded bg-foreground/10" />
+            <div className="h-0.5 w-2/3 rounded bg-foreground/10" />
           </div>
         </div>
       );
     }
-    if (id === "monochrome") {
-      return (
-        <div className="h-full w-full p-1.5 flex flex-col">
-          <div className="h-1 w-1/2 rounded bg-foreground" />
-          <div className="mt-0.5 h-0.5 w-1/3 rounded bg-foreground/50" />
-          <div className="mt-1 h-px w-full bg-foreground/40" />
-          <div className="mt-1 space-y-1">
-            <div className="h-0.5 w-full rounded bg-foreground/20" />
-            <div className="h-0.5 w-5/6 rounded bg-foreground/20" />
-            <div className="h-0.5 w-3/4 rounded bg-foreground/20" />
-          </div>
-        </div>
-      );
-    }
-    if (id === "two-column" || id === "fresher" || id === "iconic") {
+    if (id === "two-column" || id === "fresher" || id === "coral-edge") {
       const cream = id === "fresher";
       return (
         <div className="h-full w-full flex">
@@ -211,7 +168,7 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
         </div>
       );
     }
-    if (id === "sidebar-right" || id === "contemporary" || id === "creative") {
+    if (id === "sidebar-right" || id === "contemporary" || id === "neo-mint" || id === "ats-blue" || id === "dark-sidebar") {
       return (
         <div className="h-full w-full flex">
           <div className="flex-1 p-1 space-y-1">
@@ -227,7 +184,7 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
         </div>
       );
     }
-    if (id === "compact-two" || id === "startup") {
+    if (id === "startup") {
       return (
         <div className="h-full w-full flex">
           <div className="w-1/3 h-full p-1 space-y-1" style={{ background: "#f4f3ef" }}>
@@ -242,8 +199,8 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
         </div>
       );
     }
-    if (id === "modern" || id === "executive" || id === "bold" || id === "technical") {
-      const exec = id === "executive" || id === "bold" || id === "technical";
+    if (id === "modern" || id === "executive") {
+      const exec = id === "executive";
       return (
         <div className="h-full w-full">
           <div className="h-1/4 w-full p-1 flex items-end" style={{ background: accent, borderBottom: exec ? "2px solid rgba(0,0,0,0.4)" : undefined }}>
@@ -257,10 +214,10 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
         </div>
       );
     }
-    if (id === "minimal") {
+    if (id === "minimal" || id === "graphite-pro") {
       return (
         <div className="h-full w-full p-1.5 flex flex-col">
-          <div className="h-1 w-1/2 rounded bg-foreground/80" />
+          <div className="h-1 w-1/2 rounded" style={{ background: accent }} />
           <div className="mt-0.5 h-0.5 w-1/3 rounded bg-foreground/30" />
           <div className="mt-1 h-px w-full bg-foreground/15" />
           <div className="mt-1 space-y-1">
@@ -271,8 +228,8 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
         </div>
       );
     }
-    // classic, professional, elegant
-    const pro = id === "professional" || id === "corporate" || id === "academic";
+    // classic, elegant, indigo-pro
+    const pro = id === "indigo-pro";
     return (
       <div className="h-full w-full p-1.5 flex flex-col items-center">
         <div className={cn("h-1 rounded", pro ? "w-3/4" : "w-2/3")} style={{ background: accent }} />
