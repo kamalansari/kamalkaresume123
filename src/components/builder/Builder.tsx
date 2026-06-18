@@ -2663,20 +2663,6 @@ function TemplateThumb({ id, accent }: { id: TemplateId; accent: string }) {
       </div>
     );
   }
-  if (id === "compact-two") {
-    return (
-      <div className="aspect-[3/4] w-full rounded bg-white border border-border overflow-hidden flex">
-        <div className="w-1/3 h-full p-1 space-y-1" style={{ background: "#f4f3ef" }}>
-          <div className="h-1 w-3/4 rounded" style={{ background: accent }} />
-          <div className="h-0.5 w-full rounded bg-foreground/15" />
-        </div>
-        <div className="flex-1 p-1 space-y-1">
-          <div className="h-0.5 w-full rounded bg-foreground/10" />
-          <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
-        </div>
-      </div>
-    );
-  }
   if (id === "modern" || id === "executive") {
     const exec = id === "executive";
     return (
@@ -2706,8 +2692,8 @@ function TemplateThumb({ id, accent }: { id: TemplateId; accent: string }) {
       </div>
     );
   }
-  // classic + professional
-  const pro = id === "professional";
+  // classic + variants
+  const pro = false;
   return (
     <div className="aspect-[3/4] w-full rounded bg-white border border-border overflow-hidden p-1.5 flex flex-col items-center">
       <div className={cn("h-1 rounded", pro ? "w-3/4" : "w-2/3")} style={{ background: accent, letterSpacing: pro ? "0.2em" : undefined }} />
