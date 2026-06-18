@@ -474,7 +474,7 @@ export function ResumeDocument({
   const userSidebarWidth = Math.min(Math.max(data.sidebarWidth ?? 2.75, 2.1), 3.4);
   const autoFit = data.sidebarAutoFit !== false;
   const isTwoColVariant =
-    variant === "two-column" || variant === "sidebar-right" || variant === "compact-two";
+    variant === "two-column" || variant === "sidebar-right";
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const [autoExtraIn, setAutoExtraIn] = useState(0);
   useEffect(() => {
