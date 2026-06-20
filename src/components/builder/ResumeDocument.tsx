@@ -168,6 +168,68 @@ function SkillsGridContent({
   const isPlain = textStyle === "plain";
   const isSingleCol = desktopCols === 1;
 
+  // Chip-style templates: render skills as actual pill chips (like the
+  // screenshot) with a yellow accent underline above category headings.
+  const chipTemplate = data.template === "midnight-chip" || data.template === "slate-chip";
+  const chipAccent = data.template === "midnight-chip" ? "#0f1f3d" : "#1f2937";
+  const chipUnderline = data.template === "midnight-chip" ? "#f5b400" : "#f59e0b";
+
+  if (chipTemplate) {
+    const pillStyle: React.CSSProperties = {
+      display: "inline-block",
+      background: dark ? "rgba(255,255,255,0.12)" : chipAccent,
+      color: "#ffffff",
+      padding: "3px 10px",
+      borderRadius: 6,
+      fontSize: "0.85em",
+      lineHeight: 1.3,
+      fontWeight: 500,
+      letterSpacing: "0.01em",
+      breakInside: "avoid",
+      pageBreakInside: "avoid",
+    };
+    const pillWrap: React.CSSProperties = {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "6px 6px",
+      width: "100%",
+      margin: 0,
+      padding: 0,
+      listStyle: "none",
+    };
+    const chipHeadingStyle: React.CSSProperties = {
+      fontWeight: 800,
+      fontSize: "0.95em",
+      letterSpacing: "0.06em",
+      textTransform: "uppercase",
+      color: dark ? "#ffffff" : chipAccent,
+      borderBottom: `3px solid ${chipUnderline}`,
+      display: "inline-block",
+      paddingBottom: 2,
+      marginBottom: 8,
+    };
+    const renderPills = (items: string[], key?: React.Key) => (
+      <ul key={key} data-skills-list style={pillWrap}>
+        {items.map((s, i) => (
+          <li key={i} style={pillStyle}>{s}</li>
+        ))}
+      </ul>
+    );
+    if (mode === "categorized" && hasHeadings) {
+      return (
+        <div style={{ display: "grid", gap: 14, width: "100%" }}>
+          {groups.map((g, i) => (
+            <div key={i} style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
+              {g.heading && <div style={chipHeadingStyle}>{g.heading}</div>}
+              {renderPills(g.items)}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return renderPills(ed ? parseSkills(data.skills) : flatSkills);
+  }
+
   const chipStyle: React.CSSProperties = {
     display: "list-item",
     listStyleType: "disc",
@@ -339,6 +401,8 @@ export function ResumeDocument({
     "indigo-pro": "#4f46e5",
     "neo-mint": "#10b981",
     "coral-edge": "#fb7185",
+    "midnight-chip": "#0f1f3d",
+    "slate-chip": "#1f2937",
   };
   const accent = TEMPLATE_ACCENT[data.template] ?? data.accentHex;
   const fs = data.fontSize ?? 10.5;
@@ -369,6 +433,8 @@ export function ResumeDocument({
     "indigo-pro": "classic",
     "neo-mint": "sidebar-right",
     "coral-edge": "two-column",
+    "midnight-chip": "sidebar-right",
+    "slate-chip": "two-column",
   };
   const variant = VARIANT_MAP[data.template] ?? "classic";
 

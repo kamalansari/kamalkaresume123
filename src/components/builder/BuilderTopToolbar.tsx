@@ -52,6 +52,8 @@ export const ALL_TEMPLATES: TemplateMeta[] = [
   { id: "dark-sidebar", label: "Dark Sidebar", desc: "Charcoal rail, modern", cols: 2 },
   { id: "neo-mint", label: "Neo Mint", desc: "Fresh mint right rail", cols: 2 },
   { id: "coral-edge", label: "Coral Edge", desc: "Coral two-column accent", cols: 2 },
+  { id: "midnight-chip", label: "Midnight Chip", desc: "Navy chips · yellow accent", cols: 2 },
+  { id: "slate-chip", label: "Slate Chip", desc: "Graphite chips · amber accent", cols: 2 },
 ];
 
 const BG_PRESETS = [
@@ -90,6 +92,8 @@ const TEMPLATE_THUMB_ACCENT: Partial<Record<TemplateId, string>> = {
   "indigo-pro": "#4f46e5",
   "neo-mint": "#10b981",
   "coral-edge": "#fb7185",
+  "midnight-chip": "#0f1f3d",
+  "slate-chip": "#1f2937",
 };
 
 function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active: boolean }) {
@@ -164,6 +168,34 @@ function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active:
             <div className="h-0.5 w-full rounded bg-foreground/10" />
             <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
             <div className="h-0.5 w-2/3 rounded bg-foreground/10" />
+          </div>
+        </div>
+      );
+    }
+    if (id === "midnight-chip" || id === "slate-chip") {
+      const underline = id === "midnight-chip" ? "#f5b400" : "#f59e0b";
+      return (
+        <div className="h-full w-full flex">
+          <div className="flex-1 p-1 space-y-1">
+            <div className="h-1 w-3/4 rounded bg-foreground/30" />
+            <div className="h-0.5 w-full rounded bg-foreground/10" />
+            <div className="h-0.5 w-5/6 rounded bg-foreground/10" />
+            <div className="mt-1 h-0.5 w-1/4 rounded" style={{ background: underline }} />
+            <div className="flex flex-wrap gap-0.5">
+              <div className="h-1 w-4 rounded-sm" style={{ background: accent }} />
+              <div className="h-1 w-5 rounded-sm" style={{ background: accent }} />
+              <div className="h-1 w-3 rounded-sm" style={{ background: accent }} />
+              <div className="h-1 w-4 rounded-sm" style={{ background: accent }} />
+            </div>
+          </div>
+          <div className="w-1/3 h-full p-1 space-y-1" style={{ background: accent }}>
+            <div className="h-1 w-3/4 rounded bg-white/85" />
+            <div className="h-0.5 w-full rounded" style={{ background: underline }} />
+            <div className="flex flex-wrap gap-0.5">
+              <div className="h-1 w-3 rounded-sm bg-white/30" />
+              <div className="h-1 w-4 rounded-sm bg-white/30" />
+              <div className="h-1 w-3 rounded-sm bg-white/30" />
+            </div>
           </div>
         </div>
       );
