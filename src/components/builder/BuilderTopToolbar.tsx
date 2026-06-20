@@ -92,6 +92,8 @@ const TEMPLATE_THUMB_ACCENT: Partial<Record<TemplateId, string>> = {
   "indigo-pro": "#4f46e5",
   "neo-mint": "#10b981",
   "coral-edge": "#fb7185",
+  "midnight-chip": "#0f1f3d",
+  "slate-chip": "#1f2937",
 };
 
 function Thumb({ t, accent, active }: { t: TemplateMeta; accent: string; active: boolean }) {
