@@ -52,6 +52,8 @@ export const ALL_TEMPLATES: TemplateMeta[] = [
   { id: "dark-sidebar", label: "Dark Sidebar", desc: "Charcoal rail, modern", cols: 2 },
   { id: "neo-mint", label: "Neo Mint", desc: "Fresh mint right rail", cols: 2 },
   { id: "coral-edge", label: "Coral Edge", desc: "Coral two-column accent", cols: 2 },
+  { id: "midnight-chip", label: "Midnight Chip", desc: "Navy chips · yellow accent", cols: 2 },
+  { id: "slate-chip", label: "Slate Chip", desc: "Graphite chips · amber accent", cols: 2 },
 ];
 
 const BG_PRESETS = [
