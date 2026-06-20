@@ -339,6 +339,8 @@ export function ResumeDocument({
     "indigo-pro": "#4f46e5",
     "neo-mint": "#10b981",
     "coral-edge": "#fb7185",
+    "midnight-chip": "#0f1f3d",
+    "slate-chip": "#1f2937",
   };
   const accent = TEMPLATE_ACCENT[data.template] ?? data.accentHex;
   const fs = data.fontSize ?? 10.5;
@@ -369,6 +371,8 @@ export function ResumeDocument({
     "indigo-pro": "classic",
     "neo-mint": "sidebar-right",
     "coral-edge": "two-column",
+    "midnight-chip": "sidebar-right",
+    "slate-chip": "two-column",
   };
   const variant = VARIANT_MAP[data.template] ?? "classic";
 
