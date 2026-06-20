@@ -83,6 +83,8 @@ export const TEMPLATE_SIDEBAR_DEFAULTS: Partial<Record<TemplateId, SectionId[]>>
   "dark-sidebar":  ["skills", "languages", "education"],
   "neo-mint":      ["skills", "languages", "education"],
   "coral-edge":    ["skills", "languages", "education"],
+  "midnight-chip": ["skills", "languages", "education", "certifications"],
+  "slate-chip":    ["skills", "languages", "education", "certifications"],
 };
 
 // Templates that render a sidebar column at all.
