@@ -169,6 +169,8 @@ const TEMPLATES: { id: TemplateId; label: string; desc: string }[] = [
   { id: "indigo-pro", label: "Indigo Pro", desc: "Refined indigo serif" },
   { id: "neo-mint", label: "Neo Mint", desc: "Fresh mint sidebar right" },
   { id: "coral-edge", label: "Coral Edge", desc: "Coral two-column accent" },
+  { id: "midnight-chip", label: "Midnight Chip", desc: "Navy chips, yellow accent" },
+  { id: "slate-chip", label: "Slate Chip", desc: "Graphite chips, amber accent" },
 ];
 
 
