@@ -45,7 +45,10 @@ export type TemplateId =
   | "graphite-pro"
   | "indigo-pro"
   | "neo-mint"
-  | "coral-edge";
+  | "coral-edge"
+  // Chip-style skill templates (categorized pill chips)
+  | "midnight-chip"
+  | "slate-chip";
 export type SectionId =
   | "summary"
   | "experience"
